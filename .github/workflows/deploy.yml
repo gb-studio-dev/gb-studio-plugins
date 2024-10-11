@@ -30,9 +30,23 @@ jobs:
         run: |
           mkdir ./dist
 
+      - name: Restore cache
+        uses: actions/cache/restore@v4
+        id: cache-restore
+        with:
+          key: ${{ runner.os }}-dist
+          path: ./dist
+
       - name: Generate output
         run: |
           yarn run build
+
+      - name: Save cache
+        uses: actions/cache/save@v4
+        id: cache-save
+        with:
+          path: ./dist
+          key: ${{ runner.os }}-dist
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
