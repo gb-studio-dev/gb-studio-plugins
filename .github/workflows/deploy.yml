@@ -3,14 +3,14 @@ name: Deploy Plugin Repository
 on:
   push:
     branches:
-      - develop
+      - main
 
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - uses: actions/checkout@v4
