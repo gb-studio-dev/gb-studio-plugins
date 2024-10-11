@@ -1,0 +1,10 @@
+{
+  "type": "eventsPlugin",
+  "name": "Variable Actor",
+  "author": "Pau Tomas",
+  "url": "https://github.com/pau-tomas/gb-studio-plugins",
+  "description": "Move actor referenced by a variable.",
+  "license": "MIT",
+  "version": "0.0.1",
+  "gbsVersion": ">=4.2.0"
+}

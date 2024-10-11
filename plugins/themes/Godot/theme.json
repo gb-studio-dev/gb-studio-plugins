@@ -1,0 +1,167 @@
+{
+  "name": "Godot",
+  "type": "dark",
+  "typography": {
+    "fontSize": "11px",
+    "menuFontSize": "12px",
+    "toolbarFontSize": "13px"
+  },
+  "colors": {
+    "highlight": "#81b8f5",
+    "highlightText": "#000000",
+    "text": "#cdcfd2",
+    "background": "#4d4d4d",
+    "secondaryText": "#7d8188",
+    "token": {
+      "variable": "#abc9ff",
+      "character": "#ffeda1",
+      "operator": "#ff7085",
+      "code": "#cdcfd280",
+      "function": "#42ffc2",
+      "constant": "#ff8ccc"
+    },
+    "toolbar": {
+      "background": "#1e2228",
+      "border": "#1e2228",
+      "inactiveBackground": "#1e2228",
+      "inactiveBorder": "#1e2228",
+      "textShadow": "none",
+      "button": {
+        "border": "transparent"
+      }
+    },
+    "button": {
+      "background": "#262b33",
+      "border": "#1e2228",
+      "activeBackground": "#373d49",
+      "text": "#e0e0e0",
+      "nestedBackground": "#373d49",
+      "nestedActiveBackground": "#1e2228"
+    },
+    "menu": {
+      "background": "#373d49",
+      "hoverBackground": "#4d525d",
+      "activeBackground": "#4d525d",
+      "divider": "#4d525d",
+      "boxShadow": "0 0 0 1px #0a0a0a, 0 4px 11px hsla(0, 0%, 0%, 0.2)"
+    },
+    "input": {
+      "background": "#1e2228",
+      "hoverBackground": "#1e2228",
+      "activeBackground": "#262b33",
+      "text": "#cdcfd2",
+      "border": "transparent"
+    },
+    "brackets": {
+      "color": "#3c4e64",
+      "hoverBackground": "#364659"
+    },
+    "card": {
+      "background": "#292d34",
+      "text": "#cdcfd2",
+      "border": "#1e2228",
+      "divider": "#1e2228",
+      "boxShadow": "none"
+    },
+    "sidebar": {
+      "background": "#292d34",
+      "border": "#1e2228",
+      "well": {
+        "background": "#22262d",
+        "boxShadow": "none",
+        "hoverBackground": "#111111"
+      },
+      "header": {
+        "background": "#373d49",
+        "activeBackground": "#4d525d",
+        "border": "transparent",
+        "text": "#e0e0e0"
+      }
+    },
+    "panel": {
+      "background": "#373d49",
+      "border": "#262b33",
+      "divider": "#262b33",
+      "text": "#e0e0e0",
+      "icon": "#e0e0e0",
+      "selectedIcon": "#82baf7",
+      "selectedBackground": "#222831",
+      "activeBackground": "#262b33",
+      "hoverBackground": "#4d525d"
+    },
+    "document": {
+      "background": "#4d4d4d"
+    },
+    "list": {
+      "text": "#cdcfd2",
+      "icon": "#92a4ed",
+      "selectedBackground": "#3c4e64",
+      "activeBackground": "#262b33"
+    },
+    "tabs": {
+      "background": "#22262d",
+      "selectedBackground": "linear-gradient(0deg, #373d49, #373d49 90%, #6993c2 91%)",
+      "secondaryBackground": "#373d49",
+      "border": "#22262d"
+    },
+    "scripting": {
+      "header": {
+        "text": "#e0e0e0",
+        "background": "linear-gradient(0deg, #181a1f 1%, #373d49 2%, #373d49)",
+        "nest1Background": "linear-gradient(0deg, #37474f 1%, #546e7a 2%, #546e7a)",
+        "nest2Background": "linear-gradient(0deg, #051e42 1%, #0b3565 2%, #0b3565)",
+        "nest3Background": "linear-gradient(0deg, #103713 1%, #215924 2%, #215924)",
+        "nest4Background": "linear-gradient(0deg, #320d5e 1%, #4a136c 2%, #4a136c)",
+        "commentBackground": "linear-gradient(0deg, #7cb342 1%, #8bc34a 2%, #8bc34a)"
+      },
+      "tabs": {
+        "background": "#1e2228"
+      },
+      "branch": {
+        "nest1Background": "linear-gradient(0deg, #37474f 1%, #546e7a 2%, #546e7a)",
+        "nest2Background": "linear-gradient(0deg, #051e42 1%, #0b3565 2%, #0b3565)",
+        "nest3Background": "linear-gradient(0deg, #103713 1%, #215924 2%, #215924)",
+        "nest4Background": "linear-gradient(0deg, #320d5e 1%, #4a136c 2%, #4a136c)"
+      },
+      "form": {
+        "background": "#292d34"
+      },
+      "children": {
+        "nest1Border": "#607d8b",
+        "nest1Text": "#607d8b",
+        "nest2Border": "#2196f3",
+        "nest2Text": "#2196f3",
+        "nest3Border": "#4caf50",
+        "nest3Text": "#4caf50",
+        "nest4Border": "#9575cd",
+        "nest4Text": "#9575cd"
+      },
+      "placeholder": {
+        "background": "#1e2228"
+      }
+    },
+    "tracker": {
+      "background": "#4d4d4d",
+      "activeBackground": "#313742",
+      "border": "#373d49",
+      "text": "#ffffff",
+      "note": "#82fbc6",
+      "instrument": "#b1c8fa",
+      "effectCode": "#ee7987",
+      "effectParam": "#fceeaa",
+      "rollCell": {
+        "border": "#333333"
+      }
+    },
+    "prefab": {
+      "background": "#01579b",
+      "text": "#ffffff",
+      "button": {
+        "background": "#0288d1",
+        "hoverBackground": "#039be5",
+        "text": "#ffffff"
+      }
+    }
+  },
+  "borderRadius": 2
+}

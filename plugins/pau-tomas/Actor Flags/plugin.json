@@ -1,0 +1,10 @@
+{
+  "type": "eventsPlugin",
+  "name": "Actor Flags",
+  "author": "Pau Tomas",
+  "url": "https://github.com/pau-tomas/gb-studio-plugins",
+  "description": "Allow Setting Actor Pin/Unpin",
+  "license": "MIT",
+  "version": "0.0.1",
+  "gbsVersion": ">=4.2.0"
+}

@@ -1,0 +1,10 @@
+{
+  "type": "eventsPlugin",
+  "name": "Advanced Menu",
+  "author": "Pau Tomas",
+  "url": "https://github.com/pau-tomas/gb-studio-plugins",
+  "description": "Display a menu of multiple options and set the specified variable to the value of the chosen option.",
+  "license": "MIT",
+  "version": "0.0.1",
+  "gbsVersion": ">=4.2.0"
+}

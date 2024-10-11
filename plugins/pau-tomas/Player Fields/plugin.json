@@ -1,0 +1,10 @@
+{
+  "type": "eventsPlugin",
+  "name": "Player Fields",
+  "author": "Pau Tomas",
+  "url": "https://github.com/pau-tomas/gb-studio-plugins",
+  "description": "Store the value of a Player Field in a variable.",
+  "license": "MIT",
+  "version": "0.0.1",
+  "gbsVersion": ">=4.2.0"
+}

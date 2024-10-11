@@ -1,0 +1,9 @@
+{
+  "type": "assetPack",
+  "name": "Sample Project Platform Player",
+  "author": "Chris Maltby",
+  "license": "MIT",
+  "description": "The GB Studio sample project Platformer player sprite.",
+  "version": "0.0.1",
+  "gbsVersion": ">=4.2.0"
+}

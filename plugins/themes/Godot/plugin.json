@@ -1,0 +1,9 @@
+{
+  "type": "theme",
+  "name": "Godot Theme",
+  "author": "Chris Maltby",
+  "description": "Godot theme for GB Studio.\nActually, what are you doing here? Check out godotengine.org it's free and open-source.",
+  "license": "MIT",
+  "version": "0.0.1",
+  "gbsVersion": ">=4.2.0"
+}

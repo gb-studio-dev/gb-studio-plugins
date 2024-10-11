@@ -1,0 +1,169 @@
+{
+  "name": "Blueprint",
+  "type": "dark",
+  "typography": {
+    "fontSize": "11px",
+    "menuFontSize": "12px",
+    "toolbarFontSize": "13px"
+  },
+  "colors": {
+    "highlight": "#6d9a43",
+    "highlightText": "#ffffff",
+    "text": "#bfbfbf",
+    "background": "#222222",
+    "secondaryText": "#777777",
+    "token": {
+      "variable": "#9ccc65",
+      "character": "#90caf9",
+      "operator": "#90caf9",
+      "code": "#ffffff",
+      "function": "#ffffff",
+      "constant": "#90caf9"
+    },
+    "toolbar": {
+      "background": "#242424",
+      "border": "#181a1f",
+      "inactiveBackground": "#21252b",
+      "inactiveBorder": "#000000",
+      "textShadow": "none",
+      "button": {
+        "border": "transparent",
+        "borderTop": "tranparent"
+      }
+    },
+    "button": {
+      "background": "#111111",
+      "border": "#343434",
+      "borderTop": "tranparent",
+      "activeBackground": "#14151a",
+      "text": "#abb2bf",
+      "nestedBackground": "#292929",
+      "nestedActiveBackground": "#333333"
+    },
+    "menu": {
+      "background": "#393939",
+      "hoverBackground": "#016fdf",
+      "activeBackground": "#016fdf",
+      "divider": "#323842",
+      "boxShadow": "0 0 0 1px #3e4452, 0 4px 11px hsla(0, 0%, 0%, 0.1)"
+    },
+    "input": {
+      "background": "#101210",
+      "hoverBackground": "#181818",
+      "activeBackground": "#111",
+      "text": "#abb2bf",
+      "border": "#343434"
+    },
+    "brackets": {
+      "color": "#000000",
+      "hoverBackground": "#222222"
+    },
+    "card": {
+      "background": "#292929",
+      "text": "#9399a7",
+      "border": "#292929",
+      "divider": "#1c1c1c",
+      "boxShadow": "none"
+    },
+    "sidebar": {
+      "background": "#1c1c1c",
+      "border": "#111111",
+      "well": {
+        "background": "linear-gradient(0deg, rgba(0,0,0,0), rgba(0,0,0,0) 50%, rgba(0,0,0,0.05) 51%, rgba(0,0,0,0.1) 95%, rgba(0,0,0,0.4)), #181818",
+        "boxShadow": "none",
+        "hoverBackground": "#111"
+      },
+      "header": {
+        "background": "#292929",
+        "activeBackground": "#333333",
+        "border": "#181a1f",
+        "text": "#b7babb"
+      }
+    },
+    "panel": {
+      "background": "#000000",
+      "border": "#262b33",
+      "divider": "#262b33",
+      "text": "#e0e0e0",
+      "icon": "#e0e0e0",
+      "selectedIcon": "#ffffff",
+      "selectedBackground": "#016fdf",
+      "activeBackground": "#282c34",
+      "hoverBackground": "#1b1d23"
+    },
+    "document": {
+      "background": "linear-gradient(#333333 1.5px, transparent 1.5px) 0px 3px/130px 16px, linear-gradient(90deg, #333333 1.5px, transparent 1.5px) 7px 0px/16px 16px,#222"
+    },
+    "list": {
+      "text": "#ccc",
+      "icon": "#b58e56",
+      "selectedBackground": "#016fdf",
+      "activeBackground": "#282c34"
+    },
+    "tabs": {
+      "background": "#1c1c1c",
+      "selectedBackground": "linear-gradient(0deg, #292929 97%, transparent 97%, transparent), linear-gradient(90deg, #292929, #036cd5 50%, #292929)",
+      "secondaryBackground": "#292929",
+      "border": "#22262d"
+    },
+    "scripting": {
+      "header": {
+        "text": "#e2e2e2",
+        "background": "linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.4)), radial-gradient(ellipse farthest-side at left top, hsla(0, 2%, 16%, 0) 0%, hsla(120, 2%, 16%, 255) 100%), #4e4e4e",
+        "nest1Background": "linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.4)), radial-gradient(ellipse farthest-side at left top, hsla(0, 2%, 16%, 0) 0%, hsla(120, 2%, 16%, 255) 100%), #4a6f88",
+        "nest2Background": "linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.4)), radial-gradient(ellipse farthest-side at left top, hsla(0, 2%, 16%, 0) 0%, hsla(120, 2%, 16%, 255) 100%), #0b3565",
+        "nest3Background": "linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.4)), radial-gradient(ellipse farthest-side at left top, hsla(0, 2%, 16%, 0) 0%, hsla(120, 2%, 16%, 255) 100%), #215924",
+        "nest4Background": "linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.4)), radial-gradient(ellipse farthest-side at left top, hsla(0, 2%, 16%, 0) 0%, hsla(120, 2%, 16%, 255) 100%), #4a136c",
+        "commentBackground": "linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.4)), radial-gradient(ellipse farthest-side at left top, hsla(0, 2%, 16%, 0) 0%, hsla(120, 2%, 16%, 255) 100%), #8bc34a"
+      },
+      "tabs": {
+        "background": "#1c1c1c"
+      },
+      "branch": {
+        "nest1Background": "linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.4)), radial-gradient(ellipse farthest-side at left top, hsla(0, 2%, 16%, 0) 0%, hsla(120, 2%, 16%, 255) 100%), #4a6f88",
+        "nest2Background": "linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.4)), radial-gradient(ellipse farthest-side at left top, hsla(0, 2%, 16%, 0) 0%, hsla(120, 2%, 16%, 255) 100%), #203D6A",
+        "nest3Background": "linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.4)), radial-gradient(ellipse farthest-side at left top, hsla(0, 2%, 16%, 0) 0%, hsla(120, 2%, 16%, 255) 100%), #27492A",
+        "nest4Background": "linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.4)), radial-gradient(ellipse farthest-side at left top, hsla(0, 2%, 16%, 0) 0%, hsla(120, 2%, 16%, 255) 100%), #3F2460"
+      },
+      "form": {
+        "background": "linear-gradient(0deg, #101210, #000000)"
+      },
+      "children": {
+        "nest1Border": "#607d8b",
+        "nest1Text": "#607d8b",
+        "nest2Border": "#2196f3",
+        "nest2Text": "#2196f3",
+        "nest3Border": "#4caf50",
+        "nest3Text": "#4caf50",
+        "nest4Border": "#9575cd",
+        "nest4Text": "#9575cd"
+      },
+      "placeholder": {
+        "background": "#000"
+      }
+    },
+    "tracker": {
+      "background": "#222222",
+      "activeBackground": "#333333",
+      "border": "#000000",
+      "text": "#b7babb",
+      "note": "#008894",
+      "instrument": "#738bd7",
+      "effectCode": "#f45d22",
+      "effectParam": "#ffad1f",
+      "rollCell": {
+        "border": "#333333"
+      }
+    },
+    "prefab": {
+      "background": "linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.4)), radial-gradient(ellipse farthest-side at left top, hsla(0, 2%, 16%, 0) 0%, hsla(120, 2%, 16%, 255) 100%), #01579b",
+      "text": "#ffffff",
+      "button": {
+        "background": "linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.4)), radial-gradient(ellipse farthest-side at left top, hsla(0, 2%, 16%, 0) 0%, hsla(120, 2%, 16%, 255) 100%), #01579b",
+        "hoverBackground": "linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.4)), radial-gradient(ellipse farthest-side at left top, hsla(0, 2%, 16%, 0) 0%, hsla(120, 2%, 16%, 255) 100%), #039be5",
+        "text": "#ffffff"
+      }
+    }
+  },
+  "borderRadius": 2
+}

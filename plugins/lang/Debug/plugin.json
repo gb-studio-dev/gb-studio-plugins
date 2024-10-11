@@ -1,0 +1,9 @@
+{
+  "type": "lang",
+  "name": "Debug Localization",
+  "author": "Chris Maltby",
+  "description": "A localization with no values set and the debug flag enabled causing only the localization keys to be displayed. Useful for translators looking for context about where specific text is used.",
+  "license": "MIT",
+  "version": "0.0.1",
+  "gbsVersion": ">=4.2.0"
+}

@@ -1,0 +1,9 @@
+{
+  "type": "theme",
+  "name": "Blueprint Theme",
+  "author": "Chris Maltby",
+  "description": "An epic theme for GB Studio.",
+  "license": "MIT",
+  "version": "0.0.1",
+  "gbsVersion": ">=4.2.0"
+}

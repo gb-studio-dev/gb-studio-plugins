@@ -1,0 +1,10 @@
+{
+  "type": "eventsPlugin",
+  "name": "Real Time Clock",
+  "author": "Pau Tomas",
+  "url": "https://github.com/pau-tomas/gb-studio-plugins",
+  "description": "A set of events that give access to the Real Time Clock functionality present in some GB cartridges.",
+  "license": "MIT",
+  "version": "0.0.1",
+  "gbsVersion": ">=4.2.0"
+}
