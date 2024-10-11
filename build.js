@@ -1,4 +1,11 @@
-import { existsSync, cpSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import {
+  existsSync,
+  cpSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+  copyFileSync,
+} from "fs";
 import { join, dirname, relative, resolve } from "path";
 import { sync } from "glob";
 import { execSync } from "child_process";
@@ -10,6 +17,8 @@ const pluginsDir = join(__dirname, "plugins");
 const outputDir = join(__dirname, "dist");
 const repositoryJsonPath = join(__dirname, "repository.json");
 const outputRepositoryJsonPath = join(outputDir, "repository.json");
+const CNAMEPath = join(__dirname, "CNAME");
+const outputCNAMEPath = join(outputDir, "CNAME");
 
 // Ensure output directory exists
 if (!existsSync(outputDir)) {
@@ -73,6 +82,9 @@ pluginFolders.forEach((pluginJsonPath) => {
 
 // Write the final merged repository.json to the output directory
 writeFileSync(outputRepositoryJsonPath, JSON.stringify(repository, null, 2));
+
+// Copy CName
+copyFileSync(CNAMEPath, outputCNAMEPath);
 
 console.log(
   "repository.json has been successfully created in the output folder."
