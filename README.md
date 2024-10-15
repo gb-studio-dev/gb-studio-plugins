@@ -62,7 +62,7 @@ A project plugin containing replacement engine files in an `engine` folder.
 
 A globally installed theme plugin that will appear in the `View / Theme` menu.
 
-The plugin must contain a `theme.json` file at the root containing a `name` value (used to display the theme name in the menu), a type `light` or `dark` specifying which inbuild theme to extend, and key/value pairs containg the theme values to use based on the [inbuild GB Studio themes](https://github.com/chrismaltby/gb-studio/blob/b578854652b04fcca49f64a1a6dfdc64afb88594/src/components/ui/theme/lightTheme.ts).
+The plugin must contain a `theme.json` file at the root containing a `name` value (used to display the theme name in the menu), a type `light` or `dark` specifying which inbuilt theme to extend, and key/value pairs containg the theme values to use based on the [inbuilt GB Studio themes](https://github.com/chrismaltby/gb-studio/blob/b578854652b04fcca49f64a1a6dfdc64afb88594/src/components/ui/theme/lightTheme.ts).
 
 ### Lang
 
