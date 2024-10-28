@@ -1,0 +1,14 @@
+{
+  "type": "eventsPlugin",
+  "name": "Array Factory (jaJP)",
+  "author": "Tomo",
+  "url": "https://tomo666.github.io/gamedevlab/ja/category/plugins",
+  "description": "複数のグローバル変数を統合させて仮想配列として扱い、配列への値を代入します。プラグインは 2 つのイベントで構成されています。1 つは指定した配列インデックスに値を代入するプラグインで、もう 1 つは指定した配列インデックスから値を取得するプラグインです。\n英語版のプラグインを使用したい場合は、Array Factory (enUS) を使用してください。詳しい使用方法については、ドキュメントのリンクよりプラグインのマニュアルを一読ください。",
+  "license": "MIT",
+  "images": [
+    "screenshots/array_manager_set.png",
+    "screenshots/array_manager_get.png"
+  ],
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}

@@ -1,0 +1,10 @@
+{
+  "type": "eventsPlugin",
+  "name": "Obstacle Detector (enUS)",
+  "author": "Tomo",
+  "url": "https://tomo666.github.io/gamedevlab/category/plugins",
+  "description": "Provides 2 event plugins to check obstacles within a scene. NOTE: This plugin only supports 8x8 tile size mode. Obstacle Checker plugin obtains an obstacle info at the specified tile position. Actor Walkability Checker obtains an obstacle info relative to the actor's facing direction.\nIf you are looking for a Japanese localized version, please use Obstacle Detector (jaJP) instead. Be sure to read the documentation for this plugin before use.",
+  "license": "MIT",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}

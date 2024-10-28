@@ -1,0 +1,14 @@
+{
+  "type": "assetPack",
+  "name": "Dotton Font Bold jaJP",
+  "author": "Tomo",
+  "url": "https://tomo666.github.io/gamedevlab/gbs_resources/docs/fonts",
+  "description": "Dotton Font Bold jaJP is a [bold-style] Alphanumeric/Japanese Hiragana & Katakana font asset.\n\n視認性を少しだけ犠牲にした力強さが特徴の太字スタイルのフォントです。大文字英数字・記号とひらがな・カタカナが含まれています。",
+  "license": "Exclusive License",
+  "images": [
+    "screenshots/font_bitmap.png",
+    "screenshots/font_sample.png"
+  ],
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}

@@ -1,0 +1,13 @@
+{
+  "type": "eventsPlugin",
+  "name": "Cursor Controller (jaJP)",
+  "author": "Tomo",
+  "url": "https://tomo666.github.io/gamedevlab/category/plugins",
+  "description": "簡易的なカーソル操作をスプライトとアニメーションで実現します。\n英語版のプラグインを使用したい場合は、Cursor Controller (enUS) を使用してください。詳しい使用方法については、ドキュメントのリンクよりプラグインのマニュアルを一読ください。",
+  "license": "MIT",
+  "images": [
+    "screenshots/cursor_controller_ss1.gif"
+  ],
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}
