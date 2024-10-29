@@ -1,0 +1,14 @@
+{
+  "type": "assetPack",
+  "name": "Bitton Font jaJP",
+  "author": "Tomo",
+  "url": "https://tomo666.github.io/gamedevlab/gbs_resources/docs/fonts",
+  "description": "Bitton Font jaJP is a Alphanumeric/Japanese Hiragana & Katakana 3x4 pixel font.\n\n幅が 3 ビットン（3 x 4 ピクセル）の極小フォントです。大文字英数字・記号とひらがな・カタカナが含まれていますが、ひらがなの判読はかなり困難です。",
+  "license": "Exclusive License",
+  "images": [
+    "screenshots/font_bitmap.png",
+    "screenshots/font_sample.png"
+  ],
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}

@@ -1,0 +1,14 @@
+{
+  "type": "assetPack",
+  "name": "Dotton Font jaJP",
+  "author": "Tomo",
+  "url": "https://tomo666.github.io/gamedevlab/gbs_resources/docs/fonts",
+  "description": "Dotton Font jaJP is a [standard] Alphanumeric/Japanese Hiragana & Katakana font asset.\n\nドットンフォントは、スタンダードな大文字英数字・記号とひらがな・カタカナのフォントです。汎用性と視認性の両方を考慮してデザインされています。",
+  "license": "Exclusive License",
+  "images": [
+    "screenshots/font_bitmap.png",
+    "screenshots/font_sample.png"
+  ],
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}

@@ -1,0 +1,13 @@
+{
+  "type": "eventsPlugin",
+  "name": "Cursor Controller",
+  "author": "Tomo",
+  "url": "https://tomo666.github.io/gamedevlab/category/plugins",
+  "description": "[English]\nLets you control a selection cursor sprite with animations in a \"quick and dirty\" way.\n\n[Japanese]\n簡易的なカーソル操作をスプライトとアニメーションで実現します。",
+  "license": "MIT",
+  "images": [
+    "screenshots/cursor_controller_ss1.gif"
+  ],
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}
