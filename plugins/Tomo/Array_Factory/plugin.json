@@ -1,0 +1,14 @@
+{
+  "type": "eventsPlugin",
+  "name": "Array Factory",
+  "author": "Tomo",
+  "url": "https://tomo666.github.io/gamedevlab/category/plugins",
+  "description": "[English]\nMerges multiple global variables and use it as a virtual array. Plugin consists of 2 events. Ones is for setting a value to the specified array index, and the other one is for obtaining a value from a specified array index.\n\n[Japanese]\n複数のグローバル変数を統合させて仮想配列として扱い、配列への値を代入します。プラグインは 2 つのイベントで構成されています。1 つは指定した配列インデックスに値を代入するプラグインで、もう 1 つは指定した配列インデックスから値を取得するプラグインです。",
+  "license": "MIT",
+  "images": [
+    "screenshots/array_manager_set.png",
+    "screenshots/array_manager_get.png"
+  ],
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}

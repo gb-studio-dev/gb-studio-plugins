@@ -1,0 +1,13 @@
+{
+  "type": "eventsPlugin",
+  "name": "Sprite Tile Replacer",
+  "author": "Tomo",
+  "url": "https://tomo666.github.io/gamedevlab/category/plugins",
+  "description": "[English]\nReplaces a specified sprite tile with ability to select a VRAM bank. NOTE: This plugin is only compatible with Color Only mode.\n\n[Japanese]\n指定のスプライトタイルを置き換えます（VRAM バンク切り替え可能）。注意：このプラグインは「カラーのみ」モードでのみ使用可能です。",
+  "license": "MIT",
+  "images": [
+    "screenshots/sprite_tile_replacer.png"
+  ],
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}
