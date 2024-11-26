@@ -1,0 +1,16 @@
+{
+	"version": "4.2.0-e4",
+	"fields": [    
+		{
+			"key": "tile_collision_iframes",
+			"label": "Tile Collision IFrames",
+			"group": "TopDown Tile Collisions",
+			"type": "slider",
+			"cType": "UBYTE",
+			"defaultValue": 20,
+			"min": 0,
+			"max": 127
+		}
+ 
+	]
+}
