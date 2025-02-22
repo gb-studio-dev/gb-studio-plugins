@@ -1,0 +1,10 @@
+{
+  "type": "enginePlugin",
+  "name": "Submapping Ex Plugin",
+  "author": "Mico27",
+  "url": "https://github.com/Mico27/GBS-copyBkgSubWinPlugin",
+  "description": "Allow submapping of tiles from different scenes in a variety of ways.",
+  "license": "MIT",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}

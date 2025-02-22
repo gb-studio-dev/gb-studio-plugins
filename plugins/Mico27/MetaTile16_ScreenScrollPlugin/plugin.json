@@ -1,0 +1,10 @@
+{
+  "type": "enginePlugin",
+  "name": "Metatile (16px + ScreenScroll) Plugin",
+  "author": "Mico27",
+  "url": "https://github.com/Mico27/gbs-MetatilePlugin",
+  "description": "Integrates the concept of metatiles in gbstudio (16px version with screen scroll support)",
+  "license": "MIT",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}

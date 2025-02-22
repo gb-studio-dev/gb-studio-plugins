@@ -1,0 +1,10 @@
+{
+  "type": "enginePlugin",
+  "name": "Configure Load/Save Plugin",
+  "author": "Mico27",
+  "url": "https://github.com/Mico27/gbs-ConfigLoadSavePlugin",
+  "description": "Allows configuration of the game saving structure",
+  "license": "MIT",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}
