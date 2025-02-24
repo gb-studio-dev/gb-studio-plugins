@@ -1,0 +1,10 @@
+{
+  "type": "enginePlugin",
+  "name": "UI Alt Display Text Plugin",
+  "author": "Mico27",
+  "url": "https://github.com/Mico27/gbs-uiAltDisplayTextPlugin",
+  "description": "Alternate method of displaying text (uses font loaded in tileset VRAM instead of writing text to tileset VRAM)",
+  "license": "MIT",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}

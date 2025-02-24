@@ -1,0 +1,10 @@
+{
+  "type": "enginePlugin",
+  "name": "Tile Render Event Plugin",
+  "author": "Mico27",
+  "url": "https://github.com/Mico27/GBS-TileRenderEventPlugin",
+  "description": "Can register scripts to be run when a row/column/whole screen is rendered.",
+  "license": "MIT",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}
