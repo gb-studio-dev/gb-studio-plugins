@@ -11,9 +11,10 @@
 #include "actor.h"
 #include "data/game_globals.h"
 #include "data_manager.h"
+#include "scene_transition.h"
 
-uint8_t __at(0xBB80) sram_collision_data[1024];
-uint8_t __at(0xBF80) sram_map_data[MAX_MAP_DATA_SIZE];
+uint8_t __at(0xBB00) sram_collision_data[1024];
+uint8_t __at(0xBF00) sram_map_data[MAX_MAP_DATA_SIZE];
 
 UBYTE metatile_bank;
 unsigned char* metatile_ptr;
@@ -92,7 +93,7 @@ void vm_submap_metatiles(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	for (uint8_t i = 0; i < height; i++){		
 		UBYTE current_y = (dest_y + i);			
 		MemcpyBanked(sram_map_data + METATILE_MAP_OFFSET(dest_x, current_y), tilemap_ptr + (UWORD)((((source_y + i) >> 1) * (bkg.width >> 1)) + (source_x >> 1)), width >> 1, bkg.tilemap.bank);
-		if (commit){
+		if (commit && !is_transitioning_scene){
 			for (UBYTE j = 0; j < width; j++) {
 				tile_buffer[j] = ReadBankedUBYTE(metatile_ptr + TILE_MAP_OFFSET(sram_map_data[METATILE_MAP_OFFSET(dest_x + j, current_y)], dest_x + j, current_y), metatile_bank);
 			}
@@ -117,7 +118,7 @@ void replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit) BANKED {
 	x -= x & 1;
 	y -= y & 1;
 	sram_map_data[METATILE_MAP_OFFSET(x, y)] = tile_id;	
-	if (commit){	
+	if (commit && !is_transitioning_scene){	
 	#ifdef CGB
 			if (_is_CGB) {
 				VBK_REG = 1;

@@ -14,8 +14,8 @@
 #define TILE_PROP_LADDER 0x10
 
 #define SRAM_MAP_WIDTH 16
-#define SRAM_MAP_HEIGHT 8
-#define METATILE_MAP_OFFSET(x,y)  ((((y >> 1) & 7) << 4) + ((x >> 1) & 15))
+#define SRAM_MAP_HEIGHT 16
+#define METATILE_MAP_OFFSET(x,y)  (((y >> 1) << 4) + (x >> 1))
 #define TILE_MAP_OFFSET(metatile_idx,x,y)  (((metatile_idx >> 4) << 6) + ((metatile_idx & 15) << 1) + ((y & 1) << 5) + (x & 1))
 
 #define MAX_MAP_DATA_SIZE (SRAM_MAP_WIDTH * SRAM_MAP_HEIGHT)
@@ -29,8 +29,8 @@ extern unsigned char *collision_ptr;
 extern UBYTE image_tile_width;
 extern UBYTE image_tile_height;
 
-extern uint8_t __at(0xBB80) sram_collision_data[1024];
-extern uint8_t __at(0xBF80) sram_map_data[MAX_MAP_DATA_SIZE];
+extern uint8_t __at(0xBB00) sram_collision_data[1024];
+extern uint8_t __at(0xBF00) sram_map_data[MAX_MAP_DATA_SIZE];
 extern UBYTE metatile_collision_bank;
 
 /**
