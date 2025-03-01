@@ -65,15 +65,16 @@ void scroll_reset(void) BANKED {
 		y = ((camera_y >> 4) - (SCREENHEIGHT >> 1));
 		
 		if (x < 0){
-			scroll_x = x - 8;
+			scroll_x = x;
+    
 		} else if (x > scroll_x_max){
-			scroll_x = x + 8;
+			scroll_x = x;
 		}
 		
 		if (y < 0){
-			scroll_y = y - 8;
+			scroll_y = y;
 		} else if (y > scroll_y_max){
-			scroll_y = y + 8;
+			scroll_y = y;
 		}
 		
 		
@@ -195,10 +196,10 @@ UBYTE scroll_viewport(parallax_row_t * port) BANKED {
             return TRUE;
         }
 
-        if (IS_FRAME_2) {
-            if (pending_h_i) scroll_load_pending_col();
-            if (pending_w_i) scroll_load_pending_row();
-        }
+       // if (IS_FRAME_2) {
+       //     if (pending_h_i) scroll_load_pending_col();
+       //     if (pending_w_i) scroll_load_pending_row();
+       // }
 
         return TRUE;
     }

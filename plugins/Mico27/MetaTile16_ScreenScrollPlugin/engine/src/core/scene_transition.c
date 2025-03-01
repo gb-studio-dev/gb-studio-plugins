@@ -116,10 +116,20 @@ void transition_to_scene_modal(UBYTE direction) BANKED {
 		uint8_t camera_arrived = FALSE;
 		uint8_t player_arrived = FALSE;
 		
-		script_runner_update();	
-		
-		if (direction == DIRECTION_DOWN){
-			scroll_render_rows(draw_scroll_x, draw_scroll_y, 0, 2);
+		do {
+			script_runner_update();
+		} while (VM_ISLOCKED());		
+		if (direction == DIRECTION_RIGHT){
+			scroll_x = ((camera_x >> 4) - (SCREENWIDTH >> 1)) - 8;
+		} else if (direction == DIRECTION_DOWN){
+			if (image_height < SCREENHEIGHT){
+				scroll_render_rows(draw_scroll_x, draw_scroll_y, 0, (SCREENHEIGHT - image_height) >> 3);
+			}
+			scroll_y = ((camera_y >> 4) - (SCREENHEIGHT >> 1)) - 8;			
+		} else if (direction == DIRECTION_LEFT){
+			scroll_x = ((camera_x >> 4) - (SCREENWIDTH >> 1));
+		} else if (direction == DIRECTION_UP){
+			scroll_y = ((camera_y >> 4) - (SCREENHEIGHT >> 1));
 		}
 		
 		do {

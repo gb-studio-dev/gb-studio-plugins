@@ -217,3 +217,11 @@ void copy_background_submap_to_tileset(SCRIPT_CTX * THIS) OLDCALL BANKED {
 		}
 	}	
 }
+
+void vm_replace_background_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
+	set_bkg_tile_xy(((*(uint8_t *) VM_REF_TO_PTR(FN_ARG0)) & 31), ((*(uint8_t *) VM_REF_TO_PTR(FN_ARG1)) & 31), (*(uint8_t *) VM_REF_TO_PTR(FN_ARG2)));
+}
+
+void vm_replace_overlay_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
+	set_win_tile_xy(((*(uint8_t *) VM_REF_TO_PTR(FN_ARG0)) & 31), ((*(uint8_t *) VM_REF_TO_PTR(FN_ARG1)) & 31), (*(uint8_t *) VM_REF_TO_PTR(FN_ARG2)));		
+}
