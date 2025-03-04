@@ -21,10 +21,6 @@ extern unsigned char* metatile_ptr;
 extern UBYTE metatile_attr_bank;
 extern unsigned char* metatile_attr_ptr;
 
-extern UBYTE metatile_collision_bank;
-extern unsigned char* metatile_collision_ptr;
-
-
 void replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit) BANKED;
 
 #endif

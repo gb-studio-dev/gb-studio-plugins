@@ -80,10 +80,10 @@ void scroll_reset(void) BANKED {
 		
 	} else {
 		scroll_x = 0x7FFF;
-		scroll_y = 0x7FFF;
+		scroll_y = 0x7FFF;	
 		metatile_bank = 0;
-		metatile_attr_bank = 0;
-	}
+		metatile_attr_bank = 0;		
+	}	
 }
 
 void scroll_update(void) BANKED {

@@ -20,6 +20,7 @@
 #include "shadow.h"
 #include "music_manager.h"
 #include "vm.h"
+#include "meta_tiles.h"
 
 #define TILE_FRACTION_MASK         0b1111111
 #define ONE_TILE_DISTANCE          128
@@ -115,7 +116,8 @@ void transition_to_scene_modal(UBYTE direction) BANKED {
 		}
 		uint8_t camera_arrived = FALSE;
 		uint8_t player_arrived = FALSE;
-		
+		metatile_bank = 0;
+		metatile_attr_bank = 0;
 		do {
 			script_runner_update();
 		} while (VM_ISLOCKED());		
