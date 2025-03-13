@@ -133,6 +133,12 @@ export const fields = [
       },
     ],
   },
+  {
+    key: "commit",
+    type: "checkbox",
+    label: "Commit",
+    defaultValue: true,
+  },
 ];
 
 export const compile = (input, helpers) => {
@@ -166,6 +172,7 @@ export const compile = (input, helpers) => {
 		variableSetToScriptValue(tmp_colors[3], input.color3);
 	}
   
+  _stackPush(input.commit ? 0: 1);
   _stackPush(tmp_colors[3]);
   _stackPush(tmp_colors[2]);
   _stackPush(tmp_colors[1]);
@@ -173,6 +180,6 @@ export const compile = (input, helpers) => {
   _stackPush(tmp_palette_idx);
   		
   _callNative("set_palette_colors");
-  _stackPop(5);  
+  _stackPop(6);  
   
 };

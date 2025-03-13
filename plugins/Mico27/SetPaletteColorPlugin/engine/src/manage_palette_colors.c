@@ -13,6 +13,7 @@ void set_palette_colors(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	int16_t color1 = *(int16_t*)VM_REF_TO_PTR(FN_ARG2);
 	int16_t color2 = *(int16_t*)VM_REF_TO_PTR(FN_ARG3);
 	int16_t color3 = *(int16_t*)VM_REF_TO_PTR(FN_ARG4);
+	int16_t is_commit = *(int16_t*)VM_REF_TO_PTR(FN_ARG5);
 
 	UBYTE palette_from_idx = palettes & 7;
 	UBYTE is_sprite = (palettes >> 3) & 1;
@@ -27,16 +28,22 @@ void set_palette_colors(SCRIPT_CTX * THIS) OLDCALL BANKED {
             case 0:
                 if (is_sprite) {
                     DMG_palette[1] = DMGPal;
-                    OBP0_REG = DMGPal;
+					if (is_commit){
+						OBP0_REG = DMGPal;
+					}
                 } else {
 					DMG_palette[0] = DMGPal;
-                    BGP_REG = DMGPal;
+					if (is_commit){
+						BGP_REG = DMGPal;
+					}
 				}
                 break;
             case 1:
                 if (is_sprite) {
                     DMG_palette[2] = DMGPal;
-                    OBP1_REG = DMGPal;
+					if (is_commit){
+						OBP1_REG = DMGPal;
+					}
                 }
                 break;
         }
@@ -52,7 +59,7 @@ void set_palette_colors(SCRIPT_CTX * THIS) OLDCALL BANKED {
 			BkgPalette[palette_from_idx].c3 = color3;
 		}
 #ifdef CGB
-		if (_is_CGB) {
+		if (is_commit && _is_CGB) {
 			if (is_sprite){
 				set_sprite_palette(palette_from_idx, 1, (void *)(SprPalette + palette_from_idx));
 			} else {
