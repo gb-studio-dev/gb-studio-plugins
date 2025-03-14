@@ -28,6 +28,8 @@ export const fields = [
   },
 ];
 
+const background_cache = {};
+
 export const compile = (input, helpers) => {
   const { options, _callNative, _stackPushConst, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue, writeAsset } = helpers;
   
@@ -36,41 +38,44 @@ export const compile = (input, helpers) => {
   if (!metatile_scene) {
     return;
   }
-  const newTilemapData = [];
-  const oldTilemapData = scene.background.tilemap.data;
-  const oldTilemapAttrData = scene.background.tilemapAttr?.data;
-  const oldCollisionData = scene.collisions;
-  const metaTilemapData = metatile_scene.background.tilemap.data;
-  const metaTilemapAttrData = metatile_scene.background.tilemapAttr?.data;
-  const metaCollisionData = metatile_scene.collisions;
-  let tile_found = false;
-  for (let y = 0; y < scene.background.height; y++){
-	for (let x = 0; x < scene.background.width; x++){
-		for (let y2 = 0; y2 < metatile_scene.background.height; y2++){
-			for (let x2 = 0; x2 < metatile_scene.background.width; x2++){
-				if ((oldTilemapData[(y * scene.background.width) + x] == metaTilemapData[(y2 * metatile_scene.background.width) + x2]) &&
-					(!input.matchColor || !oldTilemapAttrData || !metaTilemapAttrData || 
-					(oldTilemapAttrData[(y * scene.background.width) + x] == metaTilemapAttrData[(y2 * metatile_scene.background.width) + x2])) &&
-					(!input.matchCollision || !oldCollisionData || !metaCollisionData || 
-					(oldCollisionData[(y * scene.background.width) + x] == metaCollisionData[(y2 * metatile_scene.background.width) + x2]))){
-						newTilemapData[(y * scene.background.width) + x] = (y2 * metatile_scene.background.width) + x2;
-						tile_found = true;
-						break;
+  if (!background_cache[scene.backgroundId]){
+	const newTilemapData = [];
+	const oldTilemapData = scene.background.tilemap.data;
+	const oldTilemapAttrData = scene.background.tilemapAttr?.data;
+	const oldCollisionData = scene.collisions;
+	const metaTilemapData = metatile_scene.background.tilemap.data;
+	const metaTilemapAttrData = metatile_scene.background.tilemapAttr?.data;
+	const metaCollisionData = metatile_scene.collisions;
+	let tile_found = false;
+	for (let y = 0; y < scene.background.height; y++){
+		for (let x = 0; x < scene.background.width; x++){
+			for (let y2 = 0; y2 < metatile_scene.background.height; y2++){
+				for (let x2 = 0; x2 < metatile_scene.background.width; x2++){
+					if ((oldTilemapData[(y * scene.background.width) + x] == metaTilemapData[(y2 * metatile_scene.background.width) + x2]) &&
+						(!input.matchColor || !oldTilemapAttrData || !metaTilemapAttrData || 
+						(oldTilemapAttrData[(y * scene.background.width) + x] == metaTilemapAttrData[(y2 * metatile_scene.background.width) + x2])) &&
+						(!input.matchCollision || !oldCollisionData || !metaCollisionData || 
+						(oldCollisionData[(y * scene.background.width) + x] == metaCollisionData[(y2 * metatile_scene.background.width) + x2]))){
+							newTilemapData[(y * scene.background.width) + x] = (y2 * metatile_scene.background.width) + x2;
+							tile_found = true;
+							break;
+					}
+				}
+				if (tile_found){
+					break;
 				}
 			}
-			if (tile_found){
-				break;
+			if (!tile_found){
+				throw new Error(`Cannot find matching metatile for tile at coordinate ${x}, ${y}`);
 			}
+			tile_found = false;
 		}
-		if (!tile_found){
-			throw new Error(`Cannot find matching metatile for tile at coordinate ${x}, ${y}`);
-		}
-		tile_found = false;
 	}
+	scene.background.tilemap.data = newTilemapData; 
+	scene.background.tilemapAttr.data = [0]; 
+	scene.collisions = [0];
+	background_cache[scene.backgroundId] = true;
   }
-  scene.background.tilemap.data = newTilemapData; 
-  scene.background.tilemapAttr.data = [0]; 
-  scene.collisions = [0];
     
   _addComment("Load meta tiles");
   
