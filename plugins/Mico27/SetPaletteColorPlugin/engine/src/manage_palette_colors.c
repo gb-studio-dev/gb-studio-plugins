@@ -23,7 +23,7 @@ void set_palette_colors(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	//UBYTE g1 = (color1 >> 5) & 31;
 	//UBYTE b1 = (color1 >> 10) & 31;
 	if (is_dmg) {
-		UBYTE DMGPal = DMG_PALETTE(color0 & 3, color1 & 3, color2 & 3, color3 & 3);
+		UBYTE DMGPal = (is_sprite) ? DMG_PALETTE(0, color0 & 3, color1 & 3, color2 & 3): DMG_PALETTE(color0 & 3, color1 & 3, color2 & 3, color3 & 3);
         switch (palette_from_idx & 1) {
             case 0:
                 if (is_sprite) {
@@ -48,10 +48,10 @@ void set_palette_colors(SCRIPT_CTX * THIS) OLDCALL BANKED {
                 break;
         }
 	} else {
-		if (is_sprite){
-			SprPalette[palette_from_idx].c0 = color0;
-			SprPalette[palette_from_idx].c1 = color1;
-			SprPalette[palette_from_idx].c2 = color2;
+		if (is_sprite){			
+			SprPalette[palette_from_idx].c1 = color0;
+			SprPalette[palette_from_idx].c2 = color1;
+			SprPalette[palette_from_idx].c3 = color2;
 		} else {
 			BkgPalette[palette_from_idx].c0 = color0;
 			BkgPalette[palette_from_idx].c1 = color1;
