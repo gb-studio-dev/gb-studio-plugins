@@ -183,16 +183,16 @@ void copy_background_submap_to_tileset(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	UBYTE buffer_size = sizeof(UBYTE) * width;
 	for (uint8_t i = 0; i < height; i++){
 		uint16_t source_offset = ((source_y + i) * (int16_t)bkg.width) + source_x;
-		uint16_t dest_offset = ((dest_y + i) * image_tile_width) + dest_x;
+		uint16_t dest_offset = ((dest_y + i) * (int16_t)image_tile_width) + dest_x;
 		for (uint8_t j = 0; j < width; j++){	
-			UBYTE dest_tile = ReadBankedUBYTE(image_ptr + (dest_offset + j), image_bank);	
-			UBYTE source_tile = ReadBankedUBYTE(tilemap_ptr + (source_offset + j), bkg.tilemap.bank);				
+			UBYTE dest_tile = ReadBankedUBYTE(image_ptr + (uint16_t)(dest_offset + j), image_bank);	
+			UBYTE source_tile = ReadBankedUBYTE(tilemap_ptr + (uint16_t)(source_offset + j), bkg.tilemap.bank);				
 			#ifdef CGB
 				if (_is_CGB) {			
 					
-					UBYTE dest_attr = ReadBankedUBYTE(image_attr_ptr + (dest_offset + j), image_attr_bank);	
-					if (copy_attributes){
-						UBYTE source_attr = ReadBankedUBYTE(tilemap_attr_ptr + (source_offset + j), bkg.cgb_tilemap_attr.bank);	
+					UBYTE dest_attr = ReadBankedUBYTE(image_attr_ptr + (uint16_t)(dest_offset + j), image_attr_bank);	
+					UBYTE source_attr = ReadBankedUBYTE(tilemap_attr_ptr + (uint16_t)(source_offset + j), bkg.cgb_tilemap_attr.bank);
+					if (copy_attributes){						
 						VBK_REG = 1; 
 						if (copy_attributes == 1){
 							set_bkg_tile_xy((dest_x + j) & 31, (dest_y + i) & 31, (dest_attr & 0x08)? (source_attr | 0x08): (source_attr & ~0x08));	
@@ -204,15 +204,15 @@ void copy_background_submap_to_tileset(SCRIPT_CTX * THIS) OLDCALL BANKED {
 					if (dest_attr & 0x08){ 					
 						VBK_REG = 1; 
 					}	
-				}
-			#endif
-			if (cgb_tileset){
-				SetBankedBkgData(dest_tile, 1, cgb_tileset->tiles + (source_tile << 4), bkg.cgb_tileset.bank);
-			} else {
-				SetBankedBkgData(dest_tile, 1, tileset->tiles + (source_tile << 4), bkg.tileset.bank);
-			}
-			#ifdef CGB
-				VBK_REG = 0;
+					if (cgb_tileset && (source_attr & 0x08)){
+						SetBankedBkgData(dest_tile, 1, cgb_tileset->tiles + (uint16_t)(source_tile << 4), bkg.cgb_tileset.bank);
+					} else {
+						SetBankedBkgData(dest_tile, 1, tileset->tiles + (uint16_t)(source_tile << 4), bkg.tileset.bank);
+					}
+					VBK_REG = 0;
+				}			
+			#else
+				SetBankedBkgData(dest_tile, 1, tileset->tiles + (uint16_t)(source_tile << 4), bkg.tileset.bank);
 			#endif
 		}
 	}	
