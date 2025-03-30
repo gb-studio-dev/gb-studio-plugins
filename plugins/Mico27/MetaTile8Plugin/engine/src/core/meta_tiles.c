@@ -11,9 +11,10 @@
 #include "actor.h"
 #include "data/game_globals.h"
 #include "data_manager.h"
+#include "data/states_defines.h"
 
-uint8_t __at(0xA400) sram_collision_data[256]; //sram_map_data Address 0xA500 - 0x0100(256)
-uint8_t __at(0xA500) sram_map_data[MAX_MAP_DATA_SIZE]; //0xA000 + (0x2000 (8k SRAM max size) - 0x1B00 (MAX_MAP_DATA_SIZE))
+uint8_t __at(SRAM_COLLISION_DATA_PTR) sram_collision_data[256]; //sram_map_data Address 0xA500 - 0x0100(256)
+uint8_t __at(SRAM_MAP_DATA_PTR) sram_map_data[MAX_MAP_DATA_SIZE]; //0xA000 + (0x2000 (8k SRAM max size) - 0x1B00 (MAX_MAP_DATA_SIZE))
 
 UBYTE metatile_bank;
 unsigned char* metatile_ptr;

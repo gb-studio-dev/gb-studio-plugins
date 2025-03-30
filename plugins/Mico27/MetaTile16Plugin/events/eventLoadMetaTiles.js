@@ -33,7 +33,7 @@ const background_cache = {};
 export const compile = (input, helpers) => {
   const { options, _callNative, _stackPushConst, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue, writeAsset } = helpers;
   
-  const { scenes, scene } = options;
+  const { scenes, scene, engineFields } = options;
   const metatile_scene = scenes.find((s) => s.id === input.sceneId);
   if (!metatile_scene) {
     return;
