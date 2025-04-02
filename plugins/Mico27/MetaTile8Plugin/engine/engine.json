@@ -1,1 +1,29 @@
-{"version": "4.2.0-e0"}
+{
+	"version": "4.2.0-e0",
+	"fields": [
+		{
+		"key": "MAX_MAP_DATA_WIDTH",
+		"label": "Scene max width (In 8 px tiles)",
+		"group": "Metatiles",
+		"type": "select",
+		"options": [
+			[32, "32"],
+			[64, "64"],
+			[128, "128"],
+			[256, "256"]
+		],
+		"cType": "define",
+		"defaultValue": 256
+		},
+		{
+		"key": "MAX_MAP_DATA_HEIGHT",
+		"label": "Scene max height (In 8 px tiles)",
+		"group": "Metatiles",
+		"type": "slider",
+		"cType": "define",
+		"defaultValue": 27,
+		"min": 1,
+		"max": 128
+		}
+	]
+}

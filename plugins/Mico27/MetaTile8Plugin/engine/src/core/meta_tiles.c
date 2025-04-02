@@ -11,18 +11,16 @@
 #include "actor.h"
 #include "data/game_globals.h"
 #include "data_manager.h"
+#include "data/states_defines.h"
 
-uint8_t __at(0xA400) sram_collision_data[256]; //sram_map_data Address 0xA500 - 0x0100(256)
-uint8_t __at(0xA500) sram_map_data[MAX_MAP_DATA_SIZE]; //0xA000 + (0x2000 (8k SRAM max size) - 0x1B00 (MAX_MAP_DATA_SIZE))
+uint8_t __at(SRAM_COLLISION_DATA_PTR) sram_collision_data[256]; //sram_map_data Address 0xA500 - 0x0100(256)
+uint8_t __at(SRAM_MAP_DATA_PTR) sram_map_data[MAX_MAP_DATA_SIZE]; //0xA000 + (0x2000 (8k SRAM max size) - 0x1B00 (MAX_MAP_DATA_SIZE))
 
 UBYTE metatile_bank;
 unsigned char* metatile_ptr;
 
 UBYTE metatile_attr_bank;
 unsigned char* metatile_attr_ptr;
-
-UBYTE metatile_collision_bank;
-unsigned char* metatile_collision_ptr;
 
 UBYTE image_tile_width_bit;
 
@@ -32,8 +30,6 @@ void vm_load_meta_tiles(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	const scene_t * scene_ptr = *(scene_t **) VM_REF_TO_PTR(FN_ARG1);	
 	scene_t scn;
     MemcpyBanked(&scn, scene_ptr, sizeof(scn), scene_bank);
-	metatile_collision_bank  = scn.collisions.bank;
-    metatile_collision_ptr   = scn.collisions.ptr;
 	background_t bkg;
     MemcpyBanked(&bkg, scn.background.ptr, sizeof(bkg), scn.background.bank);
     metatile_bank = bkg.tilemap.bank;
@@ -41,7 +37,7 @@ void vm_load_meta_tiles(SCRIPT_CTX * THIS) OLDCALL BANKED {
     metatile_attr_bank = bkg.cgb_tilemap_attr.bank;
     metatile_attr_ptr = bkg.cgb_tilemap_attr.ptr;
 	
-	MemcpyBanked(&sram_collision_data, metatile_collision_ptr, 256, metatile_collision_bank);
+	MemcpyBanked(&sram_collision_data, scn.collisions.ptr, 256, scn.collisions.bank);
 	
 	image_tile_width_bit = 1;
 	UBYTE width = (image_tile_width - 1);
