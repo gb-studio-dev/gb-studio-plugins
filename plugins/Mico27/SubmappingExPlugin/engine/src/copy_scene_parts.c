@@ -175,6 +175,8 @@ void copy_background_submap_to_tileset(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	background_t bkg;
     MemcpyBanked(&bkg, scn.background.ptr, sizeof(bkg), scn.background.bank);
     const tileset_t* tileset = bkg.tileset.ptr;
+	UWORD n_tiles = ReadBankedUWORD(&(tileset->n_tiles), bkg.tileset.bank);
+	UBYTE ui_reserved_offset = (n_tiles > 128 && n_tiles < 192)? (192 - n_tiles): 0;
 	unsigned char* tilemap_ptr = bkg.tilemap.ptr;
 	unsigned char* tilemap_attr_ptr = bkg.cgb_tilemap_attr.ptr;	
 	
@@ -182,11 +184,14 @@ void copy_background_submap_to_tileset(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	
 	UBYTE buffer_size = sizeof(UBYTE) * width;
 	for (uint8_t i = 0; i < height; i++){
-		uint16_t source_offset = ((source_y + i) * (int16_t)bkg.width) + source_x;
-		uint16_t dest_offset = ((dest_y + i) * (int16_t)image_tile_width) + dest_x;
+		uint16_t source_offset = ((source_y + i) * (uint16_t)bkg.width) + source_x;
+		uint16_t dest_offset = ((dest_y + i) * (uint16_t)image_tile_width) + dest_x;
 		for (uint8_t j = 0; j < width; j++){	
 			UBYTE dest_tile = ReadBankedUBYTE(image_ptr + (uint16_t)(dest_offset + j), image_bank);	
-			UBYTE source_tile = ReadBankedUBYTE(tilemap_ptr + (uint16_t)(source_offset + j), bkg.tilemap.bank);				
+			UBYTE source_tile = ReadBankedUBYTE(tilemap_ptr + (uint16_t)(source_offset + j), bkg.tilemap.bank);
+			if (ui_reserved_offset && source_tile >= 128){
+				source_tile = source_tile - ui_reserved_offset;
+			}			
 			#ifdef CGB
 				if (_is_CGB) {			
 					
@@ -210,9 +215,11 @@ void copy_background_submap_to_tileset(SCRIPT_CTX * THIS) OLDCALL BANKED {
 						SetBankedBkgData(dest_tile, 1, tileset->tiles + (uint16_t)(source_tile << 4), bkg.tileset.bank);
 					}
 					VBK_REG = 0;
-				}			
-			#else
-				SetBankedBkgData(dest_tile, 1, tileset->tiles + (uint16_t)(source_tile << 4), bkg.tileset.bank);
+				} else {
+					SetBankedBkgData(dest_tile, 1, tileset->tiles + (uint16_t)(source_tile << 4), bkg.tileset.bank);
+				}					
+			#else				
+				SetBankedBkgData(dest_tile, 1, tileset->tiles + (uint16_t)(source_tile << 4), bkg.tileset.bank);				
 			#endif
 		}
 	}	
