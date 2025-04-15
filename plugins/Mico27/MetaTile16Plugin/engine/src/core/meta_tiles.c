@@ -70,6 +70,17 @@ void vm_get_sram_tile_id_at_pos(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	script_memory[*(int16_t*)VM_REF_TO_PTR(FN_ARG2)] = sram_map_data[METATILE_MAP_OFFSET(x, y)];	
 }
 
+void vm_replace_collision(SCRIPT_CTX * THIS) OLDCALL BANKED {
+	uint8_t tile_id = *(uint8_t *) VM_REF_TO_PTR(FN_ARG0);	
+	uint8_t collision_tl = *(uint8_t *) VM_REF_TO_PTR(FN_ARG1);	
+	uint8_t collision_tr = *(uint8_t *) VM_REF_TO_PTR(FN_ARG2);	
+	uint8_t collision_bl = *(uint8_t *) VM_REF_TO_PTR(FN_ARG3);
+	uint8_t collision_br = *(uint8_t *) VM_REF_TO_PTR(FN_ARG4);	
+	sram_collision_data[TILE_MAP_OFFSET(tile_id, 0, 0)] = collision_tl;
+	sram_collision_data[TILE_MAP_OFFSET(tile_id, 1, 0)] = collision_tr;
+	sram_collision_data[TILE_MAP_OFFSET(tile_id, 0, 1)] = collision_bl;
+	sram_collision_data[TILE_MAP_OFFSET(tile_id, 1, 1)] = collision_br;
+}
 
 void vm_submap_metatiles(SCRIPT_CTX * THIS) OLDCALL BANKED {	
 	int16_t source_pos = *(int16_t*)VM_REF_TO_PTR(FN_ARG0);
