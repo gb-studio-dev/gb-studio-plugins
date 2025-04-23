@@ -9,6 +9,6 @@
     "screenshots/font_bitmap.png",
     "screenshots/font_sample.png"
   ],
-  "version": "1.0.0",
+  "version": "1.0.1",
   "gbsVersion": ">=4.2.0"
 }
