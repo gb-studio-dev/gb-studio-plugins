@@ -24,29 +24,27 @@ void set_palette_colors(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	//UBYTE b1 = (color1 >> 10) & 31;
 	if (is_dmg) {
 		UBYTE DMGPal = (is_sprite) ? DMG_PALETTE(0, color0 & 3, color1 & 3, color2 & 3): DMG_PALETTE(color0 & 3, color1 & 3, color2 & 3, color3 & 3);
-        switch (palette_from_idx & 1) {
-            case 0:
-                if (is_sprite) {
-                    DMG_palette[1] = DMGPal;
+		if (is_sprite){
+			switch (palette_from_idx & 1) {
+				case 0:
+					DMG_palette[1] = DMGPal;
 					if (is_commit){
 						OBP0_REG = DMGPal;
 					}
-                } else {
-					DMG_palette[0] = DMGPal;
-					if (is_commit){
-						BGP_REG = DMGPal;
-					}
-				}
-                break;
-            case 1:
-                if (is_sprite) {
-                    DMG_palette[2] = DMGPal;
+					break;
+				case 1:
+					DMG_palette[2] = DMGPal;
 					if (is_commit){
 						OBP1_REG = DMGPal;
 					}
-                }
-                break;
-        }
+					break;
+			}
+		} else {
+			DMG_palette[0] = DMGPal;
+			if (is_commit){
+				BGP_REG = DMGPal;
+			}
+		}
 	} else {
 		if (is_sprite){			
 			SprPalette[palette_from_idx].c1 = color0;
@@ -82,27 +80,25 @@ void get_palette_colors(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	UBYTE is_dmg = (palettes >> 4) & 1;
 	
 	if (is_dmg) {
-        switch (palette_from_idx & 1) {
-            case 0:
-                if (is_sprite) {
+		if (is_sprite){
+			switch (palette_from_idx & 1) {
+				case 0:					
 					script_memory[color0Var] = ((DMG_palette[1] >> 2) & 3);
 					script_memory[color1Var] = ((DMG_palette[1] >> 4) & 3);
-					script_memory[color2Var] = ((DMG_palette[1] >> 6) & 3);
-                } else {
-					script_memory[color0Var] = ((DMG_palette[0]) & 3);
-					script_memory[color1Var] = ((DMG_palette[0] >> 2) & 3);
-					script_memory[color2Var] = ((DMG_palette[0] >> 4) & 3);
-					script_memory[color3Var] = ((DMG_palette[0] >> 6) & 3);
-				}
-                break;
-            case 1:
-                if (is_sprite) {
+					script_memory[color2Var] = ((DMG_palette[1] >> 6) & 3);					
+					break;
+				case 1:
 					script_memory[color0Var] = ((DMG_palette[2] >> 2) & 3);
 					script_memory[color1Var] = ((DMG_palette[2] >> 4) & 3);
 					script_memory[color2Var] = ((DMG_palette[2] >> 6) & 3);
-                }
-                break;
-        }
+					break;
+			}
+		} else {
+			script_memory[color0Var] = ((DMG_palette[0]) & 3);
+			script_memory[color1Var] = ((DMG_palette[0] >> 2) & 3);
+			script_memory[color2Var] = ((DMG_palette[0] >> 4) & 3);
+			script_memory[color3Var] = ((DMG_palette[0] >> 6) & 3);
+		}
 	} else {
 		if (is_sprite){			
 			script_memory[color0Var] = SprPalette[palette_from_idx].c1;

@@ -1,5 +1,5 @@
 const l10n = require("../helpers/l10n").default;
-
+const name = "Attach Script To Button EX";
 const id = "EVENT_SET_INPUT_SCRIPT_EX";
 const groups = ["EVENT_GROUP_INPUT"];
 
@@ -143,6 +143,7 @@ const compile = (input, helpers) => {
 
 module.exports = {
   id,
+  name,
   description: l10n("EVENT_SET_INPUT_SCRIPT_DESC") + " (Extended)",
   autoLabel,
   groups,
