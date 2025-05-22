@@ -185,13 +185,14 @@ void actors_update(void) NONBANKED {
     }
 	//pop n push for flicker
 	actor = actors_active_tail;
-	actor->next = actors_active_head;
-	actors_active_head->prev = actor;
-	actors_active_head = actor;
-	actor->prev->next = 0;
-	actors_active_tail = actor->prev;
-	actor->prev = 0;
-	
+	if (actor->prev){
+	    actor->next = actors_active_head;
+	    actors_active_head->prev = actor;
+	    actors_active_head = actor;
+	    actor->prev->next = 0;
+	    actors_active_tail = actor->prev;
+	    actor->prev = 0;
+	}
     SWITCH_ROM(_save);
 }
 
