@@ -33,7 +33,7 @@ export const compile = (input, helpers) => {
     
   _addComment("Copy scene palette colors");
   
-  _stackPush(input.commit ? 0: 1);
+  _stackPushConst(input.commit ? 0: 1);
   _stackPushConst(`_${scene.symbol}`);
   _stackPushConst(`___bank_${scene.symbol}`); 
   		

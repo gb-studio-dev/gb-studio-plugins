@@ -172,7 +172,7 @@ export const compile = (input, helpers) => {
 		variableSetToScriptValue(tmp_colors[3], input.color3);
 	}
   
-  _stackPush(input.commit ? 0: 1);
+  _stackPushConst(input.commit ? 0: 1);
   _stackPush(tmp_colors[3]);
   _stackPush(tmp_colors[2]);
   _stackPush(tmp_colors[1]);
