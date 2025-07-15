@@ -213,6 +213,9 @@ void deactivate_actor(actor_t *actor) BANKED {
     if (actor == &PLAYER) return;
     actor->active = FALSE;
     DL_REMOVE_ITEM(actors_active_head, actor);
+	if (actors_active_tail == actor){
+		actors_active_tail = actor->prev;
+	}
     DL_PUSH_HEAD(actors_inactive_head, actor);
     if ((actor->hscript_update & SCRIPT_TERMINATED) == 0) {
         script_terminate(actor->hscript_update);
