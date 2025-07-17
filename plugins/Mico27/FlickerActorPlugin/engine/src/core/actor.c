@@ -185,7 +185,7 @@ void actors_update(void) NONBANKED {
     }
 	//pop n push for flicker
 	actor = actors_active_tail;
-	if (actor->prev){
+	if (actor != actors_active_head){
 	    actor->next = actors_active_head;
 	    actors_active_head->prev = actor;
 	    actors_active_head = actor;
