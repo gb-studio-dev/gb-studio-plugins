@@ -62,13 +62,42 @@ void get_actor_active_index(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	}
 }
 
+/*
+Actor1 	y = 2 	Prev = NULL		Next = Actor2	Head
+Actor2 	y = 4 	Prev = Actor1	Next = Actor3 
+Actor3 	y = 4 	Prev = Actor2	Next = Player 
+Player 	y = 3 	Prev = Actor3	Next = NULL		Tail
+*/
+
+//test order pass
+
+/*
+Actor1 	y = 2 	Prev = NULL		Next = Player		Head	
+Actor2 	y = 4 	Prev = Player	Next = Actor3 	
+Actor3 	y = 4 	Prev = Actor2	Next = NULL 		Tail
+Player 	y = 3 	Prev = Actor1	Next = Actor2		
+
+actor_a 		= Actor1
+actor_b 		= Player
+temp_actor_a 	= Actor1
+temp_next 		= NULL
+*/
+
+
 void sort_actors_by_ypos(SCRIPT_CTX * THIS) OLDCALL BANKED {
+	static actor_t* actor_a;	
+    static actor_t* actor_b;
+	static actor_t* temp_actor_a;
+	static actor_t* temp_next;
+	
 	THIS;	
 	if (!actors_active_head) return;
-    actor_t* actor_a = NULL;	
-    actor_t* actor_b = actors_active_head;
-	actor_t* temp_actor_a;
-	actor_t* temp_next;
+    
+	actor_a = NULL;	
+	actor_b = actors_active_head;
+	temp_actor_a = NULL;
+	temp_next = NULL;
+	
     // Traverse the list to sort each element
     while (actor_b) {      
         // Store the next node to process
@@ -77,7 +106,7 @@ void sort_actors_by_ypos(SCRIPT_CTX * THIS) OLDCALL BANKED {
         if (!actor_a || actor_a->pos.y >= actor_b->pos.y) {
             actor_b->next = actor_a;
             // If actor_a is not empty, set its `prev`
-            if (actor_a){
+            if (actor_a){				
 				actor_a->prev = actor_b;
 			}
             // Update actor_a to the new head
@@ -99,11 +128,11 @@ void sort_actors_by_ypos(SCRIPT_CTX * THIS) OLDCALL BANKED {
 			}
 
             // Set `next` of `temp_actor_a` to `actor_b`
-            temp_actor_a->next = actor_b;
-            actor_b->prev = temp_actor_a;
+			temp_actor_a->next = actor_b;
+			actor_b->prev = temp_actor_a;
         }
-        // Move to the next node to be actor_a, if next is empty, set tail
-		if (!temp_next){
+        // if next is empty, set tail
+		if (!actor_b->next){
 			actors_active_tail = actor_b;
 		}
         actor_b = temp_next;
