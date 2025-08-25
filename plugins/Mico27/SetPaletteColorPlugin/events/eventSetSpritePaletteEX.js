@@ -8,6 +8,12 @@ export const autoLabel = (fetchArg) => {
   return l10n("EVENT_PALETTE_SET_SPRITE") + " EX";
 };
 
+const DMG_PALETTE = {
+  id: "dmg",
+  name: "DMG (GB Default)",
+  colors: ["E8F8E0", "B0F088", "509878", "202850"],
+}
+
 export const fields = [
   {
     key: "palette0",
