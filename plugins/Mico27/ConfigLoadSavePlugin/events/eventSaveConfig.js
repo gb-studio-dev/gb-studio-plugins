@@ -10,7 +10,13 @@ const subGroups = {
 const fields = [].concat(
   [
 	{
-        label: "⚠️ Make sure to use the \"Store Variable from Game Data In Variable by Index\" if you want to peek data using save configuration!"
+        label: "⚠️ To peek data using save configuration, use the \"Store Variable from Game Data In Variable by Index\" event"
+    },
+	{
+        label: "⚠️ To save data using save configuration, use the \"Save Game Data From Save Config\" event"
+    },
+	{
+        label: "⚠️ To load data using save configuration, use the \"Load Game Data From Save Config\" event"
     },
     {
       key: "variableAmount",
@@ -46,7 +52,7 @@ const compile = (input, helpers) => {
   const { getVariableAlias, writeAsset } = helpers;  
   let save_points = "";
   for (let i = 0; i < input.variableAmount; i++){	  
-	  save_points += `SAVEPOINT(script_memory[${getVariableAlias(input[`variableDest${i}`])}]),\n`;
+	  save_points += `SAVEPOINT(script_memory[${getVariableAlias(input[`variableDest${i}`])}],${i}),\n`;
   }
   
   writeAsset(
@@ -79,9 +85,10 @@ const save_point_t save_points[] = {
 typedef struct save_point_t {
     void * target;
     size_t size;
+	uint8_t id;
 } save_point_t;
 
-#define SAVEPOINT(A) {&(A), sizeof(A)}
+#define SAVEPOINT(A, ID) {&(A), sizeof(A), (ID)}
 #define SAVEPOINTS_END {0, 0}
 
 BANKREF_EXTERN(save_points)
