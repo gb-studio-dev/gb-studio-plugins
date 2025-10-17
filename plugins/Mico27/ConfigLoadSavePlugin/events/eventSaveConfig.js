@@ -13,10 +13,10 @@ const fields = [].concat(
         label: "⚠️ To peek data using save configuration, use the \"Store Variable from Game Data In Variable by Index\" event"
     },
 	{
-        label: "⚠️ To save data using save configuration, use the \"Save Game Data From Save Config\" event"
+        label: "⚠️ To save data using save configuration, use the \"Save Game Data Using Save Config\" event"
     },
 	{
-        label: "⚠️ To load data using save configuration, use the \"Load Game Data From Save Config\" event"
+        label: "⚠️ To load data using save configuration, use the \"Load Game Data Using Save Config\" event"
     },
     {
       key: "variableAmount",

@@ -10,7 +10,7 @@ const subGroups = {
 const fields = [
   {
     key: "saveSlot",
-    label: l10n("FIELD_FROM_SAVE_SLOT"),
+    label: l10n("FIELD_SAVE_SLOT"),
     description: l10n("FIELD_SAVE_SLOT_DESC"),
     type: "togglebuttons",
     options: [
@@ -38,7 +38,7 @@ const fields = [
 const compile = (input, helpers) => {
   const { _callNative, _stackPushConst, _stackPop, _addComment } = helpers;
       
-  _addComment("Save Game Data From Save Config");
+  _addComment("Save Game Data Using Save Config");
     
   _stackPushConst(input.saveSlot);  	
   _callNative("vm_data_save_ex");
@@ -47,8 +47,8 @@ const compile = (input, helpers) => {
 
 module.exports = {
   id,
-  name: "Save Game Data From Save Config",
-  description: "Save Game Data From Save Config",
+  name: "Save Game Data Using Save Config",
+  description: "Save Game Data Using Save Config",
   groups,
   subGroups,
   fields,

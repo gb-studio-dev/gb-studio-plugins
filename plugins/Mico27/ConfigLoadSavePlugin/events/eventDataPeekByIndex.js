@@ -27,7 +27,7 @@ const fields = [
 	  }, 
       {
         key: "saveSlot",
-        label: l10n("FIELD_FROM_SAVE_SLOT"),
+        label: l10n("FIELD_SAVE_SLOT"),
         description: l10n("FIELD_SAVE_SLOT_DESC"),
         type: "togglebuttons",
         options: [
