@@ -345,7 +345,7 @@ void scroll_load_col(UBYTE x, UBYTE y, UBYTE height) BANKED {
 				tile_buffer[i] = ReadBankedUBYTE((metatile_attr_ptr + sram_map_data[METATILE_MAP_OFFSET(x, y + i)]), metatile_attr_bank);
 			}
 		} else {
-			column_pointer = (image_attr_ptr + (UWORD)((pending_h_y * image_tile_width) + pending_h_x));
+			column_pointer = (image_attr_ptr + (UWORD)((y * image_tile_width) + x));
 			for (i = 0; i < height; i++) {
 				tile_buffer[i] = ReadBankedUBYTE(column_pointer, image_attr_bank);	
 				column_pointer += image_tile_width;			

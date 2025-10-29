@@ -22,15 +22,12 @@ const fields = [
 		key: `variableSource`,
 		label: "Saved data index",
 		description: "Saved data index",
-		type: "value",
-		defaultValue: {
-			type: "number",
-			value: 0,
-		},
+		type: "number",
+		defaultValue: 0,
 	  }, 
       {
         key: "saveSlot",
-        label: l10n("FIELD_FROM_SAVE_SLOT"),
+        label: l10n("FIELD_SAVE_SLOT"),
         description: l10n("FIELD_SAVE_SLOT_DESC"),
         type: "togglebuttons",
         options: [
@@ -58,29 +55,27 @@ const fields = [
 ];
 
 const compile = (input, helpers) => {
-  const { _declareLocal, getVariableAlias, variableSetToScriptValue, getNextLabel, _savePeek, _addComment, _ifConst, _setVariableConst, _label, _addNL } = helpers;  
-  
-  const peekValueRef = _declareLocal("peek_value", 1, true);
-  const variableSourceRef = _declareLocal("tmp0", 1, true);
-  
+
+    const { _declareLocal, getVariableAlias, getNextLabel, _addComment, _ifConst, _setVariableConst, _label, _addNL, _stackPushConst, _callNative, _stackPop } = helpers;  
+    
   const variableDestAlias = getVariableAlias(input.variableDest);
-  variableSetToScriptValue(variableSourceRef, input.variableSource);
-  const foundLabel = getNextLabel();
+  //const foundLabel = getNextLabel();
   
   _addComment(
     `Store ${input.variableSource} from save slot ${input.saveSlot} into ${variableDestAlias}`
-  );
-  _savePeek(
-    peekValueRef,
-    variableDestAlias,
-    variableSourceRef,
-    1,
-    input.saveSlot
-  );
-  _ifConst(".EQ", peekValueRef, 1, foundLabel, 0);
-  _setVariableConst(input.variableDest, 0);
-  _label(foundLabel);
+  );  
+  
+  _stackPushConst(variableDestAlias);   
+  _stackPushConst(1); 
+  _stackPushConst(input.variableSource); 
+  _stackPushConst(input.saveSlot);  		
+  _callNative("vm_data_peek_ex");
+  _stackPop(4);  
+  //_ifConst(".EQ", peekValueRef, 1, foundLabel, 0);
+  //_setVariableConst(input.variableDest, 0);
+  //_label(foundLabel);
   _addNL();
+  
 };
 
 module.exports = {
