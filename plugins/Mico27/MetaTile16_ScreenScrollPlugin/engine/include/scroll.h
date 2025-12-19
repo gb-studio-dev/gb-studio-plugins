@@ -11,21 +11,18 @@
 #define SCREEN_TILES_H 18  // 144 >> 3 = 18
 #define SCREEN_PAD_LEFT 0
 #define SCREEN_PAD_RIGHT 1
-#define SCREEN_PAD_TOP 0
+#define SCREEN_PAD_TOP 1
 #define SCREEN_PAD_BOTTOM 1
 #define SCREEN_TILE_REFRES_W (SCREEN_TILES_W + SCREEN_PAD_LEFT + SCREEN_PAD_RIGHT)
 #define SCREEN_TILE_REFRES_H (SCREEN_TILES_H + SCREEN_PAD_TOP + SCREEN_PAD_BOTTOM)
-#define PENDING_BATCH_SIZE 8
-
-typedef struct script_render_t {
-    UBYTE script_bank;
-    UBYTE *script_addr;
-} script_render_t;
+#define PENDING_BATCH_SIZE 11
 
 extern INT16 scroll_x;
 extern INT16 scroll_y;
 extern INT16 draw_scroll_x;
 extern INT16 draw_scroll_y;
+extern UINT16 scroll_x_min;
+extern UINT16 scroll_y_min;
 extern UINT16 scroll_x_max;
 extern UINT16 scroll_y_max;
 extern BYTE scroll_offset_x;
@@ -36,7 +33,8 @@ extern BYTE bkg_offset_x;
 extern BYTE bkg_offset_y;
 extern UINT8 pending_w_i;
 extern UINT8 pending_h_i;
-extern UBYTE tile_buffer[SCREEN_TILE_REFRES_W];
+extern UBYTE scroll_render_disabled;
+extern UWORD bkg_address_offset;
 
 /**
  * Resets scroll settings on engine start
@@ -62,10 +60,12 @@ void scroll_render_rows(INT16 scroll_x, INT16 scroll_y, BYTE row_offset, BYTE n_
 UBYTE scroll_viewport(parallax_row_t * port) BANKED;
 void scroll_queue_row(UBYTE x, UBYTE y) BANKED;
 void scroll_queue_col(UBYTE x, UBYTE y) BANKED;
-void scroll_load_pending_row(void) BANKED;
-void scroll_load_pending_col(void) BANKED;
+void load_metatile_row(const UBYTE* from, UBYTE x, UBYTE y, UBYTE height, UBYTE bank) NONBANKED;
 void scroll_load_row(UBYTE x, UBYTE y) BANKED;
+void scroll_load_pending_row(void) BANKED;
+void load_metatile_col(const UBYTE* from, UBYTE x, UBYTE y, UBYTE height, UBYTE bank) NONBANKED;
 void scroll_load_col(UBYTE x, UBYTE y, UBYTE height) BANKED;
+void scroll_load_pending_col(void) BANKED;
 
 /**
  * Get base address of window map

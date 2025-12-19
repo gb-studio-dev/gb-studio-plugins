@@ -204,6 +204,7 @@ void ui_alt_display_dialogue(SCRIPT_CTX * THIS) OLDCALL BANKED {
 		camera_update();
 		scroll_update();
 		actors_update();
+		actors_render();
 		projectiles_render();
 		activate_shadow_OAM();
 	

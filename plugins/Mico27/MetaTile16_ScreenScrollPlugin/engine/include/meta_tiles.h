@@ -3,8 +3,8 @@
 
 #define SRAM_MAP_WIDTH 16
 #define SRAM_MAP_HEIGHT 16
-#define METATILE_MAP_OFFSET(x,y)  (((y >> 1) << 4) + (x >> 1))
-#define TILE_MAP_OFFSET(metatile_idx,x,y)  (((metatile_idx >> 4) << 6) + ((metatile_idx & 15) << 1) + ((y & 1) << 5) + (x & 1))
+#define METATILE_MAP_OFFSET(x,y)  (((y & 0xFE) << 3) + (x >> 1))
+#define TILE_MAP_OFFSET(metatile_idx,x,y)  (((metatile_idx & 0xF0) << 2) + ((metatile_idx & 15) << 1) + ((y & 1) << 5) + (x & 1))
 
 #include <gbdk/platform.h>
 #include "gbs_types.h"
@@ -21,6 +21,8 @@ extern unsigned char* metatile_ptr;
 extern UBYTE metatile_attr_bank;
 extern unsigned char* metatile_attr_ptr;
 
+UWORD get_metatile_offset(UBYTE x, UBYTE y) NONBANKED;
 void replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit) BANKED;
+void reset_meta_tile(UBYTE x, UBYTE y, UBYTE commit) BANKED;
 
 #endif

@@ -24,5 +24,6 @@ extern unsigned char* metatile_attr_ptr;
 extern UBYTE image_tile_width_bit;
 
 void replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit) BANKED;
+void reset_meta_tile(UBYTE x, UBYTE y, UBYTE commit) BANKED;
 
 #endif

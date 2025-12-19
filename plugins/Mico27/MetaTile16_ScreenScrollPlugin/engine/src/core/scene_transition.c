@@ -21,19 +21,20 @@
 #include "music_manager.h"
 #include "vm.h"
 #include "meta_tiles.h"
+#include "data/game_globals.h"
 
 #define TILE_FRACTION_MASK         0b1111111
-#define ONE_TILE_DISTANCE          128
+#define ONE_TILE_DISTANCE          256
 
-#define PLAYER_TRANSITION_RIGHT_DISTANCE		256
-#define PLAYER_TRANSITION_LEFT_DISTANCE		   	256
-#define PLAYER_TRANSITION_TOP_DISTANCE		   	256
-#define PLAYER_TRANSITION_BOTTOM_DISTANCE		256
+INT16 player_transition_right_dist;
+INT16 player_transition_left_dist;
+INT16 player_transition_top_dist;
+INT16 player_transition_bottom_dist;
 
-#define PLAYER_TRANSITION_RIGHT_THRESHOLD   	256
-#define PLAYER_TRANSITION_LEFT_THRESHOLD   		0
-#define PLAYER_TRANSITION_TOP_THRESHOLD   		128
-#define PLAYER_TRANSITION_BOTTOM_THRESHOLD   	128
+INT16 player_transition_right_threshold;
+INT16 player_transition_left_threshold;
+INT16 player_transition_top_threshold;
+INT16 player_transition_bottom_threshold;
 
 UBYTE scene_transition_enabled;
 UBYTE is_transitioning_scene;
@@ -65,19 +66,19 @@ void check_transition_to_scene_collision(void) BANKED {
 		// Check for scene scroll
 		if (transitioning_player_pos_y != PLAYER.pos.y)
 		{
-			transitioning_player_pos_y = 0xFFF;
-			if ((PLAYER.pos.y) < PLAYER_TRANSITION_TOP_THRESHOLD){
+			transitioning_player_pos_y = 0x7FFF;
+			if (((WORD)PLAYER.pos.y) < player_transition_top_threshold){
 				transition_to_scene_modal(DIRECTION_UP);				
-			} else if (PLAYER.pos.y > ((image_tile_height << 7) - PLAYER_TRANSITION_BOTTOM_THRESHOLD)){
+			} else if ((WORD)PLAYER.pos.y > (TILE_TO_SUBPX(image_tile_height) - player_transition_bottom_threshold)){
 				transition_to_scene_modal(DIRECTION_DOWN);		
 			}
 		}
 		if (transitioning_player_pos_x != PLAYER.pos.x)
 		{
-			transitioning_player_pos_x = 0xFFF;
-			if ((PLAYER.pos.x) < PLAYER_TRANSITION_LEFT_THRESHOLD){
+			transitioning_player_pos_x = 0x7FFF;
+			if (((WORD)PLAYER.pos.x) < player_transition_left_threshold){
 				transition_to_scene_modal(DIRECTION_LEFT);
-			} else if (PLAYER.pos.x > ((image_tile_width << 7) - PLAYER_TRANSITION_RIGHT_THRESHOLD)){
+			} else if ((WORD)PLAYER.pos.x > (TILE_TO_SUBPX(image_tile_width) - player_transition_right_threshold)){
 				transition_to_scene_modal(DIRECTION_RIGHT);
 			}
 		}
@@ -103,8 +104,8 @@ void transition_to_scene_modal(UBYTE direction) BANKED {
 	if (scene_bank && scene){
 		is_transitioning_scene = 1;
 		transition_load_scene(scene_bank, scene, (direction == DIRECTION_RIGHT)? image_tile_width: (direction == DIRECTION_LEFT)? -image_tile_width: 0, (direction == DIRECTION_DOWN)? image_tile_height: (direction == DIRECTION_UP)? -image_tile_height: 0);
-		transitioning_player_pos_x = PLAYER.pos.x + ((direction == DIRECTION_RIGHT)? PLAYER_TRANSITION_RIGHT_DISTANCE: (direction == DIRECTION_LEFT)? -PLAYER_TRANSITION_LEFT_DISTANCE: 0);
-		transitioning_player_pos_y = PLAYER.pos.y + ((direction == DIRECTION_DOWN)? PLAYER_TRANSITION_BOTTOM_DISTANCE: (direction == DIRECTION_UP)? -PLAYER_TRANSITION_TOP_DISTANCE: 0);
+		transitioning_player_pos_x = PLAYER.pos.x + ((direction == DIRECTION_RIGHT)? player_transition_right_dist: (direction == DIRECTION_LEFT)? -player_transition_left_dist: 0);
+		transitioning_player_pos_y = PLAYER.pos.y + ((direction == DIRECTION_DOWN)? player_transition_bottom_dist: (direction == DIRECTION_UP)? -player_transition_top_dist: 0);
 		if (round_position_flags & direction){		
 			transitioning_player_pos_x = (transitioning_player_pos_x  & ~TILE_FRACTION_MASK);
 			transitioning_player_pos_y = (transitioning_player_pos_y  & ~TILE_FRACTION_MASK);
@@ -120,20 +121,21 @@ void transition_to_scene_modal(UBYTE direction) BANKED {
 		metatile_attr_bank = 0;
 		do {
 			script_runner_update();
-		} while (VM_ISLOCKED());		
+		} while (VM_ISLOCKED());
+		wait_vbl_done();		
 		if (direction == DIRECTION_RIGHT){
-			scroll_x = ((camera_x >> 4) - (SCREENWIDTH >> 1)) - 8;
+			scroll_x = (SUBPX_TO_PX(camera_x) - (SCREENWIDTH >> 1)) - 8;
 		} else if (direction == DIRECTION_DOWN){
 			if (image_height < SCREENHEIGHT){
-				scroll_render_rows(draw_scroll_x, draw_scroll_y, 0, (SCREENHEIGHT - image_height) >> 3);
+				scroll_render_rows(draw_scroll_x, draw_scroll_y, image_tile_height, PX_TO_TILE(SCREENHEIGHT - image_height));
 			}
-			scroll_y = ((camera_y >> 4) - (SCREENHEIGHT >> 1)) - 8;			
+			scroll_y = (SUBPX_TO_PX(camera_y) - (SCREENHEIGHT >> 1)) - 8;			
 		} else if (direction == DIRECTION_LEFT){
-			scroll_x = ((camera_x >> 4) - (SCREENWIDTH >> 1));
+			scroll_x = (SUBPX_TO_PX(camera_x) - (SCREENWIDTH >> 1));
 		} else if (direction == DIRECTION_UP){
-			scroll_y = ((camera_y >> 4) - (SCREENHEIGHT >> 1));
+			scroll_y = (SUBPX_TO_PX(camera_y) - (SCREENHEIGHT >> 1));
 		}
-		
+		wait_vbl_done();
 		do {
 			script_runner_update();	
 			
@@ -141,21 +143,21 @@ void transition_to_scene_modal(UBYTE direction) BANKED {
 				camera_arrived = transition_camera_to();
 				player_arrived = transition_player_to();
 			}
-						
+			input_update();		
 			ui_update();
 	
 			toggle_shadow_OAM();
 			camera_update();
 			scroll_update();
 			actors_update();
+            actors_render();
 			projectiles_render();
 			activate_shadow_OAM();
 	
 			game_time++;
 			wait_vbl_done();
-			input_update();
 			
-			if (camera_arrived && player_arrived) {
+			if (camera_arrived && player_arrived) {				
 				scroll_reset();
 				is_transitioning_scene = 0;
 			}
@@ -175,16 +177,17 @@ void transition_load_scene(UBYTE scene_bank, const scene_t * scene, BYTE t_scrol
 	// Update sprites before scene change
 	toggle_shadow_OAM();
 	actors_update();
+	actors_render();
 	projectiles_render();
 	activate_shadow_OAM();
 	wait_vbl_done();
 	
-	initial_camera_x = camera_x = (-t_scroll_x * 128) + SCROLL_CAM_X;
-	initial_camera_y = camera_y = (-t_scroll_y * 128) + SCROLL_CAM_Y;
-	initial_player_x_pos = (PLAYER.pos.x -= (t_scroll_x * 128));
-	initial_player_y_pos = (PLAYER.pos.y -= (t_scroll_y * 128));	
-	bkg_offset_x = (bkg_offset_x + t_scroll_x) % 32;
-	bkg_offset_y = (bkg_offset_y + t_scroll_y) % 32;	
+	initial_camera_x = camera_x = -TILE_TO_SUBPX(t_scroll_x) + SCROLL_CAM_X;
+	initial_camera_y = camera_y = -TILE_TO_SUBPX(t_scroll_y) + SCROLL_CAM_Y;
+	initial_player_x_pos = (PLAYER.pos.x -= TILE_TO_SUBPX(t_scroll_x));
+	initial_player_y_pos = (PLAYER.pos.y -= TILE_TO_SUBPX(t_scroll_y));	
+	bkg_offset_x = (bkg_offset_x + t_scroll_x) & 31;
+	bkg_offset_y = (bkg_offset_y + t_scroll_y) & 31;	
     // kill all threads, but don't clear variables 
     script_runner_init(FALSE);
     // reset timers on scene change
