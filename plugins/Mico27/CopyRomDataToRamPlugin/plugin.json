@@ -1,0 +1,10 @@
+{
+  "type": "enginePlugin",
+  "name": "Copy custom ROM data to variables plugin",
+  "author": "Mico27",
+  "url": "https://github.com/Mico27/gbs-copyRomDataToRamPlugin",
+  "description": "Allows reading custom ROM data to store in variables",
+  "license": "MIT",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}
