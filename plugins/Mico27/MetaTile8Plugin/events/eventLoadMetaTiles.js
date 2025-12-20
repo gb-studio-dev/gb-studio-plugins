@@ -31,13 +31,32 @@ export const fields = [
 const background_cache = {};
 
 export const compile = (input, helpers) => {
-  const { options, _callNative, _stackPushConst, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue, writeAsset } = helpers;
+  const { options, _callNative, _stackPushConst, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue, writeAsset, engineFieldValues, engineFields } = helpers;
   
+  //Validate engine fields
+  let maxMapDataWidthValue = engineFieldValues.find((s) => s.id === "MAX_MAP_DATA_WIDTH");
+  if (!maxMapDataWidthValue){
+	  const maxMapDataWidthDefault = engineFields["MAX_MAP_DATA_WIDTH"];
+	  if (maxMapDataWidthDefault){
+		  maxMapDataWidthValue = {id: maxMapDataWidthDefault.key, value: maxMapDataWidthDefault.defaultValue};
+	  }
+  }
+  let maxMapDataHeightValue = engineFieldValues.find((s) => s.id === "MAX_MAP_DATA_HEIGHT");
+  if (!maxMapDataHeightValue){
+	  const maxMapDataHeightDefault = engineFields["MAX_MAP_DATA_HEIGHT"];
+	  if (maxMapDataHeightDefault){
+		  maxMapDataHeightValue = {id: maxMapDataHeightDefault.key, value: maxMapDataHeightDefault.defaultValue};
+	  }
+  }    
   const { scenes, scene } = options;
   const metatile_scene = scenes.find((s) => s.id === input.sceneId);
   if (!metatile_scene) {
     return;
   }
+  if ((maxMapDataWidthValue.value * maxMapDataHeightValue.value) >= 0x2000){
+	  throw new Error(`The configured maximum size for metatile scene (width x height) must be lower than 8192`);
+  }
+  
   if (!background_cache[scene.backgroundId]){
 	const newTilemapData = [];
 	const oldTilemapData = scene.background.tilemap.data;

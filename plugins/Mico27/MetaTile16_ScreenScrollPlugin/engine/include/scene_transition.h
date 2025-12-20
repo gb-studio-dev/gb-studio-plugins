@@ -9,10 +9,10 @@
 #define DIRECTION_RIGHT 2
 #define DIRECTION_DOWN 4
 #define DIRECTION_LEFT 8
-#define SCROLL_CAM_X 1280
-#define SCROLL_CAM_Y 1152
-#define SCROLL_CAM_SPEED 64
-#define SCROLL_PLAYER_SPEED 8
+#define SCROLL_CAM_X 2560
+#define SCROLL_CAM_Y 2304
+#define SCROLL_CAM_SPEED 128
+#define SCROLL_PLAYER_SPEED 16
 
 extern UBYTE scene_transition_enabled;
 extern UBYTE is_transitioning_scene;
@@ -21,6 +21,8 @@ extern far_ptr_t right_scene;
 extern far_ptr_t down_scene;
 extern far_ptr_t left_scene;
 extern UBYTE round_position_flags;
+extern INT16 transitioning_player_pos_x;
+extern INT16 transitioning_player_pos_y;
 
 void enable_transition_to_scene(void) BANKED;
 void scene_transition_reset(void) BANKED;

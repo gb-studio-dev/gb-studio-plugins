@@ -2,7 +2,7 @@
 #define META_TILES_H
 
 #define METATILE_MAP_OFFSET(x, y)  (((y >> 1) << image_tile_width_bit) + (x >> 1))
-#define TILE_MAP_OFFSET(metatile_idx,x,y)  (((metatile_idx >> 4) << 6) + ((metatile_idx & 15) << 1) + ((y & 1) << 5) + (x & 1))
+#define TILE_MAP_OFFSET(metatile_idx,x,y)  (UWORD)(((metatile_idx >> 4) << 6) + ((metatile_idx & 15) << 1) + ((y & 1) << 5) + (x & 1))
 //The metatile scene must be 256x256 made of 16x16 for a total of 256 unique metatiles
 #include <gbdk/platform.h>
 #include "gbs_types.h"
@@ -25,5 +25,6 @@ extern unsigned char* metatile_attr_ptr;
 extern UBYTE image_tile_width_bit;
 
 void replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit) BANKED;
+void reset_meta_tile(UBYTE x, UBYTE y, UBYTE commit) BANKED;
 
 #endif

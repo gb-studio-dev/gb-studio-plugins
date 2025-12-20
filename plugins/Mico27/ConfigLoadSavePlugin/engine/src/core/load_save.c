@@ -71,7 +71,7 @@ size_t save_blob_size;
 
 void data_init(void) BANKED {
     ENABLE_RAM_MBC5;
-    SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
+    SWITCH_RAM_BANK(1, RAM_BANKS_ONLY);
     // calculate save blob size
     save_blob_size = sizeof(save_signature) + sizeof(save_blob_size);
 	#if __has_include ("data/save_points.h")
@@ -92,10 +92,11 @@ void data_init(void) BANKED {
     // load from FLASH ROM
     for (UBYTE i = 0; i < SRAM_BANKS_TO_SAVE; i++) restore_sram_bank(i);
 #endif
+	SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
 }
 
 UBYTE * data_slot_address(UBYTE slot, UBYTE *bank) {
-    UWORD res = 0, res_bank = 0;
+    UWORD res = 0, res_bank = 1;
     for (UBYTE i = 0; i < slot; i++) {
         res += save_blob_size;
         if ((res + save_blob_size) > SRAM_BANK_SIZE) {
@@ -152,6 +153,7 @@ void data_save(UBYTE slot) BANKED {
     // save to FLASH ROM
     save_sram(SRAM_BANKS_TO_SAVE);
 #endif
+	SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
 }
 
 UBYTE data_load(UBYTE slot) BANKED {
@@ -188,6 +190,7 @@ UBYTE data_load(UBYTE slot) BANKED {
         save_data += point->size;
     }
 	#endif
+	SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
     // Restart music
     if (music_current_track_bank != MUSIC_STOP_BANK) {
         music_next_track = music_current_track;
@@ -206,6 +209,7 @@ void data_clear(UBYTE slot) BANKED {
     // save to FLASH ROM
     save_sram(SRAM_BANKS_TO_SAVE);
 #endif
+	SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
 }
 
 UBYTE data_peek(UBYTE slot, UINT16 idx, UWORD count, UINT16 * dest) BANKED {
@@ -214,6 +218,7 @@ UBYTE data_peek(UBYTE slot, UINT16 idx, UWORD count, UINT16 * dest) BANKED {
     SWITCH_RAM_BANK(data_bank, RAM_BANKS_ONLY);
     if (SIGN_BY_PTR(save_data) != save_signature) return FALSE;
     if (count) memcpy(dest, save_data + (sizeof(save_signature) + sizeof(save_blob_size) + sizeof(size_t) + sizeof(uint8_t)) + (idx << 1), count << 1);
+	SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
     return TRUE;
 }
 
@@ -223,6 +228,7 @@ UBYTE data_peek_ex(UBYTE slot, UINT16 idx, UWORD count, UINT16 * dest) BANKED {
     SWITCH_RAM_BANK(data_bank, RAM_BANKS_ONLY);
     if (SIGN_BY_PTR(save_data) != save_signature) return FALSE;
     if (count) memcpy(dest, save_data + (sizeof(save_signature) + sizeof(save_blob_size) + (((idx + 1) * (sizeof(size_t) + sizeof(uint8_t) + sizeof(int16_t))) - sizeof(int16_t))), count << 1);
+	SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
     return TRUE;
 }
 

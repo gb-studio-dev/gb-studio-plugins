@@ -13,8 +13,6 @@
 #include "camera.h"
 #include "ui.h"
 #include "palette.h"
-#include "events.h"
-#include "music_manager.h"
 #include "data/spritesheet_none.h"
 #include "data/data_bootstrap.h"
 #include "scene_transition.h"
@@ -38,6 +36,8 @@ UBYTE image_tile_width;
 UBYTE image_tile_height;
 UINT16 image_width;
 UINT16 image_height;
+UINT16 image_width_subpx;
+UINT16 image_height_subpx;
 UBYTE sprites_len;
 UBYTE actors_len;
 UBYTE projectiles_len;
@@ -59,8 +59,11 @@ void load_init(void) BANKED {
 }
 
 void load_bkg_tileset(const tileset_t* tiles, UBYTE bank) BANKED {
-    if ((!bank) || (!tiles)) return;
-
+	#ifdef DISABLE_TILESET_LOAD_ON_TRANSITION
+	if ((!bank) || (!tiles) || is_transitioning_scene) return;    
+	#else
+	if ((!bank) || (!tiles)) return;
+	#endif
     UWORD n_tiles = ReadBankedUWORD(&(tiles->n_tiles), bank);
 
     // load first background chunk, align to zero tile
@@ -107,10 +110,10 @@ void load_background(const background_t* background, UBYTE bank) BANKED {
 
     image_tile_width = bkg.width;
     image_tile_height = bkg.height;
-    image_width = image_tile_width * 8;
-    scroll_x_max = image_width - ((UINT16)SCREENWIDTH);
-    image_height = image_tile_height * 8;
-    scroll_y_max = image_height - ((UINT16)SCREENHEIGHT);
+    image_width = TILE_TO_PX(image_tile_width);
+    image_width_subpx = PX_TO_SUBPX(image_width);
+    image_height = TILE_TO_PX(image_tile_height);
+    image_height_subpx = PX_TO_SUBPX(image_height);
 
     load_bkg_tileset(bkg.tileset.ptr, bkg.tileset.bank);
 #ifdef CGB
@@ -125,14 +128,6 @@ void load_background(const background_t* background, UBYTE bank) BANKED {
 inline UBYTE load_sprite_tileset(UBYTE base_tile, const tileset_t * tileset, UBYTE bank) {
     UBYTE n_tiles = ReadBankedUBYTE(&(tileset->n_tiles), bank);
     if (n_tiles) SetBankedSpriteData(base_tile, n_tiles, tileset->tiles, bank);
-    return n_tiles;
-}
-
-inline UBYTE replace_sprite_tileset(UBYTE target_offset, UBYTE source_offset, UBYTE n_tiles, const tileset_t * tileset, UBYTE bank) {
-	if (!n_tiles){
-		n_tiles = ReadBankedUBYTE(&(tileset->n_tiles), bank);
-	}
-    if (n_tiles) SetBankedSpriteData(target_offset, n_tiles, tileset->tiles + (source_offset * 16), bank);
     return n_tiles;
 }
 
@@ -154,24 +149,6 @@ UBYTE load_sprite(UBYTE sprite_offset, const spritesheet_t * sprite, UBYTE bank)
     return n_tiles;
 }
 
-UBYTE replace_sprite(UBYTE target_offset, UBYTE source_offset, UBYTE n_tiles, const spritesheet_t * sprite, UBYTE bank) BANKED {
-    far_ptr_t data;
-    ReadBankedFarPtr(&data, (void *)&sprite->tileset, bank);
-    n_tiles = replace_sprite_tileset(target_offset, source_offset, n_tiles, data.ptr, data.bank);
-#ifdef CGB
-    if (_is_CGB) {
-        ReadBankedFarPtr(&data, (void *)&sprite->cgb_tileset, bank);
-        if (data.ptr) {
-            VBK_REG = 1;
-            UBYTE n_cgb_tiles = replace_sprite_tileset(target_offset, source_offset, n_tiles, data.ptr, data.bank);
-            VBK_REG = 0;
-            if (n_cgb_tiles > n_tiles) return n_cgb_tiles;
-        }
-    }
-#endif
-    return n_tiles;
-}
-
 void load_animations(const spritesheet_t *sprite, UBYTE bank, UWORD animation_set, animation_t * res_animations) NONBANKED {
     UBYTE _save = CURRENT_BANK;
     SWITCH_ROM(bank);
@@ -179,7 +156,7 @@ void load_animations(const spritesheet_t *sprite, UBYTE bank, UWORD animation_se
     SWITCH_ROM(_save);
 }
 
-void load_bounds(const spritesheet_t *sprite, UBYTE bank, bounding_box_t * res_bounds) BANKED {
+void load_bounds(const spritesheet_t *sprite, UBYTE bank, rect16_t * res_bounds) BANKED {
     MemcpyBanked(res_bounds, &sprite->bounds, sizeof(sprite->bounds), bank);
 }
 
@@ -235,8 +212,10 @@ UBYTE load_scene(const scene_t * scene, UBYTE bank, UBYTE init_data) BANKED {
     collision_bank  = scn.collisions.bank;
     collision_ptr   = scn.collisions.ptr;
 
+	#ifndef DISABLE_UI_TILESET_LOAD
     // Load UI tiles, they may be overwritten by the following load_background()
     ui_load_tiles();
+	#endif
 
     // Load background + tiles
     load_background(scn.background.ptr, scn.background.bank);
@@ -252,13 +231,26 @@ UBYTE load_scene(const scene_t * scene, UBYTE bank, UBYTE init_data) BANKED {
         scene_LCD_type = LCD_parallax;
     }
 
+    scroll_x_min = scn.scroll_bounds.left;
+    scroll_x_max = scn.scroll_bounds.right;
+    scroll_y_min = scn.scroll_bounds.top;
+    scroll_y_max = scn.scroll_bounds.bottom;
+
     if (scene_type != SCENE_TYPE_LOGO) {
         // Load player
-        PLAYER.sprite = scn.player_sprite;
-        UBYTE n_loaded = load_sprite(PLAYER.base_tile = 0, scn.player_sprite.ptr, scn.player_sprite.bank);
-        allocated_sprite_tiles = (n_loaded > scn.reserve_tiles) ? n_loaded : scn.reserve_tiles;
-        load_animations(scn.player_sprite.ptr, scn.player_sprite.bank, ANIM_SET_DEFAULT, PLAYER.animations);
-        load_bounds(scn.player_sprite.ptr, scn.player_sprite.bank, &PLAYER.bounds);
+#ifdef DISABLE_PLAYER_SPRITE_LOAD_ON_TRANSITION
+		if (is_transitioning_scene){
+			allocated_sprite_tiles = player_sprite_len;
+		} else {
+#endif
+			PLAYER.sprite = scn.player_sprite;
+			UBYTE n_loaded = load_sprite(PLAYER.base_tile = 0, scn.player_sprite.ptr, scn.player_sprite.bank);
+			allocated_sprite_tiles = player_sprite_len = (n_loaded > scn.reserve_tiles) ? n_loaded : scn.reserve_tiles;
+			load_animations(scn.player_sprite.ptr, scn.player_sprite.bank, ANIM_SET_DEFAULT, PLAYER.animations);
+			load_bounds(scn.player_sprite.ptr, scn.player_sprite.bank, &PLAYER.bounds);
+#ifdef DISABLE_PLAYER_SPRITE_LOAD_ON_TRANSITION
+		}
+#endif
     } else {
         // no player on logo, but still some little amount of actors may be present
         PLAYER.base_tile = allocated_sprite_tiles = 0x68;
@@ -384,4 +376,3 @@ void load_player(void) BANKED {
 void load_emote(const unsigned char *tiles, UBYTE bank) BANKED {
     SetBankedSpriteData(allocated_sprite_tiles, EMOTE_SPRITE_SIZE, tiles + 0, bank);
 }
-
