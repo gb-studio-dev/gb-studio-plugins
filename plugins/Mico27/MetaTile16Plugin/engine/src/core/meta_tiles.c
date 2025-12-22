@@ -155,7 +155,7 @@ static void impl_replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit
 				tile_map_offset+=31;
 				bkg_address_offset = (bkg_address_offset + 31) & 1023;
 				set_vram_byte((UBYTE*)(0x9800 + bkg_address_offset), ReadBankedUBYTE(metatile_attr_ptr + tile_map_offset, metatile_attr_bank));
-				tile_map_offset++
+				tile_map_offset++;
 				bkg_address_offset = (bkg_address_offset & 0xFFE0) + ((bkg_address_offset + 1) & 31);
 				set_vram_byte((UBYTE*)(0x9800 + bkg_address_offset), ReadBankedUBYTE(metatile_attr_ptr + tile_map_offset, metatile_attr_bank));
 				VBK_REG = 0;
