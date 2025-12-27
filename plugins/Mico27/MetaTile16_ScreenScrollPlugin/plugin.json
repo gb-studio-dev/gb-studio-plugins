@@ -3,7 +3,7 @@
   "name": "Metatile (16px + ScreenScroll) Plugin",
   "author": "Mico27",
   "url": "https://github.com/Mico27/gbs-MetatilePlugin",
-  "description": "Integrates the concept of metatiles in gbstudio (16px version with screen scroll support)",
+  "description": "Integrates the concept of metatiles in gbstudio (16px version with screen scroll support).\nWARNING: this plugin modifies the following engine files:\n- actor.h\n- camera.h\n- collision.h\n- scroll.h\n- actor.c\n- camera.c\n- collision.c\n- data_manager.c\n- interrupts.c\n- scroll.c\n- adventure.c\nAny other plugin that modifies any of these files will not be compatible with this plugin unless the files are manually merged.",
   "license": "MIT",
   "version": "1.0.0",
   "gbsVersion": ">=4.2.0"
