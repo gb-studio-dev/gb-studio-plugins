@@ -633,6 +633,7 @@ static void move_and_collide(UBYTE mask)
                     }
                 } 
             }
+            new_x = MIN(image_width_subpx - EXCLUSIVE_OFFSET(PLAYER.bounds.right), new_x);
         } else if (delta.x < 0) {
             UBYTE tile_x = SUBPX_TO_TILE(new_x + PLAYER.bounds.left);
             UBYTE tile = tile_col_test_range_y(COLLISION_RIGHT, tile_x, tile_start, tile_end);

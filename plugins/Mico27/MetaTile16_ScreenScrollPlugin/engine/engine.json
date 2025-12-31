@@ -115,6 +115,46 @@
             "type": "checkbox",
             "cType": "define",
             "defaultValue": 0
-		}
+		},
+		{
+		  "key": "MIN_OVERLAP_METATILE",
+		  "label": "Minimum metatile index to start checking for the entered metatile event",
+		  "group": "Metatiles",
+		  "type": "slider",
+		  "cType": "define",
+		  "defaultValue": 1,
+		  "min": 0,
+		  "max": 255
+		},
+		{
+          "key": "overlap_metatile_id",
+          "label": "Entered Metatile Id",
+          "description": "Id of the entered metatile",
+          "group": "Metatiles",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        },
+	    {
+          "key": "overlap_metatile_x",
+          "label": "Entered Metatile X position",
+          "description": "X position of the entered metatile",
+          "group": "Metatiles",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        },
+	    {
+          "key": "overlap_metatile_y",
+          "label": "Entered Metatile Y position",
+          "description": "Y position of the entered metatile",
+          "group": "Metatiles",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        }
 	]
 }

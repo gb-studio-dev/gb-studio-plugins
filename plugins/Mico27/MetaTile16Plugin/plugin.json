@@ -3,7 +3,7 @@
   "name": "Metatile (16px) Plugin",
   "author": "Mico27",
   "url": "https://github.com/Mico27/gbs-MetatilePlugin",
-  "description": "Integrates the concept of metatiles in gbstudio (16px version).\nWARNING: this plugin modifies the following engine files:\n- collision.h\n- scroll.h\n- collision.c\n- scroll.c\nAny other plugin that modifies any of these files will not be compatible with this plugin unless the files are manually merged.",
+  "description": "Integrates the concept of metatiles in gbstudio (16px version)",
   "license": "MIT",
   "version": "1.0.0",
   "gbsVersion": ">=4.2.0"
