@@ -1,0 +1,10 @@
+{
+    "type": "enginePlugin",
+    "name": "Get Screen Location",
+    "author": "Tlombard2",
+    "description": "Returns, in 4 variables, a bounding box for the current visible screen. Adds engine files but does not change any.",
+    "version": "1.0.0",
+    "gbsVersion": ">=4.2.0",
+    "license": "MIT",
+    "url": "https://github.com/TLombard2/GBS-Plugins"
+}
