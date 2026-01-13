@@ -44,13 +44,16 @@ const compile = (input, helpers) => {
     const { 
       _setVariable,
       _callNative,
+      _reserve
      } = helpers;
 
+    _reserve(4);
     _callNative("vm_get_screen_location");
     _setVariable(input.screenLeftVar, ".ARG0");
     _setVariable(input.screenRightVar, ".ARG1");
     _setVariable(input.screenTopVar, ".ARG2");
     _setVariable(input.screenBotVar, ".ARG3");
+    _reserve(-4);
 };
 
 module.exports = {

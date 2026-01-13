@@ -5,10 +5,10 @@
 #define SCREEN_TILE8_W            19u
 #define SCREEN_TILE8_H            17u
 
-UBYTE screenLeftX;
-UBYTE screenRightX;
-UBYTE screenTopY;
-UBYTE screenBotY;
+UINT16 screenLeftX;
+UINT16 screenRightX;
+UINT16 screenTopY;
+UINT16 screenBotY;
 
 void vm_get_screen_location(SCRIPT_CTX *THIS) OLDCALL BANKED {
     screenLeftX = PX_TO_TILE(draw_scroll_x);

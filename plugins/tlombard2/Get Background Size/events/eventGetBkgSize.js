@@ -22,14 +22,19 @@ const fields = [
 const compile = (input, helpers) => {
     const { 
       _setVariable,
-      _callNative
+      _callNative,
+      _reserve
      } = helpers;
-
+     
+    _reserve(1);
     _callNative("vm_get_bkg_width");
     _setVariable(input.bkgWidthVar, ".ARG0");
+    _reserve(-1);
 
+    _reserve(1);
     _callNative("vm_get_bkg_height");
     _setVariable(input.bkgHeightVar, ".ARG0"); 
+    _reserve(-1);
 };
 
 module.exports = {

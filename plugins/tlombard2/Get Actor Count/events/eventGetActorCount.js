@@ -15,11 +15,14 @@ const fields = [
 const compile = (input, helpers) => {
     const { 
       _setVariable,
-      _callNative
+      _callNative,
+      _reserve
      } = helpers;
 
+     _reserve(1);
     _callNative("vm_get_actor_count");
     _setVariable(input.actorCountVar, ".ARG0");
+    _reserve(-1);
 };
 
 module.exports = {
