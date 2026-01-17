@@ -7,9 +7,9 @@ const scriptValueHelpers = require("shared/lib/scriptValue/helpers");
 const l10n = require("../helpers/l10n").default;
 const lang_enUS = (l10n("ACTOR") == "アクター") ? false : true;
 
-export const id = "XV_TILE_MAP_ACTOR_WALKABILITY_CHECK";
-export const name = (lang_enUS) ? "Actor Walkability Checker" : "アクターの進行方向の障害物を取得する";
-export const groups = (lang_enUS) ? ["XV Plugins"] : ["XV プラグイン"];
+const id = "XV_TILE_MAP_ACTOR_WALKABILITY_CHECK";
+const name = (lang_enUS) ? "Actor Walkability Checker" : "アクターの進行方向の障害物を取得する";
+const groups = (lang_enUS) ? ["XV Plugins"] : ["XV プラグイン"];
 
 const fields = [].concat(
   [{
@@ -73,7 +73,7 @@ const fields = [].concat(
   }],
 );
 
-export const compile = (input, helpers) => {
+const compile = (input, helpers) => {
   const { actorID, offset, results } = input;
   const { _stackPush, getVariableAlias, _stackPushConst, _callNative, _stackPop, appendRaw,
     variableSetToScriptValue, variableSetToValue, _stackPushReference, actorSetById, actorSetActive, actorPushById } = helpers;

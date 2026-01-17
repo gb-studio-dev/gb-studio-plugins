@@ -8,6 +8,6 @@
   "images": [
     "screenshots/cursor_controller_ss1.gif"
   ],
-  "version": "1.0.0",
+  "version": "1.0.1",
   "gbsVersion": ">=4.2.0"
 }
