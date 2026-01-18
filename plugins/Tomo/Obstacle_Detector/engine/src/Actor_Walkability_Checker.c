@@ -10,6 +10,7 @@
 #include "collision.h"
 #include "actor.h"
 #include "math.h"
+#include "data_manager.h"
 
 actor_t *actor_at_tile_ex(UBYTE tx, UBYTE ty, UBYTE inc_noclip, actor_t* this_actor) BANKED {
     for (actor_t *actor = actors_active_head; (actor); actor = actor->next) {
@@ -54,14 +55,24 @@ void ActorWalkabilityChecker(SCRIPT_CTX * THIS) OLDCALL BANKED {
     int16_t* results = VM_REF_TO_PTR(*(int16_t *)VM_REF_TO_PTR(FN_ARG0));
     
     // Passed in values from editor
-    int16_t offset = *(int16_t*)VM_REF_TO_PTR(FN_ARG1);
-    int16_t actorID = *(int16_t*)VM_REF_TO_PTR(FN_ARG2);
+    int16_t isPlatformer = *(int16_t*)VM_REF_TO_PTR(FN_ARG1);
+    int16_t offset = *(int16_t*)VM_REF_TO_PTR(FN_ARG2);
+    int16_t actorID = *(int16_t*)VM_REF_TO_PTR(FN_ARG3);
     actor_t* actor = actors + (UBYTE)(actorID);
 
-    // Actor struct has positions in pixel units, so convert them to tile positions
-    UBYTE actor_tile_x = actor->pos.x >> 7; //actor->pos.x / (8 * 16);
-    UBYTE actor_tile_y = actor->pos.y >> 7; // actor->pos.y / (8 * 16);
+    // Actor struct has positions in pixel units, so convert and store them to tile positions in the following vars
+    UBYTE actor_tile_x;
+    UBYTE actor_tile_y;
 
+    // For platformer scene, it seems like the actor's position returns twice the amount compared to Topdown/Adventure
+    if(isPlatformer) {
+        actor_tile_x = actor->pos.x >> 7 >> 1;
+        actor_tile_y = actor->pos.y >> 7 >> 1;
+    } else {
+        actor_tile_x = actor->pos.x >> 7; //actor->pos.x / (8 * 16);
+        actor_tile_y = actor->pos.y >> 7; // actor->pos.y / (8 * 16);
+    }
+    
     BYTE collisionResults = 0;
 
     switch(actor->dir) {
