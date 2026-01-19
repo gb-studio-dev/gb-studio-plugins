@@ -12,6 +12,7 @@
 #include "input.h"
 #include "math.h"
 #include "collision.h"
+#include "macro.h"
 #include "data/game_globals.h"
 
 #define CURSOR_ANIM_COUNTER_MAX 48
@@ -22,9 +23,9 @@
 //#define CURSOR_STEP_OPPOSITE_BOUNDARY_DISTANCE_DIVIDER 2
 //#define CURSOR_STEP_BOUNCE_AMOUNT_DIVIDER 4
 #define CURSOR_BUTTON_HELD_WAIT_FRAME_AMOUNT 8
-#define CURSOR_BOUNCE_AMOUNT_LEFT 33
+#define CURSOR_BOUNCE_AMOUNT_LEFT 60
 #define CURSOR_BOUNCE_AMOUNT_RIGHT -15
-#define CURSOR_BOUNCE_AMOUNT_TOP 30
+#define CURSOR_BOUNCE_AMOUNT_TOP 60
 #define CURSOR_BOUNCE_AMOUNT_BOTTOM -16
 #define CURSOR_BOUNCE_ANIM_WAIT_LEFT 2
 #define CURSOR_BOUNCE_ANIM_WAIT_RIGHT 2
@@ -77,6 +78,9 @@ UBYTE currentAnimStateID = 0;
 BYTE previousButtonPressed = CURSOR_BUTTON_PRESSED_NULL; 
 BYTE prevCursorIndex = -1;
 BYTE cursorIndex = -1;
+
+int16_t animOffsetAmountX = NULL;
+int16_t animOffsetAmountY = NULL;
 
 // Changes actor state
 void ChangeActorState(SCRIPT_CTX * THIS, UBYTE actor_id, UWORD state, UBYTE state_id) BANKED {
@@ -132,12 +136,12 @@ void CursorController(SCRIPT_CTX * THIS) OLDCALL BANKED {
     // Variable index is passed (in ARG0) for result storage, so now we can assign the results back to this variable
     int16_t* results = VM_REF_TO_PTR(*(int16_t *)VM_REF_TO_PTR(FN_ARG0));
     int16_t* current_index = VM_REF_TO_PTR(*(int16_t *)VM_REF_TO_PTR(FN_ARG1));
-    int16_t base_pos_y = *(int16_t*)VM_REF_TO_PTR(FN_ARG2) << 4;
-    int16_t base_pos_x = *(int16_t*)VM_REF_TO_PTR(FN_ARG3) << 4;
-    int16_t ex_offset_pos_y = *(int16_t*)VM_REF_TO_PTR(FN_ARG4) << 4;
-    int16_t ex_offset_pos_x = *(int16_t*)VM_REF_TO_PTR(FN_ARG5) << 4;
-    int16_t move_step_y = *(int16_t*)VM_REF_TO_PTR(FN_ARG6) << 4;
-    int16_t move_step_x = *(int16_t*)VM_REF_TO_PTR(FN_ARG7) << 4;
+    int16_t base_pos_y = *(int16_t*)VM_REF_TO_PTR(FN_ARG2) << 4 << 1; // 4.2.0 fix
+	int16_t base_pos_x = *(int16_t*)VM_REF_TO_PTR(FN_ARG3) << 4 << 1; // 4.2.0 fix
+	int16_t ex_offset_pos_y = *(int16_t*)VM_REF_TO_PTR(FN_ARG4) << 4 << 1; // 4.2.0 fix
+	int16_t ex_offset_pos_x = *(int16_t*)VM_REF_TO_PTR(FN_ARG5) << 4 << 1; // 4.2.0 fix
+	int16_t move_step_y = *(int16_t*)VM_REF_TO_PTR(FN_ARG6) << 4 << 1; // 4.2.0 fix
+	int16_t move_step_x = *(int16_t*)VM_REF_TO_PTR(FN_ARG7) << 4 << 1; // 4.2.0 fix
     UBYTE max_rows = *(uint8_t*)VM_REF_TO_PTR(EX_FN_ARG8);
     UBYTE max_columns = *(uint8_t*)VM_REF_TO_PTR(EX_FN_ARG9);
 
@@ -179,14 +183,19 @@ void CursorController(SCRIPT_CTX * THIS) OLDCALL BANKED {
     UBYTE is_ignore_cursor_pos_change = FALSE;
     UBYTE is_jump_cursor_index = FALSE;
 
-    int16_t animOffsetAmountX = ((actor->bounds.right - actor->bounds.left) << 4) - 48;
-    int16_t animOffsetAmountY = ((actor->bounds.bottom - actor->bounds.top) << 4) - 48;
-
+	//int16_t animOffsetAmountX; // = ((actor->bounds.right - actor->bounds.left) << 1) >> 2;//((actor->bounds.right - actor->bounds.left) << 4) - 48;
+	//int16_t animOffsetAmountY; // = ((actor->bounds.bottom - actor->bounds.top) << 1) >> 2;
+	
+	if(animOffsetAmountX == NULL || animOffsetAmountY == NULL) {
+		animOffsetAmountX = 400; //((actor->bounds.right - actor->bounds.left) << 1) - (((actor->bounds.right - actor->bounds.left) << 1) / 2);
+		animOffsetAmountY = 400; //((actor->bounds.bottom - actor->bounds.top) << 1);
+	}
+	
     // If initial call, set to default states
     // NOTE: To initialize properly, results should be set to 0 before calling this plugin
-    if(*results == 0) {
+	if(*results == 0) {
         ChangeActorState(THIS, actor_id, actor_activated_state_id, CURSOR_ANIM_STATE_ACTIVATED);
-        actor->anim_noloop = TRUE;
+		SET_FLAG(actor->flags, ACTOR_FLAG_ANIM_NOLOOP); //actor->anim_noloop = TRUE;
         previousButtonPressed = CURSOR_BUTTON_PRESSED_NULL;
         cursorIndex = *current_index;
         prevCursorIndex = cursorIndex;
@@ -194,9 +203,9 @@ void CursorController(SCRIPT_CTX * THIS) OLDCALL BANKED {
         actor->pos.y = base_pos_y + (cursorIndex / max_columns * move_step_y);
         accumPosX = actor->pos.x;
         accumPosY = actor->pos.y;
-        actor->hidden = FALSE;
+		CLR_FLAG(actor->flags, ACTOR_FLAG_HIDDEN); //actor->hidden = FALSE;
         *results = CURSOR_BUTTON_PRESSED_NULL;
-    } else {
+	} else {
         currentKeyPressed = CURSOR_BUTTON_PRESSED_NULL;
         if(INPUT_A) currentKeyPressed = CURSOR_BUTTON_PRESSED_A;
         if(INPUT_B) currentKeyPressed = CURSOR_BUTTON_PRESSED_B;
@@ -275,13 +284,13 @@ void CursorController(SCRIPT_CTX * THIS) OLDCALL BANKED {
     if(!is_ignore_buttons_press) {
         if((INPUT_A_PRESSED && !isInputHeld) || (INPUT_A && is_move_while_btn_held && is_enable_continuous_a_btn_held)) {
             ChangeActorState(THIS, actor_id, actor_selected_active_state_id, CURSOR_ANIM_STATE_SELECTED);
-            actor->anim_noloop = TRUE;
+			SET_FLAG(actor->flags, ACTOR_FLAG_ANIM_NOLOOP); //actor->anim_noloop = TRUE;
             isInputHeld = TRUE;
             btnHeldCounter = CURSOR_BUTTON_HELD_WAIT_FRAME_AMOUNT;
             *results = CURSOR_BUTTON_PRESSED_A;
         } else if(INPUT_B_PRESSED && !isInputHeld) {
             ChangeActorState(THIS, actor_id, actor_cancel_state_id, CURSOR_ANIM_STATE_CANCEL);
-            actor->anim_noloop = TRUE;
+			SET_FLAG(actor->flags, ACTOR_FLAG_ANIM_NOLOOP); //actor->anim_noloop = TRUE;
             isInputHeld = TRUE;
             btnHeldCounter = CURSOR_BUTTON_HELD_WAIT_FRAME_AMOUNT;
             *results = CURSOR_BUTTON_PRESSED_B;
@@ -290,7 +299,7 @@ void CursorController(SCRIPT_CTX * THIS) OLDCALL BANKED {
             cursorIndex--;
             accumPosX -= move_step_x;
             if((cursorIndex + 1) % max_columns == 0) {
-                if(is_move_to_opposite_end_on_edge) {
+				if(is_move_to_opposite_end_on_edge) {
                     cursorIndex += max_columns;
                     accumPosX += move_step_x * max_columns;
                     // Check whether if the new cursor index has landed on a collision
@@ -356,7 +365,8 @@ void CursorController(SCRIPT_CTX * THIS) OLDCALL BANKED {
             if(is_easing_movement) {
                 if(is_boundary_reached && is_move_opposite_dir_at_edge || is_jump_cursor_index) {
                     if(is_use_mappings) {
-                        posOffsetX = actor->pos.x - (base_pos_x + (cursorIndex % max_columns) * move_step_x);
+						posOffsetX = actor->pos.x - (base_pos_x + (cursorIndex % max_columns) * move_step_x);
+						//posOffsetX = (actor->pos.x << 1) - (base_pos_x + (cursorIndex % max_columns) * move_step_x);
                     } else {
                         posOffsetX = -move_step_x * (max_columns - 1);
                     }
@@ -452,7 +462,8 @@ void CursorController(SCRIPT_CTX * THIS) OLDCALL BANKED {
             if(is_easing_movement) {
                 if(is_boundary_reached && is_move_opposite_dir_at_edge || is_jump_cursor_index) {
                     if(is_use_mappings) {
-                        posOffsetX = actor->pos.x - (base_pos_x + (cursorIndex % max_columns) * move_step_x);
+						posOffsetX = actor->pos.x - (base_pos_x + (cursorIndex % max_columns) * move_step_x);
+						//posOffsetX = (actor->pos.x << 1) - (base_pos_x + (cursorIndex % max_columns) * move_step_x);
                     } else {
                         posOffsetX = move_step_x * (max_columns - 1);
                     }
@@ -734,30 +745,31 @@ void CursorController(SCRIPT_CTX * THIS) OLDCALL BANKED {
 
     previousButtonPressed = currentKeyPressed;
 
-    // If cursor index has changed from previous selection
+	// If cursor index has changed from previous selection
+	/*
     if(prevCursorIndex != cursorIndex) {
         // Play enter state if cursor index has changed
         if(posOffsetX == 0 && posOffsetY == 0 && currentAnimStateID != CURSOR_ANIM_STATE_ENTER) {
             ChangeActorState(THIS, actor_id, actor_enter_state_id, CURSOR_ANIM_STATE_ENTER);
-            actor->anim_noloop = FALSE;
+			CLR_FLAG(actor->flags, ACTOR_FLAG_ANIM_NOLOOP); //actor->anim_noloop = FALSE;
             prevCursorIndex = cursorIndex;
         }
-    }
+    }*/
 
     // If state is activated or enter state, we only play it once, so now change to default state
     if(currentAnimStateID == CURSOR_ANIM_STATE_ACTIVATED || currentAnimStateID == CURSOR_ANIM_STATE_ENTER) {
         if(actor->frame == actor->animations->end) {
             ChangeActorState(THIS, actor_id, 0, CURSOR_ANIM_STATE_DEFAULT);
-            actor->anim_noloop = FALSE;
+			CLR_FLAG(actor->flags, ACTOR_FLAG_ANIM_NOLOOP); //actor->anim_noloop = FALSE;
         }
     }
     // If cancel state is triggered already, hide actor and set results to 0 if animation is ended
     else if(currentAnimStateID == CURSOR_ANIM_STATE_CANCEL) {
         // If cancel state was same as default, just return 0 immediately
         if(actor->frame == actor->animations->end || actor_cancel_state_id == 0) {
-            actor->hidden = TRUE;
+			SET_FLAG(actor->flags, ACTOR_FLAG_HIDDEN); //actor->hidden = TRUE;
             ChangeActorState(THIS, actor_id, 0, CURSOR_ANIM_STATE_DEFAULT);
-            actor->anim_noloop = FALSE;
+			CLR_FLAG(actor->flags, ACTOR_FLAG_ANIM_NOLOOP); //actor->anim_noloop = FALSE;
             *results = CURSOR_BUTTON_PRESSED_B;
             return;
         }
@@ -767,7 +779,7 @@ void CursorController(SCRIPT_CTX * THIS) OLDCALL BANKED {
         // If cancel state was same as default, just return 0 immediately
         if(actor->frame == actor->animations->end || actor_cancel_state_id == 0) {
             ChangeActorState(THIS, actor_id, actor_selected_loop_state_id, CURSOR_ANIM_STATE_SELECTED_LOOP);
-            actor->anim_noloop = FALSE;
+			CLR_FLAG(actor->flags, ACTOR_FLAG_ANIM_NOLOOP); //actor->anim_noloop = FALSE;
             *results = CURSOR_BUTTON_PRESSED_A;
             return;
         }
@@ -788,5 +800,5 @@ void CursorController(SCRIPT_CTX * THIS) OLDCALL BANKED {
 
     // Update cursor positions
     actor->pos.x = accumPosX + posOffsetX + ex_offset_pos_x;
-    actor->pos.y = accumPosY + posOffsetY + ex_offset_pos_y;
+	actor->pos.y = accumPosY + posOffsetY + ex_offset_pos_y;
 }

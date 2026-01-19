@@ -7,9 +7,9 @@ const scriptValueHelpers = require("shared/lib/scriptValue/helpers");
 const l10n = require("../helpers/l10n").default;
 const lang_enUS = (l10n("ACTOR") == "アクター") ? false : true;
 
-export const id = "XV_TILE_MAP_ACTOR_WALKABILITY_CHECK";
-export const name = (lang_enUS) ? "Actor Walkability Checker" : "アクターの進行方向の障害物を取得する";
-export const groups = (lang_enUS) ? ["XV Plugins"] : ["XV プラグイン"];
+const id = "XV_TILE_MAP_ACTOR_WALKABILITY_CHECK";
+const name = (lang_enUS) ? "Actor Walkability Checker" : "アクターの進行方向の障害物を取得する";
+const groups = (lang_enUS) ? ["XV Plugins"] : ["XV プラグイン"];
 
 const fields = [].concat(
   [{
@@ -67,15 +67,15 @@ const fields = [].concat(
         label: (lang_enUS) ? "Variable to store results" : "結果を保存する変数",
         description: (lang_enUS) ? "Variable to store the results." : "障害物の有無を保存する変数",
         type: "variable",
-        defaultValue: "LAST_VARIABLE",
+		defaultValue: "LAST_VARIABLE",
       },
     ],
   }],
 );
 
-export const compile = (input, helpers) => {
+const compile = (input, helpers) => {
   const { actorID, offset, results } = input;
-  const { _stackPush, getVariableAlias, _stackPushConst, _callNative, _stackPop, appendRaw,
+  const { _stackPush, getVariableAlias, _stackPushConst, _callNative, _stackPop, appendRaw, scene,
     variableSetToScriptValue, variableSetToValue, _stackPushReference, actorSetById, actorSetActive, actorPushById } = helpers;
     const { precompileScriptValue, optimiseScriptValue } = scriptValueHelpers;
 
@@ -97,16 +97,22 @@ export const compile = (input, helpers) => {
     } else {
       _stackPop(1); // We already have value pushed in stack, so remove it here
       return;
-    }
+	}
+	
+	if(scene.type === "PLATFORM") {
+		_stackPushConst(1);
+	} else {
+		_stackPushConst(0);
+	}
 
     // Get & push the reference for variable results
     const [resultsVar] = precompileScriptValue(optimiseScriptValue(results));
     _stackPushReference(getVariableAlias(resultsVar[0]));
-
+	
     // Call native function on engine side
     _callNative("ActorWalkabilityChecker");
     // Remove pushed values from stack
-    _stackPop(3);
+    _stackPop(4);
 };
 
 module.exports = {

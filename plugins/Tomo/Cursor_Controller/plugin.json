@@ -3,11 +3,11 @@
   "name": "Cursor Controller",
   "author": "Tomo",
   "url": "https://tomo666.github.io/gamedevlab/category/plugins",
-  "description": "[English]\nLets you control a selection cursor sprite with animations in a \"quick and dirty\" way.\n\n[Japanese]\n簡易的なカーソル操作をスプライトとアニメーションで実現します。",
+  "description": "[English]\nLets you control a selection cursor sprite with animations in a \"quick and dirty\" way.\n\nVersion 1.1.1: Updated to support GBS 4.2.0\n\n[Japanese]\n簡易的なカーソル操作をスプライトとアニメーションで実現します。\n\nVersion 1.1.1: GBS 4.2.0用にアップデートしました。\n\n",
   "license": "MIT",
   "images": [
     "screenshots/cursor_controller_ss1.gif"
   ],
-  "version": "1.0.0",
+  "version": "1.1.1",
   "gbsVersion": ">=4.2.0"
 }

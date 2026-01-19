@@ -7,9 +7,9 @@ const scriptValueHelpers = require("shared/lib/scriptValue/helpers");
 const l10n = require("../helpers/l10n").default;
 const lang_enUS = (l10n("ACTOR") == "アクター") ? false : true;
 
-export const id = "XV_ARRAY_MANAGER_GET";
-export const name = (lang_enUS) ? "Array Manager (Get Value)" : "配列マネージャー（値の取得）";
-export const groups = (lang_enUS) ? ["XV Plugins"] : ["XV プラグイン"];
+const id = "XV_ARRAY_MANAGER_GET";
+const name = (lang_enUS) ? "Array Manager (Get Value)" : "配列マネージャー（値の取得）";
+const groups = (lang_enUS) ? ["XV Plugins"] : ["XV プラグイン"];
 
 const fields = [].concat(
   [
@@ -281,7 +281,7 @@ const fields = [].concat(
   }],
 );
 
-export const compile = (input, helpers) => {
+const compile = (input, helpers) => {
   const { var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14, var15, var16,
     number_of_vars_to_use, divide_bit_amount, array_index, results } = input;
   const { _stackPush, getVariableAlias, _stackPushConst, _callNative, _stackPop, appendRaw,
