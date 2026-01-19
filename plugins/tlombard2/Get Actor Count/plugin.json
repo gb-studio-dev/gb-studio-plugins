@@ -1,0 +1,10 @@
+{
+    "type": "enginePlugin",
+    "name": "Get Actor Count",
+    "author": "Tlombard2",
+    "description": "Returns the current number of actors in the current scene. Includes the player actor in the count. Adds engine files but does not change any.",
+    "version": "1.0.0",
+    "gbsVersion": ">=4.2.0",
+    "license": "MIT",
+    "url": "https://github.com/TLombard2/GBS-Plugins"
+}
