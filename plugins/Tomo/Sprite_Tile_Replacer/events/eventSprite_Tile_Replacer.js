@@ -6,9 +6,9 @@ const scriptValueHelpers = require("shared/lib/scriptValue/helpers");
 const l10n = require("../helpers/l10n").default;
 const lang_enUS = (l10n("ACTOR") == "アクター") ? false : true;
 
-export const id = "XV_SPRITE_TILE_REPLACER";
-export const name = (lang_enUS) ? "Sprite Tile Replacer" : "指定のスプライトタイルを置き換える";
-export const groups = (lang_enUS) ? ["XV Plugins"] : ["XV プラグイン"];
+const id = "XV_SPRITE_TILE_REPLACER";
+const name = (lang_enUS) ? "Sprite Tile Replacer" : "指定のスプライトタイルを置き換える";
+const groups = (lang_enUS) ? ["XV Plugins"] : ["XV プラグイン"];
 
 const fields = [].concat(
   [{
@@ -99,7 +99,7 @@ const fields = [].concat(
   }],
 );
 
-export const compile = (input, helpers) => {
+const compile = (input, helpers) => {
   const { vram_bank, actor, tileset_bank_tiles, tileset_tiles, source_tile_idx, target_tile_idx } = input;
   const { _stackPush, getVariableAlias, _stackPushConst, _callNative, _stackPop, appendRaw,
     variableSetToScriptValue, variableSetToValue, _stackPushReference, actorSetById, actorSetActive, actorPushById } = helpers;

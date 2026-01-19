@@ -8,6 +8,7 @@
 #include "vm.h"
 #include "collision.h"
 #include "actor.h"
+#include "macro.h"
 
 BYTE get_collision_object_id_at_tile(UBYTE x, UBYTE y, UBYTE is_include_player) BANKED {
     // Get the collision ID at the specified tile position
@@ -18,7 +19,7 @@ BYTE get_collision_object_id_at_tile(UBYTE x, UBYTE y, UBYTE is_include_player) 
     // Map collision check passed, so now we will check if any actor's are there
     actor_t* actor = actor_at_tile(x, y, 1);
     // Ignore pinned actors and player it self
-    if(!actor->pinned && actor != NULL) {
+    if(!CHK_FLAG(actor->flags, ACTOR_FLAG_PINNED) && actor != NULL) {
         // Can't walk through because there's an actor
         if(is_include_player && actor == &PLAYER) {
             // For player actor, return the actor ID as -128

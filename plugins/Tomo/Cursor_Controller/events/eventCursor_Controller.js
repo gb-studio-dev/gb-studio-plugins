@@ -6,9 +6,9 @@ const scriptValueHelpers = require("shared/lib/scriptValue/helpers");
 const l10n = require("../helpers/l10n").default;
 const lang_enUS = (l10n("ACTOR") == "アクター") ? false : true;
 
-export const id = "XV_CURSOR_CONTROLLER";
-export const name = (lang_enUS) ? "Cursor Controller" : "カーソルコントローラー";
-export const groups = (lang_enUS) ? ["XV Plugins"] : ["XV プラグイン"];
+const id = "XV_CURSOR_CONTROLLER";
+const name = (lang_enUS) ? "Cursor Controller" : "カーソルコントローラー";
+const groups = (lang_enUS) ? ["XV Plugins"] : ["XV プラグイン"];
 
 const fields = [].concat(
   [
@@ -462,7 +462,7 @@ const fields = [].concat(
   }],
 );
 
-export const compile = (input, helpers) => {
+const compile = (input, helpers) => {
   const { actor_id, actor_activated_state_id, actor_enter_state_id, actor_cancel_state_id, actor_selected_active_state_id, actor_selected_loop_state_id,
     base_pos_x, base_pos_y, offset_pos_x, offset_pos_y, move_step_x, move_step_y, max_columns, max_rows, mapping_start_tile_x, mapping_start_tile_y,
     is_easing_movement, is_move_opposite_dir_at_edge, is_move_to_opposite_end_on_edge, is_bounce_at_edge, is_move_while_btn_held,
