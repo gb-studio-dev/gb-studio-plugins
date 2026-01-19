@@ -21,6 +21,7 @@
 #include "music_manager.h"
 #include "vm.h"
 #include "meta_tiles.h"
+#include "macro.h"
 #include "data/game_globals.h"
 
 #define TILE_FRACTION_MASK         0b1111111
@@ -62,7 +63,7 @@ void scene_transition_reset(void) BANKED {
 }
 
 void check_transition_to_scene_collision(void) BANKED {	
-	if (scene_transition_enabled && !is_transitioning_scene && !PLAYER.disabled) {		
+	if (scene_transition_enabled && !is_transitioning_scene && !CHK_FLAG(PLAYER.flags, ACTOR_FLAG_DISABLED)) {		
 		// Check for scene scroll
 		if (transitioning_player_pos_y != PLAYER.pos.y)
 		{
@@ -167,9 +168,11 @@ void transition_to_scene_modal(UBYTE direction) BANKED {
 
 void transition_load_scene(UBYTE scene_bank, const scene_t * scene, BYTE t_scroll_x, BYTE t_scroll_y) BANKED {
 	// hide actors (except player)
-	actor_t *actor = PLAYER.prev;
+	actor_t *actor = actors_active_tail;
     while (actor) {
-		actor->hidden = 1;
+		if (actor != &PLAYER){
+			SET_FLAG(actor->flags, ACTOR_FLAG_HIDDEN);
+		}		
 		actor = actor->prev;
 	}
 	// hide projectiles

@@ -1,5 +1,5 @@
 {
-	"version": "4.2.0-e26",
+	"version": "4.2.0-e29",
 	"fields": [
 	    {
           "key": "player_transition_right_dist",
@@ -151,6 +151,26 @@
           "label": "Entered Metatile Y position",
           "description": "Y position of the entered metatile",
           "group": "Metatiles",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        },
+		{
+          "key": "bkg_offset_x",
+          "label": "Scene scroll offset X",
+          "description": "X offset of the screen viewport due to scene transition",
+          "group": "Screen Scroll",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        },
+		{
+          "key": "bkg_offset_y",
+          "label": "Scene scroll offset Y",
+          "description": "Y offset of the screen viewport due to scene transition",
+          "group": "Screen Scroll",
           "type": "number",
           "cType": "UBYTE",
           "defaultValue": 0,

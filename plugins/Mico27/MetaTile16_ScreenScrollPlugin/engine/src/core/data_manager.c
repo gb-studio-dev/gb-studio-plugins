@@ -16,6 +16,7 @@
 #include "data/spritesheet_none.h"
 #include "data/data_bootstrap.h"
 #include "scene_transition.h"
+#include "macro.h"
 
 #define ALLOC_BKG_TILES_TOWARDS_SPR
 
@@ -126,6 +127,7 @@ void load_background(const background_t* background, UBYTE bank) BANKED {
 }
 
 inline UBYTE load_sprite_tileset(UBYTE base_tile, const tileset_t * tileset, UBYTE bank) {
+    if ((!bank) && (!tileset)) return 0;
     UBYTE n_tiles = ReadBankedUBYTE(&(tileset->n_tiles), bank);
     if (n_tiles) SetBankedSpriteData(base_tile, n_tiles, tileset->tiles, bank);
     return n_tiles;
@@ -284,7 +286,7 @@ UBYTE load_scene(const scene_t * scene, UBYTE bank, UBYTE init_data) BANKED {
         actors_inactive_head = NULL;
 
         // Add player to inactive, then activate
-        PLAYER.active = FALSE;
+        CLR_FLAG(PLAYER.flags, ACTOR_FLAG_ACTIVE);
         actors_active_tail = &PLAYER;
         DL_PUSH_HEAD(actors_inactive_head, actors_active_tail);
         activate_actor(&PLAYER);
@@ -306,11 +308,11 @@ UBYTE load_scene(const scene_t * scene, UBYTE bank, UBYTE init_data) BANKED {
                 }
                 load_animations((void *)actor->sprite.ptr, actor->sprite.bank, ANIM_SET_DEFAULT, actor->animations);
                 // add to inactive list by default
-                actor->active = FALSE;
+                CLR_FLAG(actor->flags, ACTOR_FLAG_ACTIVE);
                 DL_PUSH_HEAD(actors_inactive_head, actor);
 
                 // activate if the actor is pinned or persistent
-                if ((actor->pinned) || (actor->persistent)) activate_actor(actor);
+                if (CHK_FLAG(actor->flags, ACTOR_FLAG_PINNED | ACTOR_FLAG_PERSISTENT)) activate_actor(actor);
             }
         }
 
@@ -368,9 +370,9 @@ void load_player(void) BANKED {
     PLAYER.frame = 0;
     PLAYER.frame_start = 0;
     PLAYER.frame_end = 2;
-    PLAYER.pinned = FALSE;
+    CLR_FLAG(PLAYER.flags, ACTOR_FLAG_PINNED);
     PLAYER.collision_group = COLLISION_GROUP_PLAYER;
-    PLAYER.collision_enabled = TRUE;
+    SET_FLAG(PLAYER.flags, ACTOR_FLAG_COLLISION);
 }
 
 void load_emote(const unsigned char *tiles, UBYTE bank) BANKED {

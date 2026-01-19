@@ -17,11 +17,6 @@
 #define SCREEN_TILE_REFRES_H (SCREEN_TILES_H + SCREEN_PAD_TOP + SCREEN_PAD_BOTTOM)
 #define PENDING_BATCH_SIZE 11
 
-typedef struct script_render_t {
-    UBYTE script_bank;
-    UBYTE *script_addr;
-} script_render_t;
-
 extern INT16 scroll_x;
 extern INT16 scroll_y;
 extern INT16 draw_scroll_x;

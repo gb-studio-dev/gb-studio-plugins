@@ -3,7 +3,7 @@
   "name": "Configure Load/Save Plugin",
   "author": "Mico27",
   "url": "https://github.com/Mico27/gbs-ConfigLoadSavePlugin",
-  "description": "Allows configuration of the game saving structure.\nWARNING: this plugin modifies the following engine files:\n- load_save.c\n- load_save.h\nAny other plugin that modifies any of these files will not be compatible with this plugin unless the files are manually merged.",
+  "description": "Allows configuration of the game saving structure",
   "license": "MIT",
   "version": "1.0.0",
   "gbsVersion": ">=4.2.0"
