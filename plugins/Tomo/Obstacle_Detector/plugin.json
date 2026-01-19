@@ -3,7 +3,7 @@
   "name": "Obstacle Detector",
   "author": "Tomo",
   "url": "https://tomo666.github.io/gamedevlab/category/plugins",
-  "description": "[English]\nProvides 2 event plugins to check obstacles within a scene. NOTE: This plugin only supports 8x8 tile size mode. Obstacle Checker plugin obtains an obstacle info at the specified tile position. Actor Walkability Checker obtains an obstacle info relative to the actor's facing direction.\n\nVersion 1.1.1: Added support for Platformer scene type.\n\n[Japanese]\nシーン内の障害物の情報を取得する 2 つのプラグインで構成されています。注意：このプラグインは、8x8 タイルサイズのモードにのみ対応しています。1 つは タイルの障害物の情報を取得する Obstacle Checker、もう 1 つは アクターの進行方向の障害物を取得する Actor Walkability Checker。\n\nVersion 1.1.1: プラットフォーマータイプのシーンのサポートを追加しました。\n\n",
+  "description": "[English]\nProvides 2 event plugins to check obstacles within a scene. NOTE: This plugin only supports 8x8 tile size mode. Obstacle Checker plugin obtains an obstacle info at the specified tile position. Actor Walkability Checker obtains an obstacle info relative to the actor's facing direction.\n\nVersion 1.1.1: Updated for GBS 4.2.0.\n\n[Japanese]\nシーン内の障害物の情報を取得する 2 つのプラグインで構成されています。注意：このプラグインは、8x8 タイルサイズのモードにのみ対応しています。1 つは タイルの障害物の情報を取得する Obstacle Checker、もう 1 つは アクターの進行方向の障害物を取得する Actor Walkability Checker。\n\nVersion 1.1.1: GBS 4.2.0用にアップデート。\n\n",
   "license": "MIT",
   "version": "1.1.1",
   "gbsVersion": ">=4.2.0"
