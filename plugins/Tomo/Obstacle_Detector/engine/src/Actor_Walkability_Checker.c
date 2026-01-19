@@ -10,14 +10,14 @@
 #include "collision.h"
 #include "actor.h"
 #include "math.h"
-#include "data_manager.h"
+#include "macro.h"
 
 actor_t *actor_at_tile_ex(UBYTE tx, UBYTE ty, UBYTE inc_noclip, actor_t* this_actor) BANKED {
     for (actor_t *actor = actors_active_head; (actor); actor = actor->next) {
-        if ((!inc_noclip && !actor->collision_enabled))
+        if ((!inc_noclip && !CHK_FLAG(actor->flags, ACTOR_FLAG_COLLISION)))
             continue;
-
-        UBYTE a_tx = (actor->pos.x >> 7), a_ty = (actor->pos.y >> 7);
+        // 4.2.0 Beta fix (actor positions vs tile position offset adjustments)
+        UBYTE a_tx = (actor->pos.x >> 7 >> 1), a_ty = (actor->pos.y >> 7 >> 1);
         if ((ty == a_ty) && (tx == a_tx || tx == a_tx + 1 || tx == a_tx - 1)) {
             // Ignore self
             if(actor == this_actor) continue;
@@ -36,7 +36,7 @@ BYTE get_collision_object_id_at_tile_ex(UBYTE x, UBYTE y, actor_t* this_actor) B
     // Map collision check passed, so now we will check if any actor's are there
     actor_t* actor = actor_at_tile_ex(x, y, 1, this_actor);
     // Ignore pinned actors and actor it self
-    if(!actor->pinned && actor != NULL) {
+    if(!CHK_FLAG(actor->flags, ACTOR_FLAG_PINNED) && actor != NULL) {
         // Can't walk through because there's an actor
         // Return the actor ID (but with negative actor ID value so we can distinguish between collision ID and actor ID)
         if(actor == &PLAYER) {
@@ -64,14 +64,9 @@ void ActorWalkabilityChecker(SCRIPT_CTX * THIS) OLDCALL BANKED {
     UBYTE actor_tile_x;
     UBYTE actor_tile_y;
 
-    // For platformer scene, it seems like the actor's position returns twice the amount compared to Topdown/Adventure
-    if(isPlatformer) {
-        actor_tile_x = actor->pos.x >> 7 >> 1;
-        actor_tile_y = actor->pos.y >> 7 >> 1;
-    } else {
-        actor_tile_x = actor->pos.x >> 7; //actor->pos.x / (8 * 16);
-        actor_tile_y = actor->pos.y >> 7; // actor->pos.y / (8 * 16);
-    }
+    // 4.2.0 Beta fix (actor positions vs tile position offset adjustments)
+    actor_tile_x = actor->pos.x >> 7 >> 1;
+    actor_tile_y = actor->pos.y >> 7 >> 1;
     
     BYTE collisionResults = 0;
 
@@ -87,8 +82,8 @@ void ActorWalkabilityChecker(SCRIPT_CTX * THIS) OLDCALL BANKED {
             }
             break;
         case DIR_RIGHT:
-            for(UBYTE i = 1; i < offset + 1; i++) {
-                collisionResults = get_collision_object_id_at_tile_ex(actor_tile_x + i, actor_tile_y, actor);
+        for(UBYTE i = 1; i < offset + 1; i++) {
+                collisionResults = get_collision_object_id_at_tile_ex(actor_tile_x + i + 1, actor_tile_y, actor);
                 // Actor collision detected
                 if(collisionResults != 0) {
                     *results = collisionResults;
@@ -98,7 +93,7 @@ void ActorWalkabilityChecker(SCRIPT_CTX * THIS) OLDCALL BANKED {
             break;
         case DIR_UP:
             for(UBYTE i = 1; i < offset + 1; i++) {
-                collisionResults = get_collision_object_id_at_tile_ex(actor_tile_x, actor_tile_y - i, actor);
+                collisionResults = get_collision_object_id_at_tile_ex(actor_tile_x, actor_tile_y - i - 1, actor);
                 // Actor collision detected
                 if(collisionResults != 0) {
                     *results = collisionResults;
