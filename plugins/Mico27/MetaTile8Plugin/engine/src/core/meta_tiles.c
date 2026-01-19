@@ -4,6 +4,7 @@
 
 #include "meta_tiles.h"
 #include "system.h"
+#include "events.h"
 #include "vm.h"
 #include "bankdata.h"
 #include "scroll.h"
@@ -12,6 +13,10 @@
 #include "data/game_globals.h"
 #include "data_manager.h"
 #include "data/states_defines.h"
+
+#define METATILE_EVENTS_SIZE 2
+#define METATILE_ENTER_EVENT 0
+#define METATILE_COLLISION_EVENT 1
 
 uint8_t __at(SRAM_COLLISION_DATA_PTR) sram_collision_data[256]; //sram_map_data Address 0xA500 - 0x0100(256)
 uint8_t __at(SRAM_MAP_DATA_PTR) sram_map_data[MAX_MAP_DATA_SIZE]; //0xA000 + (0x2000 (8k SRAM max size) - 0x1B00 (MAX_MAP_DATA_SIZE))
@@ -23,6 +28,23 @@ UBYTE metatile_attr_bank;
 unsigned char* metatile_attr_ptr;
 
 UBYTE image_tile_width_bit;
+
+script_event_t metatile_events[METATILE_EVENTS_SIZE];
+
+UBYTE prev_metatile_overlap_iteration;
+UBYTE metatile_overlap_iteration;
+UBYTE previous_top_tile;
+UBYTE previous_left_tile;
+UBYTE previous_bottom_tile;
+UBYTE previous_right_tile;
+UBYTE current_left_tile; 
+UBYTE current_top_tile;	
+UBYTE current_right_tile; 
+UBYTE current_bottom_tile;
+
+UBYTE overlap_metatile_id;
+UBYTE overlap_metatile_x;
+UBYTE overlap_metatile_y;
 
 void vm_load_meta_tiles(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	scroll_reset();
@@ -128,6 +150,20 @@ void vm_submap_metatiles(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	
 }
 
+void vm_assign_metatile_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
+    UWORD *slot = VM_REF_TO_PTR(FN_ARG2);
+    UBYTE *bank = VM_REF_TO_PTR(FN_ARG1);
+    UBYTE **ptr = VM_REF_TO_PTR(FN_ARG0);
+    metatile_events[*slot].script_bank = *bank;
+    metatile_events[*slot].script_addr = *ptr;
+}
+
+void vm_clear_metatile_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
+    UWORD *slot = VM_REF_TO_PTR(FN_ARG0);
+    metatile_events[*slot].script_bank = 0;
+    metatile_events[*slot].script_addr = NULL;
+}
+
 static void impl_replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit) {	
 	sram_map_data[METATILE_MAP_OFFSET(x, y)] = tile_id;	
 	if (commit){
@@ -149,4 +185,99 @@ void replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit) BANKED {
 
 void reset_meta_tile(UBYTE x, UBYTE y, UBYTE commit) BANKED {	
 	impl_replace_meta_tile(x, y, ReadBankedUBYTE(image_ptr + (UWORD)((y * image_tile_width) + x), image_bank), commit);	
+}
+
+static UBYTE on_metatile_enter(UBYTE tile_x, UBYTE tile_y) {
+	UBYTE tile_id = sram_map_data[METATILE_MAP_OFFSET(tile_x, tile_y)];
+	if (tile_id >= MIN_OVERLAP_METATILE){
+		overlap_metatile_id = tile_id;
+		overlap_metatile_x = tile_x;
+		overlap_metatile_y = tile_y;
+		script_execute(metatile_events[METATILE_ENTER_EVENT].script_bank, metatile_events[METATILE_ENTER_EVENT].script_addr, 0, 0);
+		return TRUE;
+	}
+	return FALSE;
+}
+
+UBYTE metatile_overlap_at_intersection(rect16_t *bb, upoint16_t *offset) BANKED {
+	if (!metatile_events[METATILE_ENTER_EVENT].script_addr){
+		return FALSE;
+	}
+	if (!prev_metatile_overlap_iteration){
+		current_left_tile = SUBPX_TO_TILE(offset->x + bb->left); 
+		current_top_tile = SUBPX_TO_TILE(offset->y + bb->top);	
+		current_right_tile = SUBPX_TO_TILE(offset->x + bb->right); 
+		current_bottom_tile = SUBPX_TO_TILE(offset->y + bb->bottom);
+	}
+	UBYTE tmp_tile = 0;
+	UBYTE left_side_checked = 0;
+	UBYTE right_side_checked = 0;
+	metatile_overlap_iteration = 0;
+	//check left
+	if (current_left_tile < previous_left_tile){
+		tmp_tile = current_top_tile;
+		while (tmp_tile <= current_bottom_tile){
+			metatile_overlap_iteration++;
+			if (metatile_overlap_iteration > prev_metatile_overlap_iteration){
+				if (on_metatile_enter(current_left_tile, tmp_tile)){
+					prev_metatile_overlap_iteration = metatile_overlap_iteration;
+					return TRUE;
+				}
+			}
+			tmp_tile++;
+		}
+		left_side_checked = 1;
+	}
+	//check right	
+	if (current_left_tile != current_right_tile && (current_right_tile > previous_right_tile)){
+		tmp_tile = current_top_tile;
+		while (tmp_tile <= current_bottom_tile){
+			metatile_overlap_iteration++;
+			if (metatile_overlap_iteration > prev_metatile_overlap_iteration){
+				if (on_metatile_enter(current_right_tile, tmp_tile)){
+					prev_metatile_overlap_iteration = metatile_overlap_iteration;
+					return TRUE;
+				}
+			}
+			tmp_tile++;
+		}
+		right_side_checked = 1;
+	}
+	
+	//Check top
+	if (current_top_tile < previous_top_tile){
+		tmp_tile = current_left_tile + left_side_checked;
+		while (tmp_tile <= (current_right_tile - right_side_checked)){
+			metatile_overlap_iteration++;
+			if (metatile_overlap_iteration > prev_metatile_overlap_iteration){
+				if (on_metatile_enter(tmp_tile, current_top_tile)){
+					prev_metatile_overlap_iteration = metatile_overlap_iteration;
+					return TRUE;
+				}		
+			}			
+			tmp_tile++;
+		}
+	}	
+	
+	//Check bottom
+	if (current_top_tile != current_bottom_tile && (current_bottom_tile > previous_bottom_tile)){
+		tmp_tile = current_left_tile + left_side_checked;
+		while (tmp_tile <= (current_right_tile - right_side_checked)){
+			metatile_overlap_iteration++;
+			if (metatile_overlap_iteration > prev_metatile_overlap_iteration){
+				if (on_metatile_enter(tmp_tile, current_bottom_tile)){
+					prev_metatile_overlap_iteration = metatile_overlap_iteration;
+					return TRUE;
+				}
+			}			
+			tmp_tile++;
+		}
+	}
+	
+	previous_left_tile = current_left_tile;
+	previous_top_tile = current_top_tile;
+	previous_right_tile = current_right_tile;
+	previous_bottom_tile = current_bottom_tile;
+	prev_metatile_overlap_iteration = 0;
+	return FALSE;
 }

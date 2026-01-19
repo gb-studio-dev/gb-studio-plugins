@@ -15,7 +15,7 @@
 #define SCREEN_PAD_BOTTOM 2
 #define SCREEN_TILE_REFRES_W (SCREEN_TILES_W + SCREEN_PAD_LEFT + SCREEN_PAD_RIGHT)
 #define SCREEN_TILE_REFRES_H (SCREEN_TILES_H + SCREEN_PAD_TOP + SCREEN_PAD_BOTTOM)
-#define PENDING_BATCH_SIZE 7
+#define PENDING_BATCH_SIZE 11
 
 typedef struct script_render_t {
     UBYTE script_bank;
@@ -26,6 +26,8 @@ extern INT16 scroll_x;
 extern INT16 scroll_y;
 extern INT16 draw_scroll_x;
 extern INT16 draw_scroll_y;
+extern UINT16 scroll_x_min;
+extern UINT16 scroll_y_min;
 extern UINT16 scroll_x_max;
 extern UINT16 scroll_y_max;
 extern BYTE scroll_offset_x;

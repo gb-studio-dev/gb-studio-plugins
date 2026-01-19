@@ -3,7 +3,7 @@
   "name": "Simulate Input Plugin",
   "author": "Mico27",
   "url": "https://github.com/Mico27/GBS-simulateInputPlugin",
-  "description": "Allow scripting sequences of simulated inputs",
+  "description": "Allow scripting sequences of simulated inputs.\nWARNING: this plugin modifies the following engine files:\n- core.c\nAny other plugin that modifies any of these files will not be compatible with this plugin unless the files are manually merged.",
   "license": "MIT",
   "version": "1.0.0",
   "gbsVersion": ">=4.2.0"

@@ -26,4 +26,5 @@ extern UBYTE image_tile_width_bit;
 void replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit) BANKED;
 void reset_meta_tile(UBYTE x, UBYTE y, UBYTE commit) BANKED;
 
+UBYTE metatile_overlap_at_intersection(rect16_t *bb, upoint16_t *offset) BANKED;
 #endif

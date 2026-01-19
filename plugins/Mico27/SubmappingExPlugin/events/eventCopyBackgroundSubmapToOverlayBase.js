@@ -7,97 +7,155 @@ export const autoLabel = (fetchArg) => {
 };
 
 export const fields = [
-  {
-    key: "sceneId",
-    label: "Scene",
-    type: "scene",
-	width: "100%",
-    defaultValue: "LAST_SCENE",
+{
+	type: "group",
+	fields: [
+		{
+			key: "sceneId",
+			label: "Scene",
+			type: "scene",
+			width: "100%",
+			defaultValue: "LAST_SCENE",
+			conditions: [
+			{
+				key: "use_far_ptr",
+				ne: true
+			},
+			],
+		},
+		{
+			key: `scene_bank`,
+			label: "Scene bank",
+			type: "value",
+			width: "50%",
+			defaultValue: {
+			type: "number",
+			value: 0,
+			},
+			conditions: [
+			{
+				key: "use_far_ptr",
+				eq: true
+			},
+			],
+		},
+		{
+			key: `scene_ptr`,
+			label: "Scene Pointer",
+			type: "value",
+			width: "50%",
+			defaultValue: {
+			type: "number",
+			value: 0,
+			},
+			conditions: [
+			{
+				key: "use_far_ptr",
+				eq: true
+			},
+			],
+		},
+		{
+			key: "use_far_ptr",
+			label: "Use scene's far ptr",
+			type: "checkbox",
+			width: "50%",
+		},
+	]
+},
+{
+	type: "group",
+	fields: [
+		{
+          key: `bkg_x`,
+          label: "Background X",
+          type: "value",
+          width: "50%",
+          defaultValue: {
+            type: "number",
+            value: 0,
+          },
+        },
+		{
+          key: `bkg_y`,
+          label: "Background Y",
+          type: "value",
+          width: "50%",
+          defaultValue: {
+            type: "number",
+            value: 0,
+          },
+        },
+	]
+},
+{
+	type: "group",
+	fields: [
+		{
+          key: `win_x`,
+          label: "Overlay X",
+          type: "value",
+          width: "50%",
+          defaultValue: {
+            type: "number",
+            value: 0,
+          },
+        },
+		{
+          key: `win_y`,
+          label: "Overlay Y",
+          type: "value",
+          width: "50%",
+          defaultValue: {
+            type: "number",
+            value: 0,
+          },
+        },
+	]
+},
+{
+	type: "group",
+	fields: [
+		{
+			key: "w",
+			label: "width",
+			description: "width",
+			type: "value",
+			width: "50%",
+			defaultValue: {
+			type: "number",
+			value: 0,
+			},
+		},
+		{
+			key: "h",
+			label: "height",
+			description: "height",
+			type: "value",
+			width: "50%",
+			defaultValue: {
+			type: "number",
+			value: 0,
+			},
+		},
+	]
+},
+{
+  key: "tile_offset",
+  label: "tile idx offset",
+  description: "height",
+  type: "value",
+  width: "100%",
+  defaultValue: {
+    type: "number",
+    value: 0,
   },
-  {
-    key: `bkg_x`,
-    label: "Background X",
-    type: "value",
-    width: "50%",
-    defaultValue: {
-      type: "number",
-      value: 0,
-    },
-  },
-  {
-    key: `bkg_y`,
-    label: "Background Y",
-    type: "value",
-    width: "50%",
-    defaultValue: {
-      type: "number",
-      value: 0,
-    },
-  },
-  {
-    key: `win_x`,
-    label: "Overlay X",
-    type: "value",
-    width: "50%",
-    defaultValue: {
-      type: "number",
-      value: 0,
-    },
-  },
-  {
-    key: `win_y`,
-    label: "Overlay Y",
-    type: "value",
-    width: "50%",
-    defaultValue: {
-      type: "number",
-      value: 0,
-    },
-  },
-  {
-    key: "w",
-    label: "width",
-    description: "width",
-    type: "value",
-    width: "50%",
-    defaultValue: {
-      type: "number",
-      value: 0,
-    },
-  },
-  {
-    key: "h",
-    label: "height",
-    description: "height",
-    type: "value",
-    width: "50%",
-    defaultValue: {
-      type: "number",
-      value: 0,
-    },
-  },
-  {
-    key: "tile_offset",
-    label: "tile idx offset",
-    description: "height",
-    type: "value",
-    width: "100%",
-    defaultValue: {
-      type: "number",
-      value: 0,
-    },
-  },
+},
 ];
 
 export const compile = (input, helpers) => {
   const { options, _callNative, _rpn, _stackPushConst, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue } = helpers;
-  
-  const { scenes } = options;
-  const scene = scenes.find((s) => s.id === input.sceneId);
-  if (!scene) {
-    return;
-  }
-  
+    
   const tmp0 = _declareLocal("tmp_bkg_x", 1, true);
   const tmp1 = _declareLocal("tmp_bkg_y", 1, true);
   const tmp2 = _declareLocal("tmp_win_x", 1, true);
@@ -132,8 +190,23 @@ export const compile = (input, helpers) => {
           .refSet(tmp2)
           .stop();
   
-  _stackPushConst(`_${scene.symbol}`);
-  _stackPushConst(`___bank_${scene.symbol}`); 
+  if (input.use_far_ptr){
+	variableSetToScriptValue(tmp4, input.scene_bank);
+	variableSetToScriptValue(tmp5, input.scene_ptr);	
+  } 
+		  
+  if (input.use_far_ptr){
+	  _stackPush(tmp5);
+	  _stackPush(tmp4);
+  } else {
+	const { scenes } = options;
+	const scene = scenes.find((s) => s.id === input.sceneId);
+	if (!scene) {
+		return;
+	}
+	_stackPushConst(`_${scene.symbol}`);
+	_stackPushConst(`___bank_${scene.symbol}`); 
+  }
   _stackPush(tmp6);
   _stackPush(tmp2);
   _stackPush(tmp1);
