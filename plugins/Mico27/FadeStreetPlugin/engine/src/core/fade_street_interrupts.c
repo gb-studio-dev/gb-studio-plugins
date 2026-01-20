@@ -75,7 +75,7 @@ bool refresh_obj_palettes;
 
 
 #ifdef CGB
-inline void fs_copy_pals(void)
+void fs_copy_pals(void) BANKED
 {
 	if (refresh_bkg_palettes) {
 		BCPS_REG = 128;
