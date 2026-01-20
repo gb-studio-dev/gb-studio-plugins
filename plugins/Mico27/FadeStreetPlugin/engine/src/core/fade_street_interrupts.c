@@ -73,8 +73,9 @@ void fullscreen_LCD_isr(void) NONBANKED {
 bool refresh_bkg_palettes;
 bool refresh_obj_palettes;
 
+
 #ifdef CGB
-void fs_copy_pals(void) BANKED
+inline void fs_copy_pals(void)
 {
 	if (refresh_bkg_palettes) {
 		BCPS_REG = 128;
@@ -218,6 +219,7 @@ void fs_copy_pals(void) BANKED
 #endif
 
 void VBL_isr(void) NONBANKED {
+	
 #ifdef CGB
 	if (_is_CGB) {
 		// load CGB palettes:
