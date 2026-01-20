@@ -1,0 +1,17 @@
+{
+	"version":"4.2.0-e29",
+	"fields": [
+		{
+			"group": "Fade Street",
+			"label": "Use Fade Street Plugin",
+			"type": "select",
+			"options": [
+				["true",  "True"]
+			],
+			"key": "GF_FADE_STREET_INSTALLED",
+			"cType": "define",
+			"defalultValue": "true"
+		}
+	]
+}
+

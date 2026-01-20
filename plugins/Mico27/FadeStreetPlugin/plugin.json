@@ -1,0 +1,10 @@
+{
+  "type": "enginePlugin",
+  "name": "Fade Street",
+  "author": "Mico27",
+  "url": "https://github.com/Mico27/gbs-fadestreet",
+  "description": "Toolset for animation color palettes and custom fading.",
+  "license": "MIT",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}
