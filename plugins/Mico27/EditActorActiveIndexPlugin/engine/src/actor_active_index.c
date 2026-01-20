@@ -5,12 +5,13 @@
 #include "vm.h"
 #include "actor.h"
 #include "linked_list.h"
+#include "macro.h"
 
 void set_actor_active_index(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	UBYTE actor_idx = *(uint8_t *)VM_REF_TO_PTR(FN_ARG0);
 	UBYTE active_idx = *(uint8_t *)VM_REF_TO_PTR(FN_ARG1);
 	actor_t * actor = actors + actor_idx;
-	if (actor->active){	
+	if (CHK_FLAG(actor->flags, ACTOR_FLAG_ACTIVE)){	
 		DL_REMOVE_ITEM(actors_active_head, actor);
 		if (!actor->next) {
 			actors_active_tail = actor->prev;
@@ -47,7 +48,7 @@ void set_actor_active_index(SCRIPT_CTX * THIS) OLDCALL BANKED {
 void get_actor_active_index(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	UBYTE actor_idx = *(uint8_t *)VM_REF_TO_PTR(FN_ARG0);
 	actor_t * actor = actors + actor_idx;
-	if (actor->active){	
+	if (CHK_FLAG(actor->flags, ACTOR_FLAG_ACTIVE)){	
 		actor_t * target_actor = actors_active_head;
 		UBYTE active_idx = 0;
 		while (target_actor) {

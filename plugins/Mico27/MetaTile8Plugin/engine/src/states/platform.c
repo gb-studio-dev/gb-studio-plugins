@@ -15,6 +15,7 @@
 #include "scroll.h"
 #include "trigger.h"
 #include "vm.h"
+#include "macro.h"
 #include "meta_tiles.h"
 
 // Feature Flags --------------------------------------------------------------
@@ -1452,7 +1453,7 @@ finally_check_actor_col:
     if (mask & COL_CHECK_TRIGGERS)
     {
         trigger_activate_at_intersection(&PLAYER.bounds, &PLAYER.pos, INPUT_UP_PRESSED);
-		metatile_overlap_at_intersection(&PLAYER.bounds, &PLAYER.pos);
+        metatile_overlap_at_intersection(&PLAYER.bounds, &PLAYER.pos);
     }
 }
 
@@ -1737,7 +1738,7 @@ static void state_update_ground(void) {
         if (plat_is_actor_attached)
         {
             // If the platform has been disabled, detach the player
-            if (plat_attached_actor->disabled == TRUE)
+            if (CHK_FLAG(plat_attached_actor->flags, ACTOR_FLAG_DISABLED))
             {
                 plat_next_state = FALL_STATE;
                 plat_is_actor_attached = FALSE;
@@ -2324,7 +2325,7 @@ static void state_update_ladder(void) {
 
 // WALL_STATE
 
-#ifdef FEAT_PLATFORM_WALL
+#ifdef FEAT_PLATFORM_WALL_JUMP
 static void state_enter_wall(void) {
     plat_jump_type = JUMP_TYPE_NONE;
     plat_run_stage = RUN_STAGE_NONE;
