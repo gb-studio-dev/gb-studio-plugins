@@ -1,0 +1,10 @@
+{
+  "type": "enginePlugin",
+  "name": "Fade Street",
+  "author": "Mico27",
+  "url": "https://github.com/Mico27/gbs-fadestreet",
+  "description": "Toolset for animation color palettes and custom fading.\nWARNING: this plugin modifies the following engine files:\n- data_manager.c\n- fade_manager.c\n- interrupts.c\n- vm_palette.c\nAny other plugin that modifies any of these files will not be compatible with this plugin unless the files are manually merged.",
+  "license": "MIT",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}

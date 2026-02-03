@@ -1,9 +1,9 @@
 {
-  "type": "eventsPlugin",
+  "type": "enginePlugin",
   "name": "Replace Tileset Tiles Plugin",
   "author": "Mico27",
   "url": "https://github.com/Mico27/gbs-replaceTilesetTilesPlugin",
-  "description": "Replace tileset tiles in VRAM (uses the VM_REPLACE_TILE gbvm operation)",
+  "description": "Replace tileset tiles in VRAM",
   "license": "MIT",
   "version": "1.0.0",
   "gbsVersion": ">=4.2.0"

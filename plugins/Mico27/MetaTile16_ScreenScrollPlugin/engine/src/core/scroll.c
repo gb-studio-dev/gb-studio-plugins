@@ -74,14 +74,14 @@ void scroll_reset(void) BANKED {
 		x = (SUBPX_TO_PX(camera_x) - (SCREENWIDTH >> 1));
 		y = (SUBPX_TO_PX(camera_y) - (SCREENHEIGHT >> 1));
 		
-		if (x < 0){
+		if (x & 0x8000u) {
 			scroll_x = x;
     
 		} else if (x > scroll_x_max){
 			scroll_x = x;
 		}
 		
-		if (y < 0){
+		if (y & 0x8000u) {
 			scroll_y = y;
 		} else if (y > scroll_y_max){
 			scroll_y = y;
@@ -153,12 +153,11 @@ UBYTE scroll_viewport(parallax_row_t * port) BANKED {
         // If column is +/- 1 just render next column
         if (current_col == (UBYTE)(new_col - 1)) {
             // Render right column
-            UBYTE x = shift_col - SCREEN_PAD_LEFT + SCREEN_TILE_REFRES_W - 1;
+            UBYTE x = shift_col + SCREEN_TILE_REFRES_W - 1;
             scroll_load_col(x, port->start_tile, port->tile_height);
         } else if (current_col == (UBYTE)(new_col + 1)) {
             // Render left column
-            UBYTE x = MAX(0, shift_col - SCREEN_PAD_LEFT);
-            scroll_load_col(x, port->start_tile, port->tile_height);
+            scroll_load_col(shift_col, port->start_tile, port->tile_height);
         } else if (current_col != new_col) {
             // If column differs by more than 1 render entire viewport
             scroll_render_rows(shift_scroll_x, 0, port->start_tile, port->tile_height);
@@ -171,18 +170,17 @@ UBYTE scroll_viewport(parallax_row_t * port) BANKED {
         // If column is +/- 1 just render next column
         if (current_col == (UBYTE)(new_col - 1)) {
             // Queue right column
-            UBYTE x = new_col - SCREEN_PAD_LEFT + SCREEN_TILE_REFRES_W - 1;
+            UBYTE x = new_col + SCREEN_TILE_REFRES_W - 1;
             UBYTE y = MAX(0, MAX((new_row - SCREEN_PAD_TOP), port->start_tile));
             UBYTE full_y = MAX(0, (new_row - SCREEN_PAD_TOP));
             scroll_queue_col(x, y);
             activate_actors_in_col(x, full_y);
         } else if (current_col == (UBYTE)(new_col + 1)) {
             // Queue left column
-            UBYTE x = MAX(0, new_col - SCREEN_PAD_LEFT);
             UBYTE y = MAX(0, MAX((new_row - SCREEN_PAD_TOP), port->start_tile));
             UBYTE full_y = MAX(0, (new_row - SCREEN_PAD_TOP));
-            scroll_queue_col(x, y);
-            activate_actors_in_col(x, full_y);
+            scroll_queue_col(new_col, y);
+            activate_actors_in_col(new_col, full_y);
         } else if (current_col != new_col) {
             // If column differs by more than 1 render entire screen
             scroll_render_rows(draw_scroll_x, draw_scroll_y, ((scene_LCD_type == LCD_parallax) ? port->start_tile : -SCREEN_PAD_TOP), SCREEN_TILE_REFRES_H);
@@ -194,16 +192,14 @@ UBYTE scroll_viewport(parallax_row_t * port) BANKED {
         // If row is +/- 1 just render next row
         if (current_row == (UBYTE)(new_row - 1)) {
             // Queue bottom row
-            UBYTE x = MAX(0, new_col - SCREEN_PAD_LEFT);
             UBYTE y = new_row - SCREEN_PAD_TOP + SCREEN_TILE_REFRES_H - 1;
-            scroll_queue_row(x, y);
-            activate_actors_in_row(x, y);
+            scroll_queue_row(new_col, y);
+            activate_actors_in_row(new_col, y);
         } else if (current_row == (UBYTE)(new_row + 1)) {
             // Queue top row
-            UBYTE x = MAX(0, new_col - SCREEN_PAD_LEFT);
             UBYTE y = MAX(port->start_tile, new_row - SCREEN_PAD_TOP);
-            scroll_queue_row(x, y);
-            activate_actors_in_row(x, y);
+            scroll_queue_row(new_col, y);
+            activate_actors_in_row(new_col, y);
         } else if (current_row != new_row) {			
             // If row differs by more than 1 render entire screen
             scroll_render_rows(draw_scroll_x, draw_scroll_y, ((scene_LCD_type == LCD_parallax) ? port->start_tile : -SCREEN_PAD_TOP), SCREEN_TILE_REFRES_H);
@@ -228,7 +224,7 @@ void scroll_render_rows(INT16 scroll_x, INT16 scroll_y, BYTE row_offset, BYTE n_
 	
 	if (scroll_render_disabled) return;
 
-    UBYTE x = MAX(0, PX_TO_TILE(scroll_x) - SCREEN_PAD_LEFT);
+    UBYTE x = PX_TO_TILE(scroll_x);
     UBYTE y = MAX(0, PX_TO_TILE(scroll_y) + row_offset);
 
     for (BYTE i = 0; i != n_rows && y != image_tile_height; ++i, y++) {

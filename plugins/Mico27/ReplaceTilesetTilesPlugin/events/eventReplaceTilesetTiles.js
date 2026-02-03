@@ -47,21 +47,20 @@ export const fields = [
 ];
 
 export const compile = (input, helpers) => {
-  const { options, _callNative, _stackPushConst, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue, _replaceTile } = helpers;
+  const { options, _callNative, _stackPushConst, _stackPush, _stackPop, _addComment, _declareLocal, _stackPushScriptValue, _replaceTile } = helpers;
   
   const { tilesets } = options;
   const tileset = tilesets.find((t) => t.id === input.tilesetId) ?? tilesets[0];
   if (!tileset) {
     return;
   }
-  
-  const tmp0 = _declareLocal("tmp_0", 1, true);
-  const tmp1 = _declareLocal("tmp_1", 1, true);
-    
-  variableSetToScriptValue(tmp0, input.idx_target_tile);
-  variableSetToScriptValue(tmp1, input.idx_start_tile);
+      
+  _stackPushScriptValue(input.idx_target_tile);
+  _stackPushScriptValue(input.idx_start_tile);
     
   _addComment("Replace tiles");
   
-  _replaceTile(tmp0, tileset.symbol, tmp1, input.tile_length);
+  _replaceTile(".ARG1", tileset.symbol, ".ARG0", input.tile_length);
+  
+  _stackPop(2);
 };

@@ -5,6 +5,6 @@
   "url": "https://github.com/Mico27/gbs-flickerActorPlugin",
   "description": "Plugin to enable actor flickering when too many sprites are being render (either by scanline limit or by OAM limit).\nWARNING: this plugin modifies the following engine files:\n- actor.c\nAny other plugin that modifies any of these files will not be compatible with this plugin unless the files are manually merged.",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "gbsVersion": ">=4.2.0"
 }
