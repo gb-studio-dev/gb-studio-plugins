@@ -26,6 +26,7 @@ BANKREF(VM_ACTOR)
 #define MOVE_H                     (MOVE_ALLOW_H | MOVE_NEEDED_H)
 #define MOVE_V                     (MOVE_ALLOW_V | MOVE_NEEDED_V)
 #define TILE_FRACTION_MASK         0b11111111
+#define TILE_HALF_MASK             0b10000000
 #define ONE_TILE_DISTANCE          256
 
 
@@ -215,22 +216,10 @@ void vm_actor_move_to(SCRIPT_CTX * THIS, INT16 idx) OLDCALL BANKED {
 
     // Interrupt actor movement
     if (CHK_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT)) {
-        // Set new X destination to next tile
-        if ((actor->pos.x < params->X) && (actor->pos.x & TILE_FRACTION_MASK)) {   // Bitmask to check for non-grid-aligned position
-            params->X = (actor->pos.x & ~TILE_FRACTION_MASK) + ONE_TILE_DISTANCE;  // If moving in positive direction, round up to next tile
-        } else {
-            params->X = actor->pos.x  & ~TILE_FRACTION_MASK;                       // Otherwise, round down
-        }
-        // Set new Y destination to next tile
-        if ((actor->pos.y < params->Y) && (actor->pos.y & TILE_FRACTION_MASK)) {
-            params->Y = (actor->pos.y & ~TILE_FRACTION_MASK) + ONE_TILE_DISTANCE;
-        } else {
-            params->Y = actor->pos.y  & ~TILE_FRACTION_MASK;
-        }
-        CLR_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+        return;
     }
 
-    UBYTE test_actors = CHK_FLAG(params->ATTR, ACTOR_ATTR_CHECK_COLL_ACTORS) && ((game_time & 0x03) == (params->ID & 0x03));
+    UBYTE test_actors = CHK_FLAG(params->ATTR, ACTOR_ATTR_CHECK_COLL_ACTORS);
 
     // Move in X Axis
     if (CHK_FLAG(THIS->flags, MOVE_H) == MOVE_H) {
@@ -321,10 +310,59 @@ void vm_actor_move_to(SCRIPT_CTX * THIS, INT16 idx) OLDCALL BANKED {
 }
 
 void vm_actor_move_cancel(SCRIPT_CTX * THIS, INT16 idx) OLDCALL BANKED {
+
+    // indicate waitable state of context
+    THIS->waitable = 1;
+
     UBYTE * n_actor = VM_REF_TO_PTR(idx);
     actor_t * actor = actors + *n_actor;
 
+    // Set interrupt to stop all subsequent scripted movement until next move init
     SET_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+
+    // Determine tile snapped destination
+    UWORD dest_x = SUBPX_SNAP_TILE(actor->pos.x);
+    UWORD dest_y = SUBPX_SNAP_TILE(actor->pos.y);
+
+    // If position is over half tile, move to next tile
+    if (actor->pos.x & TILE_HALF_MASK) {
+        dest_x += ONE_TILE_DISTANCE;
+    }
+    if (actor->pos.y & TILE_HALF_MASK) {
+        dest_y += ONE_TILE_DISTANCE;
+    }
+
+    // Move to tile aligned position
+    if (actor->pos.x > dest_x) {
+        actor->pos.x -= actor->move_speed;
+        if (actor->pos.x < dest_x) {
+            actor->pos.x = dest_x;
+        }
+    } else if (actor->pos.x < dest_x) {
+        actor->pos.x += actor->move_speed;
+        if (actor->pos.x > dest_x) {
+            actor->pos.x = dest_x;
+        }
+    }
+    if (actor->pos.y > dest_y) {
+        actor->pos.y -= actor->move_speed;
+        if (actor->pos.y < dest_y) {
+            actor->pos.y = dest_y;
+        }
+    } else if (actor->pos.y < dest_y) {
+        actor->pos.y += actor->move_speed;
+        if (actor->pos.y > dest_y) {
+            actor->pos.y = dest_y;
+        }
+    }
+
+    // If reached tile aligned position, return
+    if (actor->pos.x == dest_x && actor->pos.y == dest_y) {
+        return;
+    }
+
+    THIS->PC -= (INSTRUCTION_SIZE + sizeof(idx));
+    return;
 }
 
 void vm_actor_activate(SCRIPT_CTX * THIS, INT16 idx) OLDCALL BANKED {
@@ -525,7 +563,9 @@ void vm_actor_set_spritesheet_by_ref(SCRIPT_CTX * THIS, INT16 idxA, INT16 idxB) 
     UBYTE spritesheet_bank = (UBYTE)(params->BANK);
     const spritesheet_t *spritesheet = params->DATA;
 
-    load_sprite(actor->base_tile, spritesheet, spritesheet_bank);
+    actor->using_sprite_buffer = !actor->using_sprite_buffer;
+	UBYTE base_tile = actor->base_tile + (actor->using_sprite_buffer ? actor->reserve_tiles: 0);
+    load_sprite(base_tile, spritesheet, spritesheet_bank);
     actor->sprite.bank = spritesheet_bank;
     actor->sprite.ptr = (void *)spritesheet;
     load_animations(spritesheet, spritesheet_bank, ANIM_SET_DEFAULT, actor->animations);
@@ -548,9 +588,6 @@ void vm_actor_move_to_init(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BAN
     actor = actors + (UBYTE)(params->ID);
 
     CLR_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
-
-    // Switch to moving animation frames
-    actor_set_anim_moving(actor);
 
     // Snap to nearest pixel before moving
     actor->pos.x = SUBPX_SNAP_PX(actor->pos.x);
@@ -596,7 +633,7 @@ void vm_actor_move_to_init(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BAN
 }
 
 void vm_actor_move_to_x(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKED {
-    actor_t *actor;
+    static actor_t *actor;
 
     // indicate waitable state of context
     THIS->waitable = 1;
@@ -606,22 +643,10 @@ void vm_actor_move_to_x(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKED
 
     // Interrupt actor movement
     if (CHK_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT)) {
-        // Set new X destination to next tile
-        if ((actor->pos.x < params->X) && (actor->pos.x & TILE_FRACTION_MASK)) {   // Bitmask to check for non-grid-aligned position
-            params->X = (actor->pos.x & ~TILE_FRACTION_MASK) + ONE_TILE_DISTANCE;  // If moving in positive direction, round up to next tile
-        } else {
-            params->X = actor->pos.x  & ~TILE_FRACTION_MASK;                       // Otherwise, round down
-        }
-        // Set new Y destination to next tile
-        if ((actor->pos.y < params->Y) && (actor->pos.y & TILE_FRACTION_MASK)) {
-            params->Y = (actor->pos.y & ~TILE_FRACTION_MASK) + ONE_TILE_DISTANCE;
-        } else {
-            params->Y = actor->pos.y  & ~TILE_FRACTION_MASK;
-        }
-        CLR_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+        return;
     }
 
-    UBYTE test_actors = CHK_FLAG(attr, ACTOR_ATTR_CHECK_COLL_ACTORS) && ((game_time & 0x03) == (params->ID & 0x03));
+    UBYTE test_actors = CHK_FLAG(attr, ACTOR_ATTR_CHECK_COLL_ACTORS);
 
     if (params->X == actor->pos.x) {
         // Already at destination
@@ -634,9 +659,8 @@ void vm_actor_move_to_x(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKED
         // Check for actor collision
         actor_t *hit_actor;
         if (test_actors && (hit_actor = actor_overlapping_bb(&actor->bounds, &actor->pos, actor))) {
-            actor->pos.x = hit_actor->pos.x + hit_actor->bounds.right - actor->bounds.left + 1;
-            params->Y = actor->pos.y & ~TILE_FRACTION_MASK;
-            SET_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+            actor->pos.x += actor->move_speed;
+            params->Y = actor->pos.y;
             actor_set_anim_idle(actor);
             return;
         }
@@ -655,9 +679,8 @@ void vm_actor_move_to_x(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKED
         // Check for actor collision
         actor_t *hit_actor;
         if (test_actors && (hit_actor = actor_overlapping_bb(&actor->bounds, &actor->pos, actor))) {
-            actor->pos.x = hit_actor->pos.x + hit_actor->bounds.left - actor->bounds.right - 1;
-            params->Y = actor->pos.y & ~TILE_FRACTION_MASK;
-            SET_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+            actor->pos.x -= actor->move_speed;
+            params->Y = actor->pos.y;
             actor_set_anim_idle(actor);
             return;
         }
@@ -676,32 +699,21 @@ void vm_actor_move_to_x(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKED
 }
 
 void vm_actor_move_to_y(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKED {
-    actor_t *actor;
+    static actor_t *actor;
 
     // indicate waitable state of context
     THIS->waitable = 1;
 
     act_move_to_t * params = VM_REF_TO_PTR(idx);
     actor = actors + (UBYTE)(params->ID);
+    
 
     // Interrupt actor movement
     if (CHK_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT)) {
-        // Set new X destination to next tile
-        if ((actor->pos.x < params->X) && (actor->pos.x & TILE_FRACTION_MASK)) {   // Bitmask to check for non-grid-aligned position
-            params->X = (actor->pos.x & ~TILE_FRACTION_MASK) + ONE_TILE_DISTANCE;  // If moving in positive direction, round up to next tile
-        } else {
-            params->X = actor->pos.x  & ~TILE_FRACTION_MASK;                       // Otherwise, round down
-        }
-        // Set new Y destination to next tile
-        if ((actor->pos.y < params->Y) && (actor->pos.y & TILE_FRACTION_MASK)) {
-            params->Y = (actor->pos.y & ~TILE_FRACTION_MASK) + ONE_TILE_DISTANCE;
-        } else {
-            params->Y = actor->pos.y  & ~TILE_FRACTION_MASK;
-        }
-        CLR_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+        return;
     }
 
-    UBYTE test_actors = CHK_FLAG(attr, ACTOR_ATTR_CHECK_COLL_ACTORS) && ((game_time & 0x03) == (params->ID & 0x03));
+    UBYTE test_actors = CHK_FLAG(attr, ACTOR_ATTR_CHECK_COLL_ACTORS);
 
     if (params->Y == actor->pos.y) {
         // Already at destination
@@ -714,9 +726,8 @@ void vm_actor_move_to_y(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKED
         // Check for actor collision
         actor_t *hit_actor;
         if (test_actors && (hit_actor = actor_overlapping_bb(&actor->bounds, &actor->pos, actor))) { 
-            actor->pos.y = hit_actor->pos.y + hit_actor->bounds.bottom - actor->bounds.top + 1;
-            params->X = actor->pos.x & ~TILE_FRACTION_MASK;
-            SET_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+            actor->pos.y += actor->move_speed;
+            params->X = actor->pos.x;
             actor_set_anim_idle(actor);
             return;
         }
@@ -734,9 +745,8 @@ void vm_actor_move_to_y(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKED
         // Check for actor collision
         actor_t *hit_actor;
         if (test_actors && (hit_actor = actor_overlapping_bb(&actor->bounds, &actor->pos, actor))) { 
-            actor->pos.y = hit_actor->pos.y + hit_actor->bounds.top - actor->bounds.bottom - 1;
-            params->X = actor->pos.x & ~TILE_FRACTION_MASK;
-            SET_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+            actor->pos.y -= actor->move_speed;
+            params->X = actor->pos.x;
             actor_set_anim_idle(actor);
             return;
         }
@@ -754,7 +764,7 @@ void vm_actor_move_to_y(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKED
 }
 
 void vm_actor_move_to_xy(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKED {
-    actor_t *actor;
+    static actor_t *actor;
 
     // indicate waitable state of context
     THIS->waitable = 1;
@@ -764,22 +774,10 @@ void vm_actor_move_to_xy(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKE
 
     // Interrupt actor movement
     if (CHK_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT)) {
-        // Set new X destination to next tile
-        if ((actor->pos.x < params->X) && (actor->pos.x & TILE_FRACTION_MASK)) {   // Bitmask to check for non-grid-aligned position
-            params->X = (actor->pos.x & ~TILE_FRACTION_MASK) + ONE_TILE_DISTANCE;  // If moving in positive direction, round up to next tile
-        } else {
-            params->X = actor->pos.x  & ~TILE_FRACTION_MASK;                       // Otherwise, round down
-        }
-        // Set new Y destination to next tile
-        if ((actor->pos.y < params->Y) && (actor->pos.y & TILE_FRACTION_MASK)) {
-            params->Y = (actor->pos.y & ~TILE_FRACTION_MASK) + ONE_TILE_DISTANCE;
-        } else {
-            params->Y = actor->pos.y  & ~TILE_FRACTION_MASK;
-        }
-        CLR_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+        return;
     }
 
-    UBYTE test_actors = CHK_FLAG(attr, ACTOR_ATTR_CHECK_COLL_ACTORS) && ((game_time & 0x03) == (params->ID & 0x03));
+    UBYTE test_actors = CHK_FLAG(attr, ACTOR_ATTR_CHECK_COLL_ACTORS);
 
     UBYTE reached_x = params->X == actor->pos.x;
     UBYTE reached_y = params->Y == actor->pos.y;
@@ -792,8 +790,8 @@ void vm_actor_move_to_xy(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKE
             // Check for actor collision
             actor_t *hit_actor;
             if (test_actors && (hit_actor = actor_overlapping_bb(&actor->bounds, &actor->pos, actor))) {
-                actor->pos.x = hit_actor->pos.x + hit_actor->bounds.right - actor->bounds.left + 1;
-                SET_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+                actor->pos.x += actor->move_speed;
+                params->Y = actor->pos.y;
                 reached_x = TRUE;
             }
 
@@ -810,8 +808,8 @@ void vm_actor_move_to_xy(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKE
             // Check for actor collision
             actor_t *hit_actor;
             if (test_actors && (hit_actor = actor_overlapping_bb(&actor->bounds, &actor->pos, actor))) {
-                actor->pos.x = hit_actor->pos.x + hit_actor->bounds.left - actor->bounds.right - 1;
-                SET_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+                actor->pos.x -= actor->move_speed;
+                params->Y = actor->pos.y;
                 reached_x = TRUE;
             }
 
@@ -832,8 +830,8 @@ void vm_actor_move_to_xy(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKE
             // Check for actor collision
             actor_t *hit_actor;
             if (test_actors && (hit_actor = actor_overlapping_bb(&actor->bounds, &actor->pos, actor))) { 
-                actor->pos.y = hit_actor->pos.y + hit_actor->bounds.bottom - actor->bounds.top + 1;
-                SET_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+                actor->pos.y += actor->move_speed;
+                params->X = actor->pos.x;
                 reached_y = TRUE;
             }
 
@@ -849,8 +847,8 @@ void vm_actor_move_to_xy(SCRIPT_CTX * THIS, INT16 idx, UBYTE attr) OLDCALL BANKE
             // Check for actor collision
             actor_t *hit_actor;
             if (test_actors && (hit_actor = actor_overlapping_bb(&actor->bounds, &actor->pos, actor))) { 
-                actor->pos.y = hit_actor->pos.y + hit_actor->bounds.top - actor->bounds.bottom - 1;
-                SET_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+                actor->pos.y -= actor->move_speed;
+                params->X = actor->pos.x;
                 reached_y = TRUE;
             }
 
@@ -878,6 +876,11 @@ void vm_actor_move_to_set_dir_x(SCRIPT_CTX * THIS, INT16 idx) OLDCALL BANKED {
     act_move_to_t * params = VM_REF_TO_PTR(idx);
     actor = actors + (UBYTE)(params->ID);
     
+    // Interrupt actor movement
+    if (CHK_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT)) {
+        return;
+    }
+
     if (params->X != actor->pos.x) {
         actor_set_dir(actor, params->X < actor->pos.x ? DIR_LEFT : DIR_RIGHT, TRUE);
     }
@@ -889,7 +892,21 @@ void vm_actor_move_to_set_dir_y(SCRIPT_CTX * THIS, INT16 idx) OLDCALL BANKED {
     act_move_to_t * params = VM_REF_TO_PTR(idx);
     actor = actors + (UBYTE)(params->ID);
     
+    // Interrupt actor movement
+    if (CHK_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT)) {
+        return;
+    }
+
     if (params->Y != actor->pos.y) {
         actor_set_dir(actor, params->Y < actor->pos.y ? DIR_UP : DIR_DOWN, TRUE);
     }
+}
+
+void vm_actor_set_anim_moving(SCRIPT_CTX * THIS, INT16 idx) OLDCALL BANKED {
+    actor_t *actor;
+
+    act_move_to_t * params = VM_REF_TO_PTR(idx);
+    actor = actors + (UBYTE)(params->ID);
+    
+    actor_set_anim(actor, actor->dir + N_DIRECTIONS);
 }

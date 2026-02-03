@@ -54,9 +54,9 @@ void topdown_update(void) BANKED {
             // Landed on a trigger
             return;
         }
-		
+#ifdef ENABLE_TOPDOWN_ENTER_METATILE
 		metatile_overlap_at_intersection(&PLAYER.bounds, &PLAYER.pos);
-
+#endif
         // Check input to set player movement
         if (INPUT_RECENT_LEFT) {
             player_moving = TRUE;
@@ -68,6 +68,11 @@ void topdown_update(void) BANKED {
             UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
             if (tile_col_test_range_y(COLLISION_RIGHT, tile_x - 1, tile_start, tile_end)) {
                 player_moving = FALSE;
+#ifdef ENABLE_TOPDOWN_LEFT_COLLISION_METATILE
+                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
+            } else {
+                reset_collision_cache(DIR_LEFT);                                    
+#endif
             }
         } else if (INPUT_RECENT_RIGHT) {
             player_moving = TRUE;
@@ -79,6 +84,11 @@ void topdown_update(void) BANKED {
             UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
             if (tile_col_test_range_y(COLLISION_LEFT, tile_x + 1, tile_start, tile_end)) {
                 player_moving = FALSE;
+#ifdef ENABLE_TOPDOWN_RIGHT_COLLISION_METATILE
+                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
+            } else {
+                reset_collision_cache(DIR_RIGHT);                                    
+#endif
             }
         } else if (INPUT_RECENT_UP) {
             player_moving = TRUE;
@@ -90,6 +100,11 @@ void topdown_update(void) BANKED {
             UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
             if (tile_col_test_range_x(COLLISION_BOTTOM, tile_y - 1, tile_start, tile_end)) {
                 player_moving = FALSE;
+#ifdef ENABLE_TOPDOWN_UP_COLLISION_METATILE
+                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
+            } else {
+                reset_collision_cache(DIR_UP);                                    
+#endif
             }
         } else if (INPUT_RECENT_DOWN) {
             player_moving = TRUE;
@@ -101,6 +116,11 @@ void topdown_update(void) BANKED {
             UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
             if (tile_col_test_range_x(COLLISION_TOP, tile_y + 1, tile_start, tile_end)) {
                 player_moving = FALSE;
+#ifdef ENABLE_TOPDOWN_DOWN_COLLISION_METATILE
+                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
+            } else {
+                reset_collision_cache(DIR_DOWN);                                    
+#endif
             }
         }
 

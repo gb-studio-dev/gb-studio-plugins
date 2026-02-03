@@ -5,6 +5,6 @@
   "url": "https://github.com/Mico27/gbs-setPaletteColorPlugin",
   "description": "Allows to edit at runtime the colors of a palette.",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "gbsVersion": ">=4.2.0"
 }

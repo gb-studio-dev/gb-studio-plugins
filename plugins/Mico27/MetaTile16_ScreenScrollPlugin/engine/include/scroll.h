@@ -57,15 +57,8 @@ void scroll_update(void) BANKED;
 void scroll_repaint(void) BANKED;
 
 void scroll_render_rows(INT16 scroll_x, INT16 scroll_y, BYTE row_offset, BYTE n_rows) BANKED;
-UBYTE scroll_viewport(parallax_row_t * port) BANKED;
-void scroll_queue_row(UBYTE x, UBYTE y) BANKED;
-void scroll_queue_col(UBYTE x, UBYTE y) BANKED;
 void load_metatile_row(const UBYTE* from, UBYTE x, UBYTE y, UBYTE height, UBYTE bank) NONBANKED;
-void scroll_load_row(UBYTE x, UBYTE y) BANKED;
-void scroll_load_pending_row(void) BANKED;
 void load_metatile_col(const UBYTE* from, UBYTE x, UBYTE y, UBYTE height, UBYTE bank) NONBANKED;
-void scroll_load_col(UBYTE x, UBYTE y, UBYTE height) BANKED;
-void scroll_load_pending_col(void) BANKED;
 
 /**
  * Get base address of window map

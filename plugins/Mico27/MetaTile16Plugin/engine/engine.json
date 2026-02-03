@@ -1,5 +1,5 @@
 {
-	"version": "4.2.0-e29",
+	"version": "4.2.0-e33",
 	"fields": [
 		{
 		"key": "MAX_MAP_DATA_WIDTH",
@@ -25,7 +25,7 @@
 		"min": 1,
 		"max": 128
 		},
-		{
+        {
 		  "key": "MIN_OVERLAP_METATILE",
 		  "label": "Minimum metatile index to start checking for the entered metatile event",
 		  "group": "Metatiles",
@@ -35,6 +35,417 @@
 		  "min": 0,
 		  "max": 255
 		},
+        {
+		  "key": "MIN_DOWN_COLLISION_METATILE",
+		  "label": "Minimum metatile index to start checking for the down collision metatile event",
+		  "group": "Metatiles",
+		  "type": "slider",
+		  "cType": "define",
+		  "defaultValue": 1,
+		  "min": 0,
+		  "max": 255
+		},
+        {
+		  "key": "MIN_RIGHT_COLLISION_METATILE",
+		  "label": "Minimum metatile index to start checking for the right collision metatile event",
+		  "group": "Metatiles",
+		  "type": "slider",
+		  "cType": "define",
+		  "defaultValue": 1,
+		  "min": 0,
+		  "max": 255
+		},
+        {
+		  "key": "MIN_UP_COLLISION_METATILE",
+		  "label": "Minimum metatile index to start checking for the up collision metatile event",
+		  "group": "Metatiles",
+		  "type": "slider",
+		  "cType": "define",
+		  "defaultValue": 1,
+		  "min": 0,
+		  "max": 255
+		},
+        {
+		  "key": "MIN_LEFT_COLLISION_METATILE",
+		  "label": "Minimum metatile index to start checking for the left collision metatile event",
+		  "group": "Metatiles",
+		  "type": "slider",
+		  "cType": "define",
+		  "defaultValue": 1,
+		  "min": 0,
+		  "max": 255
+		},
+        {
+          "key": "ENABLE_PLAT_ENTER_METATILE",
+          "sceneType": "PLATFORM",
+          "label": "Enable enter metatile event",
+          "description": "Enable enter metatile event",
+          "group": "GAMETYPE_PLATFORMER",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "isHeading": true
+        },
+        {
+          "key": "ENABLE_PLAT_COLLISION_METATILE",
+          "sceneType": "PLATFORM",
+          "label": "Enable collision metatile event",
+          "description": "Enable collision metatile event",
+          "group": "GAMETYPE_PLATFORMER",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "isHeading": true
+        },
+		{
+          "key": "ENABLE_PLAT_DOWN_COLLISION_METATILE",
+          "sceneType": "PLATFORM",
+          "label": "Enable down collision metatile event",
+          "description": "Enable down collision metatile event",
+          "group": "GAMETYPE_PLATFORMER",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_PLAT_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_PLAT_RIGHT_COLLISION_METATILE",
+          "sceneType": "PLATFORM",
+          "label": "Enable right collision metatile event",
+          "description": "Enable right collision metatile event",
+          "group": "GAMETYPE_PLATFORMER",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_PLAT_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_PLAT_UP_COLLISION_METATILE",
+          "sceneType": "PLATFORM",
+          "label": "Enable up collision metatile event",
+          "description": "Enable up collision metatile event",
+          "group": "GAMETYPE_PLATFORMER",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_PLAT_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_PLAT_LEFT_COLLISION_METATILE",
+          "sceneType": "PLATFORM",
+          "label": "Enable left collision metatile event",
+          "description": "Enable left collision metatile event",
+          "group": "GAMETYPE_PLATFORMER",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_PLAT_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_POINTNCLICK_ENTER_METATILE",
+          "sceneType": "POINTNCLICK",
+          "label": "Enable enter metatile event",
+          "description": "Enable enter metatile event",
+          "group": "GAMETYPE_POINT_N_CLICK",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "isHeading": true
+        },
+        {
+          "key": "ENABLE_ADV_ENTER_METATILE",
+          "sceneType": "ADVENTURE",
+          "label": "Enable enter metatile event",
+          "description": "Enable enter metatile event",
+          "group": "GAMETYPE_ADVENTURE",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "isHeading": true
+        },
+        {
+          "key": "ENABLE_ADV_COLLISION_METATILE",
+          "sceneType": "ADVENTURE",
+          "label": "Enable collision metatile event",
+          "description": "Enable collision metatile event",
+          "group": "GAMETYPE_ADVENTURE",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "isHeading": true
+        },
+		{
+          "key": "ENABLE_ADV_DOWN_COLLISION_METATILE",
+          "sceneType": "ADVENTURE",
+          "label": "Enable down collision metatile event",
+          "description": "Enable down collision metatile event",
+          "group": "GAMETYPE_ADVENTURE",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_ADV_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_ADV_RIGHT_COLLISION_METATILE",
+          "sceneType": "ADVENTURE",
+          "label": "Enable right collision metatile event",
+          "description": "Enable right collision metatile event",
+          "group": "GAMETYPE_ADVENTURE",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_ADV_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_ADV_UP_COLLISION_METATILE",
+          "sceneType": "ADVENTURE",
+          "label": "Enable up collision metatile event",
+          "description": "Enable up collision metatile event",
+          "group": "GAMETYPE_ADVENTURE",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_ADV_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_ADV_LEFT_COLLISION_METATILE",
+          "sceneType": "ADVENTURE",
+          "label": "Enable left collision metatile event",
+          "description": "Enable left collision metatile event",
+          "group": "GAMETYPE_ADVENTURE",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_ADV_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_SHMUP_ENTER_METATILE",
+          "sceneType": "SHMUP",
+          "label": "Enable enter metatile event",
+          "description": "Enable enter metatile event",
+          "group": "GAMETYPE_SHMUP",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "isHeading": true
+        },
+        {
+          "key": "ENABLE_SHMUP_COLLISION_METATILE",
+          "sceneType": "SHMUP",
+          "label": "Enable collision metatile event",
+          "description": "Enable collision metatile event",
+          "group": "GAMETYPE_SHMUP",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "isHeading": true
+        },
+		{
+          "key": "ENABLE_SHMUP_DOWN_COLLISION_METATILE",
+          "sceneType": "SHMUP",
+          "label": "Enable down collision metatile event",
+          "description": "Enable down collision metatile event",
+          "group": "GAMETYPE_SHMUP",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_SHMUP_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_SHMUP_RIGHT_COLLISION_METATILE",
+          "sceneType": "SHMUP",
+          "label": "Enable right collision metatile event",
+          "description": "Enable right collision metatile event",
+          "group": "GAMETYPE_SHMUP",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_SHMUP_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_SHMUP_UP_COLLISION_METATILE",
+          "sceneType": "SHMUP",
+          "label": "Enable up collision metatile event",
+          "description": "Enable up collision metatile event",
+          "group": "GAMETYPE_SHMUP",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_SHMUP_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_SHMUP_LEFT_COLLISION_METATILE",
+          "sceneType": "SHMUP",
+          "label": "Enable left collision metatile event",
+          "description": "Enable left collision metatile event",
+          "group": "GAMETYPE_SHMUP",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_SHMUP_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_TOPDOWN_ENTER_METATILE",
+          "sceneType": "TOPDOWN",
+          "label": "Enable enter metatile event",
+          "description": "Enable enter metatile event",
+          "group": "GAMETYPE_TOP_DOWN",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "isHeading": true
+        },
+        {
+          "key": "ENABLE_TOPDOWN_COLLISION_METATILE",
+          "sceneType": "TOPDOWN",
+          "label": "Enable collision metatile event",
+          "description": "Enable collision metatile event",
+          "group": "GAMETYPE_TOP_DOWN",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "isHeading": true
+        },
+		{
+          "key": "ENABLE_TOPDOWN_DOWN_COLLISION_METATILE",
+          "sceneType": "TOPDOWN",
+          "label": "Enable down collision metatile event",
+          "description": "Enable down collision metatile event",
+          "group": "GAMETYPE_TOP_DOWN",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_TOPDOWN_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_TOPDOWN_RIGHT_COLLISION_METATILE",
+          "sceneType": "TOPDOWN",
+          "label": "Enable right collision metatile event",
+          "description": "Enable right collision metatile event",
+          "group": "GAMETYPE_TOP_DOWN",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_TOPDOWN_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_TOPDOWN_UP_COLLISION_METATILE",
+          "sceneType": "TOPDOWN",
+          "label": "Enable up collision metatile event",
+          "description": "Enable up collision metatile event",
+          "group": "GAMETYPE_TOP_DOWN",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_TOPDOWN_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+          "key": "ENABLE_TOPDOWN_LEFT_COLLISION_METATILE",
+          "sceneType": "TOPDOWN",
+          "label": "Enable left collision metatile event",
+          "description": "Enable left collision metatile event",
+          "group": "GAMETYPE_TOP_DOWN",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "indent": 1,
+          "conditions": [
+             {
+               "key": "ENABLE_TOPDOWN_COLLISION_METATILE",
+               "truthy": true
+             }
+           ]
+        },
 		{
           "key": "overlap_metatile_id",
           "label": "Entered Metatile Id",
@@ -64,6 +475,56 @@
           "cType": "UBYTE",
           "defaultValue": 0,
           "runtimeOnly": true
-        }
+        },   
+        {
+          "key": "collided_metatile_id",
+          "label": "Collided Metatile Id",
+          "description": "Id of the collided metatile",
+          "group": "Metatiles",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        },
+	    {
+          "key": "collided_metatile_x",
+          "label": "Collided Metatile X position",
+          "description": "X position of the collided metatile",
+          "group": "Metatiles",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        },
+	    {
+          "key": "collided_metatile_y",
+          "label": "Collided Metatile Y position",
+          "description": "Y position of the collided metatile",
+          "group": "Metatiles",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        },
+        {
+          "key": "collided_metatile_dir",
+          "label": "Collided Metatile Direction",
+          "description": "Direction of the collided metatile",
+          "group": "Metatiles",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        },
+	    {
+          "key": "collided_metatile_source",
+          "label": "Collided Metatile Source",
+          "description": "Source of the collided metatile",
+          "group": "Metatiles",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        }       
 	]
 }

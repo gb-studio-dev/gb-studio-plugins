@@ -10,7 +10,11 @@ const fields = [
         defaultValue: "0",
         options: [
           ["0", "Metatile Enter"],
-          ["1", "Metatile Collision"],
+          ["1", "Metatile Down Collision"],
+          ["2", "Metatile Right Collision"],
+          ["3", "Metatile Up Collision"],
+          ["4", "Metatile Left Collision"],
+          ["5", "Metatile Any Collision"],
         ],
     },
     {

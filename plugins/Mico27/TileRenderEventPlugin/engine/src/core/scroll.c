@@ -320,7 +320,6 @@ void scroll_load_col(UBYTE x, UBYTE y, UBYTE height) NONBANKED {
     }
 #endif
     // DMG Column Load
-    unsigned char* map = image_ptr + image_tile_width * y + x;
     SWITCH_ROM(image_bank);
     set_bkg_submap(x, y, 1, height, image_ptr, image_tile_width);
     SWITCH_ROM(_save_bank);
