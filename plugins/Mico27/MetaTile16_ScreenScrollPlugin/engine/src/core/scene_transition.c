@@ -134,7 +134,7 @@ void transition_to_scene_modal(UBYTE direction) BANKED {
 		} else if (direction == DIRECTION_LEFT){
 			scroll_x = (SUBPX_TO_PX(camera_x) - (SCREENWIDTH >> 1));
 		} else if (direction == DIRECTION_UP){
-			scroll_y = (SUBPX_TO_PX(camera_y) - (SCREENHEIGHT >> 1));
+			scroll_y = (SUBPX_TO_PX(camera_y) - (SCREENHEIGHT >> 1)) + 8;
 		}
 		wait_vbl_done();
 		do {
