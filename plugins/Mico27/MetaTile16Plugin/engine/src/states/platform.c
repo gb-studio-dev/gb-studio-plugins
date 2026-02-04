@@ -15,6 +15,7 @@
 #include "scroll.h"
 #include "trigger.h"
 #include "vm.h"
+#include "macro.h"
 #include "meta_tiles.h"
 
 // Feature Flags --------------------------------------------------------------
@@ -45,6 +46,9 @@
 #endif
 #ifndef INPUT_PLATFORM_INTERACT
 #define INPUT_PLATFORM_INTERACT INPUT_A
+#endif
+#ifndef INPUT_PLATFORM_FORCE_TRIGGER
+#define INPUT_PLATFORM_FORCE_TRIGGER INPUT_UP_PRESSED
 #endif
 #ifndef INPUT_PLATFORM_DROP_THROUGH
 #define INPUT_PLATFORM_DROP_THROUGH 0
@@ -122,6 +126,9 @@
 #define COLLISION_SLOPE_ANY           (COLLISION_SLOPE_45 | COLLISION_SLOPE_225_BOT | COLLISION_SLOPE_225_TOP)
 #define COLLISION_SLOPE               0x70u
 
+#define ENABLE_PLAT_HORIZONTAL_COLLISION_METATILE \
+    defined(ENABLE_PLAT_LEFT_COLLISION_METATILE) || \
+    defined(ENABLE_PLAT_RIGHT_COLLISION_METATILE)
 
 #define PLATFORM_ANIM_OVERRIDES_SET \
     defined(PLATFORM_FALL_ANIM) || \
@@ -836,7 +843,7 @@ static void player_set_jump_anim(void)
 #ifdef FEAT_PLATFORM_WALL_JUMP
 static void wall_check(void)
 {
-    if (plat_wall_col != 0 && plat_wall_slide)
+    if (plat_wall_col != 0 && plat_wall_slide && plat_next_state != GROUND_STATE)
     {
         plat_next_state = WALL_STATE;
     }
@@ -1057,7 +1064,7 @@ static void handle_horizontal_input(void)
         if (plat_vel_x != 0)
         {
             // Set deceleration value based on state
-            WORD dec = (plat_state == GROUND_STATE) ? plat_dec : plat_air_dec;
+            WORD dec = (plat_state == GROUND_STATE || plat_state == RUN_STATE) ? plat_dec : plat_air_dec;
 
             if (plat_vel_x < 0)
             {
@@ -1174,6 +1181,27 @@ static void move_and_collide(UBYTE mask)
 #ifdef FEAT_PLATFORM_WALL_JUMP
             plat_coyote_timer = plat_coyote_frames + 1;
 #endif
+#if ENABLE_PLAT_HORIZONTAL_COLLISION_METATILE
+            if (moving_right){
+#ifdef ENABLE_PLAT_RIGHT_COLLISION_METATILE
+                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
+#endif
+            } else {
+#ifdef ENABLE_PLAT_LEFT_COLLISION_METATILE
+                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
+#endif
+            }
+        } else {
+            if (moving_right){
+#ifdef ENABLE_PLAT_RIGHT_COLLISION_METATILE
+                reset_collision_cache(DIR_RIGHT);
+#endif                
+            } else {
+#ifdef ENABLE_PLAT_LEFT_COLLISION_METATILE
+                reset_collision_cache(DIR_LEFT);	
+#endif 
+            }				
+#endif  
         }
 
     finally_update_x:
@@ -1316,6 +1344,11 @@ static void move_and_collide(UBYTE mask)
                 plat_drop_timer = 0;
 #endif
                 plat_grounded = TRUE;
+#ifdef ENABLE_PLAT_DOWN_COLLISION_METATILE
+                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
+            } else {
+                reset_collision_cache(DIR_DOWN);
+#endif  
             }
         finally_update_y:
             if (plat_grounded && (plat_state != DASH_STATE)) {
@@ -1348,6 +1381,11 @@ static void move_and_collide(UBYTE mask)
                 plat_coyote_timer = 0;
 #endif
                 plat_next_state = FALL_STATE;
+#ifdef ENABLE_PLAT_UP_COLLISION_METATILE
+                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
+            } else {
+                reset_collision_cache(DIR_UP);
+#endif  
             }
             PLAYER.pos.y = new_y;
         }
@@ -1451,8 +1489,10 @@ finally_check_actor_col:
 
     if (mask & COL_CHECK_TRIGGERS)
     {
-        trigger_activate_at_intersection(&PLAYER.bounds, &PLAYER.pos, INPUT_UP_PRESSED);
-		metatile_overlap_at_intersection(&PLAYER.bounds, &PLAYER.pos);
+        trigger_activate_at_intersection(&PLAYER.bounds, &PLAYER.pos, INPUT_PLATFORM_FORCE_TRIGGER);
+#ifdef ENABLE_PLAT_ENTER_METATILE
+        metatile_overlap_at_intersection(&PLAYER.bounds, &PLAYER.pos);
+#endif
     }
 }
 
@@ -1737,7 +1777,7 @@ static void state_update_ground(void) {
         if (plat_is_actor_attached)
         {
             // If the platform has been disabled, detach the player
-            if (plat_attached_actor->disabled == TRUE)
+            if (CHK_FLAG(plat_attached_actor->flags, ACTOR_FLAG_DISABLED))
             {
                 plat_next_state = FALL_STATE;
                 plat_is_actor_attached = FALSE;
@@ -2324,7 +2364,7 @@ static void state_update_ladder(void) {
 
 // WALL_STATE
 
-#ifdef FEAT_PLATFORM_WALL
+#ifdef FEAT_PLATFORM_WALL_JUMP
 static void state_enter_wall(void) {
     plat_jump_type = JUMP_TYPE_NONE;
     plat_run_stage = RUN_STAGE_NONE;

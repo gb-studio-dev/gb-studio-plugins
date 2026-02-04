@@ -20,6 +20,14 @@
 // put submap of a large map to screen
 void set_bkg_submap(UINT8 x, UINT8 y, UINT8 w, UINT8 h, const unsigned char *map, UINT8 map_w) OLDCALL;
 
+void scroll_queue_row(UBYTE x, UBYTE y);
+void scroll_queue_col(UBYTE x, UBYTE y);
+void scroll_load_pending_row(void);
+void scroll_load_pending_col(void);
+void scroll_load_row(UBYTE x, UBYTE y);
+void scroll_load_col(UBYTE x, UBYTE y, UBYTE height);
+UBYTE scroll_viewport(parallax_row_t * port);
+
 INT16 scroll_x;
 INT16 scroll_y;
 INT16 draw_scroll_x;
@@ -135,7 +143,7 @@ void scroll_update(void) BANKED {
     scroll_viewport(parallax_rows + 2);
 }
 
-UBYTE scroll_viewport(parallax_row_t * port) BANKED {
+UBYTE scroll_viewport(parallax_row_t * port) {
     if (port->next_y) {
         // one of upper parallax slices
         UINT16 shift_scroll_x;
@@ -233,7 +241,7 @@ void scroll_render_rows(INT16 scroll_x, INT16 scroll_y, BYTE row_offset, BYTE n_
     }	
 }
 
-void scroll_queue_row(UBYTE x, UBYTE y) BANKED {
+void scroll_queue_row(UBYTE x, UBYTE y) {
     
 	while (pending_w_i) {
         // If previous row wasn't fully rendered
@@ -255,7 +263,7 @@ void scroll_queue_row(UBYTE x, UBYTE y) BANKED {
 	scroll_load_pending_row();
 }
 
-void scroll_queue_col(UBYTE x, UBYTE y) BANKED {
+void scroll_queue_col(UBYTE x, UBYTE y) {
     
 	while (pending_h_i) {
         // If previous column wasn't fully rendered
@@ -300,7 +308,7 @@ void set_bkg_submap_banked(const UBYTE* ptr, UBYTE x, UBYTE y, UBYTE width, UBYT
 	SWITCH_ROM(_save_bank);		
 }
 
-void scroll_load_row(UBYTE x, UBYTE y) BANKED {
+void scroll_load_row(UBYTE x, UBYTE y) {
 	UBYTE width = MIN(SCREEN_TILE_REFRES_W, image_tile_width);	
 	// DMG Row Load	
 	if (metatile_bank){
@@ -325,7 +333,7 @@ void scroll_load_row(UBYTE x, UBYTE y) BANKED {
 }
 
 /* Update pending (up to 5) rows */
-void scroll_load_pending_row(void) BANKED {    
+void scroll_load_pending_row(void) {    
     UBYTE width = MIN(pending_w_i, PENDING_BATCH_SIZE);	
 	// DMG Row Load	
 	if (metatile_bank){
@@ -354,7 +362,7 @@ void scroll_load_pending_row(void) BANKED {
 }
 
 
-void scroll_load_col(UBYTE x, UBYTE y, UBYTE height) BANKED {	
+void scroll_load_col(UBYTE x, UBYTE y, UBYTE height) {	
 	// DMG Column Load
 	if (metatile_bank){
 		bkg_address_offset = ((UWORD)get_bkg_xy_addr((x + bkg_offset_x) & 31, (y + bkg_offset_y) & 31)) - 0x9800;
@@ -377,7 +385,7 @@ void scroll_load_col(UBYTE x, UBYTE y, UBYTE height) BANKED {
     
 }
 
-void scroll_load_pending_col(void) BANKED {
+void scroll_load_pending_col(void) {
     UBYTE height = MIN(pending_h_i, PENDING_BATCH_SIZE);	
 	// DMG Column Load
 	if (metatile_bank){

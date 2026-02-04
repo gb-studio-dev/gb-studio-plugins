@@ -81,9 +81,9 @@ void pointnclick_update(void) BANKED {
 
     // Check for trigger collisions
     hit_trigger = trigger_at_intersection(&PLAYER.bounds, &PLAYER.pos);
-	
+#ifdef ENABLE_POINTNCLICK_ENTER_METATILE
 	metatile_overlap_at_intersection(&PLAYER.bounds, &PLAYER.pos);
-
+#endif
     // Check for actor collisions
     hit_actor = actor_overlapping_player();
 

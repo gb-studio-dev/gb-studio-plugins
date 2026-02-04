@@ -5,6 +5,6 @@
   "url": "https://github.com/Mico27/gbs-AttachScriptToInputExPlugin",
   "description": "Allow to specify an on hold and an on release input script inside an attach script to input event.",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "gbsVersion": ">=4.2.0"
 }

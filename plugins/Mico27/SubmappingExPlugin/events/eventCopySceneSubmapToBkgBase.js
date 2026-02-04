@@ -152,66 +152,46 @@ export const fields = [
 ];
 
 export const compile = (input, helpers) => {
-  const { options, _callNative, _rpn, _stackPushConst, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue } = helpers;
+  const { options, _callNative, _rpn, _stackPushScriptValue, _stackPushConst, _stackPop, _addComment } = helpers;
     
-  const tmp0 = _declareLocal("tmp_source_x", 1, true);
-  const tmp1 = _declareLocal("tmp_source_y", 1, true);
-  const tmp2 = _declareLocal("tmp_dest_x", 1, true);
-  const tmp3 = _declareLocal("tmp_dest_y", 1, true);
-  const tmp4 = _declareLocal("tmp_w", 1, true);
-  const tmp5 = _declareLocal("tmp_h", 1, true);
-  const tmp6 = _declareLocal("tmp_tile_offset", 1, true);
-    
-  variableSetToScriptValue(tmp0, input.source_x);
-  variableSetToScriptValue(tmp1, input.source_y);
-  variableSetToScriptValue(tmp2, input.dest_x);
-  variableSetToScriptValue(tmp3, input.dest_y);
-  variableSetToScriptValue(tmp4, input.w);
-  variableSetToScriptValue(tmp5, input.h);
-  variableSetToScriptValue(tmp6, input.tile_offset);
-    
-  
   _addComment("Copy scene submap to background with tile offset");
   
-  _rpn()
-		  .ref(tmp1).int16(256).operator(".MUL")		// (source_y << 8) | source_x
-		  .ref(tmp0)        						      
-          .operator(".B_OR")
-          .refSet(tmp0)
-		  .ref(tmp3).int16(256).operator(".MUL")		// (dest_y << 8) | dest_x
-		  .ref(tmp2)       							       
-          .operator(".B_OR")
-          .refSet(tmp1)
-		  .ref(tmp5).int16(256).operator(".MUL")        // (h << 8) | w
-		  .ref(tmp4)       							        
-          .operator(".B_OR")
-          .refSet(tmp2)
-          .stop();
-		  
-	
   if (input.use_far_ptr){
-	variableSetToScriptValue(tmp4, input.scene_bank);
-	variableSetToScriptValue(tmp5, input.scene_ptr);	
-  } 
-		  
-  if (input.use_far_ptr){
-	  _stackPush(tmp5);
-	  _stackPush(tmp4);
+    _stackPushScriptValue(input.scene_ptr);
+    _stackPushScriptValue(input.scene_bank);
   } else {
-	const { scenes } = options;
+    const { scenes } = options;
 	const scene = scenes.find((s) => s.id === input.sceneId);
 	if (!scene) {
 		return;
 	}
-	_stackPushConst(`_${scene.symbol}`);
+    _stackPushConst(`_${scene.symbol}`);
 	_stackPushConst(`___bank_${scene.symbol}`); 
   }
+  _stackPushScriptValue(input.tile_offset);
+  _stackPushScriptValue(input.w);
+  _stackPushScriptValue(input.h);
+  _stackPushScriptValue(input.dest_x);
+  _stackPushScriptValue(input.dest_y);
+  _stackPushScriptValue(input.source_x);
+  _stackPushScriptValue(input.source_y);
   
-  _stackPush(tmp6);
-  _stackPush(tmp2);
-  _stackPush(tmp1);
-  _stackPush(tmp0);
-  		
+  _rpn()
+		  .ref(".ARG4").int16(256).operator(".MUL")		// (h << 8) | w 
+		  .ref(".ARG5")        						      
+          .operator(".B_OR")
+          .refSet(".ARG5")
+		  .ref(".ARG2").int16(256).operator(".MUL")		// (dest_y << 8) | dest_x
+		  .ref(".ARG3")       							       
+          .operator(".B_OR")
+          .refSet(".ARG4")
+		  .ref(".ARG0").int16(256).operator(".MUL")     // (source_y << 8) | source_x
+		  .ref(".ARG1")       							        
+          .operator(".B_OR")
+          .refSet(".ARG3")
+          .stop();
+          
+  _stackPop(3);  		
   _callNative("copy_background_submap_to_background_base");
   _stackPop(6);  
   

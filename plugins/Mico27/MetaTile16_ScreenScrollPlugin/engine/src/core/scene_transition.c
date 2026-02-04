@@ -70,20 +70,20 @@ void check_transition_to_scene_collision(void) BANKED {
 			transitioning_player_pos_y = 0x7FFF;
 			if (((WORD)PLAYER.pos.y) < player_transition_top_threshold){
 				transition_to_scene_modal(DIRECTION_UP);				
-			} else if ((WORD)PLAYER.pos.y > (TILE_TO_SUBPX(image_tile_height) - player_transition_bottom_threshold)){
+                } else if ((WORD)PLAYER.pos.y > (TILE_TO_SUBPX(image_tile_height) - player_transition_bottom_threshold)){
 				transition_to_scene_modal(DIRECTION_DOWN);		
-			}
-		}
+            }
+        }
 		if (transitioning_player_pos_x != PLAYER.pos.x)
 		{
 			transitioning_player_pos_x = 0x7FFF;
 			if (((WORD)PLAYER.pos.x) < player_transition_left_threshold){
 				transition_to_scene_modal(DIRECTION_LEFT);
-			} else if ((WORD)PLAYER.pos.x > (TILE_TO_SUBPX(image_tile_width) - player_transition_right_threshold)){
+                } else if ((WORD)PLAYER.pos.x > (TILE_TO_SUBPX(image_tile_width) - player_transition_right_threshold)){
 				transition_to_scene_modal(DIRECTION_RIGHT);
-			}
-		}
-	}
+            }
+        }
+    }
 }
 
 void transition_to_scene_modal(UBYTE direction) BANKED {
@@ -92,16 +92,16 @@ void transition_to_scene_modal(UBYTE direction) BANKED {
 	if (direction == DIRECTION_UP){
 		scene_bank = up_scene.bank;
 		scene = up_scene.ptr;
-	} else if (direction == DIRECTION_RIGHT){
+        } else if (direction == DIRECTION_RIGHT){
 		scene_bank = right_scene.bank;
 		scene = right_scene.ptr;
-	} else if (direction == DIRECTION_DOWN){
+        } else if (direction == DIRECTION_DOWN){
 		scene_bank = down_scene.bank;
 		scene = down_scene.ptr;
-	} else {
+        } else {
 		scene_bank = left_scene.bank;
 		scene = left_scene.ptr;
-	}
+    }
 	if (scene_bank && scene){
 		is_transitioning_scene = 1;
 		transition_load_scene(scene_bank, scene, (direction == DIRECTION_RIGHT)? image_tile_width: (direction == DIRECTION_LEFT)? -image_tile_width: 0, (direction == DIRECTION_DOWN)? image_tile_height: (direction == DIRECTION_UP)? -image_tile_height: 0);
@@ -112,30 +112,30 @@ void transition_to_scene_modal(UBYTE direction) BANKED {
 			transitioning_player_pos_y = (transitioning_player_pos_y  & ~TILE_FRACTION_MASK);
 			if (direction == DIRECTION_UP){
 				transitioning_player_pos_y += ONE_TILE_DISTANCE;
-			} else if (direction == DIRECTION_LEFT){
+                } else if (direction == DIRECTION_LEFT){
 				transitioning_player_pos_x += ONE_TILE_DISTANCE;
-			}
-		}
+            }
+        }
 		uint8_t camera_arrived = FALSE;
 		uint8_t player_arrived = FALSE;
 		metatile_bank = 0;
 		metatile_attr_bank = 0;
 		do {
 			script_runner_update();
-		} while (VM_ISLOCKED());
+        } while (VM_ISLOCKED());
 		wait_vbl_done();		
 		if (direction == DIRECTION_RIGHT){
 			scroll_x = (SUBPX_TO_PX(camera_x) - (SCREENWIDTH >> 1)) - 8;
-		} else if (direction == DIRECTION_DOWN){
+            } else if (direction == DIRECTION_DOWN){
 			if (image_height < SCREENHEIGHT){
 				scroll_render_rows(draw_scroll_x, draw_scroll_y, image_tile_height, PX_TO_TILE(SCREENHEIGHT - image_height));
-			}
+            }
 			scroll_y = (SUBPX_TO_PX(camera_y) - (SCREENHEIGHT >> 1)) - 8;			
-		} else if (direction == DIRECTION_LEFT){
+            } else if (direction == DIRECTION_LEFT){
 			scroll_x = (SUBPX_TO_PX(camera_x) - (SCREENWIDTH >> 1));
-		} else if (direction == DIRECTION_UP){
+            } else if (direction == DIRECTION_UP){
 			scroll_y = (SUBPX_TO_PX(camera_y) - (SCREENHEIGHT >> 1)) + 8;
-		}
+        }
 		wait_vbl_done();
 		do {
 			script_runner_update();	
@@ -143,27 +143,30 @@ void transition_to_scene_modal(UBYTE direction) BANKED {
 			if (!VM_ISLOCKED()){
 				camera_arrived = transition_camera_to();
 				player_arrived = transition_player_to();
-			}
+            }
 			input_update();		
 			ui_update();
-	
+            
 			toggle_shadow_OAM();
 			camera_update();
 			scroll_update();
 			actors_update();
             actors_render();
-			projectiles_render();
+			if (projectiles_active_head) {
+                projectiles_update();
+                projectiles_render();
+            }
 			activate_shadow_OAM();
-	
+            
 			game_time++;
 			wait_vbl_done();
 			
 			if (camera_arrived && player_arrived) {				
 				scroll_reset();
 				is_transitioning_scene = 0;
-			}
-		} while (is_transitioning_scene);
-	}
+            }
+        } while (is_transitioning_scene);
+    }
 }
 
 void transition_load_scene(UBYTE scene_bank, const scene_t * scene, BYTE t_scroll_x, BYTE t_scroll_y) BANKED {
@@ -172,16 +175,16 @@ void transition_load_scene(UBYTE scene_bank, const scene_t * scene, BYTE t_scrol
     while (actor) {
 		if (actor != &PLAYER){
 			SET_FLAG(actor->flags, ACTOR_FLAG_HIDDEN);
-		}		
+        }		
 		actor = actor->prev;
-	}
+    }
 	// hide projectiles
 	projectiles_init();
 	// Update sprites before scene change
 	toggle_shadow_OAM();
 	actors_update();
 	actors_render();
-	projectiles_render();
+    projectiles_render();
 	activate_shadow_OAM();
 	wait_vbl_done();
 	
@@ -220,21 +223,21 @@ uint8_t transition_camera_to(void) BANKED {
         if (camera_x <= SCROLL_CAM_X) {
             camera_x = SCROLL_CAM_X;
         }
-    } else if (camera_x < SCROLL_CAM_X) {
+        } else if (camera_x < SCROLL_CAM_X) {
         // Move right
         camera_x += SCROLL_CAM_SPEED;
         if (camera_x >= SCROLL_CAM_X) {
             camera_x = SCROLL_CAM_X;
         }        
     }
-
+    
     if (camera_y > SCROLL_CAM_Y) {
         // Move up
         camera_y -= SCROLL_CAM_SPEED;
         if (camera_y <= SCROLL_CAM_Y) {
             camera_y = SCROLL_CAM_Y;
         }        
-    } else if (camera_y < SCROLL_CAM_Y) {
+        } else if (camera_y < SCROLL_CAM_Y) {
         // Move down
         camera_y += SCROLL_CAM_SPEED;
         if (camera_y >= SCROLL_CAM_Y) {
@@ -265,21 +268,21 @@ uint8_t transition_player_to(void) BANKED {
         if (oldPlayerPosX <= newPlayerPosX) {
             oldPlayerPosX = newPlayerPosX;
         }
-    } else if (oldPlayerPosX < newPlayerPosX) {
+        } else if (oldPlayerPosX < newPlayerPosX) {
         // Move right
         oldPlayerPosX += SCROLL_PLAYER_SPEED;
         if (oldPlayerPosX >= newPlayerPosX) {
             oldPlayerPosX = newPlayerPosX;
         }        
     }
-
+    
     if (oldPlayerPosY > newPlayerPosY) {
         // Move up
         oldPlayerPosY -= SCROLL_PLAYER_SPEED;
         if (oldPlayerPosY <= newPlayerPosY) {
             oldPlayerPosY = newPlayerPosY;
         }        
-    } else if (oldPlayerPosY < newPlayerPosY) {
+        } else if (oldPlayerPosY < newPlayerPosY) {
         // Move down
         oldPlayerPosY += SCROLL_PLAYER_SPEED;
         if (oldPlayerPosY >= newPlayerPosY) {

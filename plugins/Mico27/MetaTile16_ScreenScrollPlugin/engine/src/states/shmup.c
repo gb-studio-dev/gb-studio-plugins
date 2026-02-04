@@ -267,12 +267,22 @@ void shmup_update(void) BANKED {
                 tile = tile_col_test_range_x(COLLISION_TOP, tile_y, tile_start, tile_end);
                 if (tile) {
                     PLAYER.pos.y = TILE_TO_SUBPX(tile_y) - EXCLUSIVE_OFFSET(PLAYER.bounds.bottom);
+#ifdef ENABLE_DOWN_COLLISION_METATILE
+                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
+                } else {
+                    reset_collision_cache(DIR_DOWN);		
+#endif 
                 }
             } else { // Moving up
                 UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
                 tile = tile_col_test_range_x(COLLISION_BOTTOM, tile_y, tile_start, tile_end);
                 if (tile) {
                     PLAYER.pos.y = TILE_TO_SUBPX(tile_y + 1) - PLAYER.bounds.top;
+#ifdef ENABLE_UP_COLLISION_METATILE
+                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
+                } else {
+                    reset_collision_cache(DIR_UP);		
+#endif 
                 }
             }
         }
@@ -286,12 +296,22 @@ void shmup_update(void) BANKED {
                 tile = tile_col_test_range_y(COLLISION_LEFT, tile_x, tile_start, tile_end);
                 if (tile) {
                     PLAYER.pos.x = TILE_TO_SUBPX(tile_x) - EXCLUSIVE_OFFSET(PLAYER.bounds.right);
+#ifdef ENABLE_RIGHT_COLLISION_METATILE
+                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
+                } else {
+                    reset_collision_cache(DIR_RIGHT);		
+#endif 
                 }
             } else { // Moving left
                 UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
                 tile = tile_col_test_range_y(COLLISION_RIGHT, tile_x, tile_start, tile_end);
                 if (tile) {
                     PLAYER.pos.x = TILE_TO_SUBPX(tile_x + 1) - PLAYER.bounds.left;
+#ifdef ENABLE_LEFT_COLLISION_METATILE
+                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
+                } else {
+                    reset_collision_cache(DIR_LEFT);		
+#endif 
                 }
             }
         }
@@ -307,6 +327,13 @@ void shmup_update(void) BANKED {
                 shooter_reached_end = TRUE;
                 camera_x = shooter_dest;
             }
+            // Sync camera subpixels with player to prevent visual jitter
+            // (only when player isn't moving horizontally)
+            IF_FREE_MOVEMENT({
+                if (!player_moving || angle == ANGLE_0DEG || angle == ANGLE_180DEG) {
+                    camera_x = SUBPX_SNAP_PX(camera_x) | SUBPX_PX_REMAINDER(PLAYER.pos.x);
+                }
+            })
         } else if (shooter_direction == DIR_RIGHT) {
             IF_FREE_MOVEMENT(camera_x += shooter_scroll_speed);
             PLAYER.pos.x += shooter_scroll_speed;
@@ -314,6 +341,13 @@ void shmup_update(void) BANKED {
                 shooter_reached_end = TRUE;
                 camera_x = shooter_dest;
             }
+            // Sync camera subpixels with player to prevent visual jitter
+            // (only when player isn't moving horizontally)
+            IF_FREE_MOVEMENT({
+                if (!player_moving || angle == ANGLE_0DEG || angle == ANGLE_180DEG) {
+                    camera_x = SUBPX_SNAP_PX(camera_x) | SUBPX_PX_REMAINDER(PLAYER.pos.x);
+                }
+            })
         } else if (shooter_direction == DIR_UP) {
             IF_FREE_MOVEMENT(camera_y -= shooter_scroll_speed);
             PLAYER.pos.y -= shooter_scroll_speed;
@@ -321,6 +355,13 @@ void shmup_update(void) BANKED {
                 shooter_reached_end = TRUE;
                 camera_y = shooter_dest;
             }
+            // Sync camera subpixels with player to prevent visual jitter
+            // (only when player isn't moving vertically)
+            IF_FREE_MOVEMENT({
+                if (!player_moving || angle == ANGLE_90DEG || angle == ANGLE_270DEG) {
+                    camera_y = SUBPX_SNAP_PX(camera_y) | SUBPX_PX_REMAINDER(PLAYER.pos.y);
+                }
+            })
         } else {
             IF_FREE_MOVEMENT(camera_y += shooter_scroll_speed);
             PLAYER.pos.y += shooter_scroll_speed;
@@ -328,16 +369,14 @@ void shmup_update(void) BANKED {
                 shooter_reached_end = TRUE;
                 camera_y = shooter_dest;
             }
+            // Sync camera subpixels with player to prevent visual jitter
+            // (only when player isn't moving vertically)
+            IF_FREE_MOVEMENT({
+                if (!player_moving || angle == ANGLE_90DEG || angle == ANGLE_270DEG) {
+                    camera_y = SUBPX_SNAP_PX(camera_y) | SUBPX_PX_REMAINDER(PLAYER.pos.y);
+                }
+            })
         }
-
-        // Sync camera subpixels with player to prevent visual jitter
-        // (only when player isn't moving)
-        IF_FREE_MOVEMENT({
-            if (!player_moving) {
-                camera_x = SUBPX_SNAP_PX(camera_x) | SUBPX_PX_REMAINDER(PLAYER.pos.x);
-                camera_y = SUBPX_SNAP_PX(camera_y) | SUBPX_PX_REMAINDER(PLAYER.pos.y);
-            }
-        })
     }
 
     // Check for collisions caused by auto-scroll
@@ -353,6 +392,13 @@ void shmup_update(void) BANKED {
                         PLAYER.pos.x = TILE_TO_SUBPX(tile_x) - EXCLUSIVE_OFFSET(PLAYER.bounds.right);
                     }
                 })
+#ifdef ENABLE_SHMUP_RIGHT_COLLISION_METATILE
+                if (tile) {
+                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
+                } else {
+                    reset_collision_cache(DIR_RIGHT);	
+                }                    
+#endif 
             } else { // DIR_LEFT
                 UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
                 tile = tile_col_test_range_y(COLLISION_RIGHT, tile_x, tile_start, tile_end);
@@ -361,6 +407,13 @@ void shmup_update(void) BANKED {
                         PLAYER.pos.x = TILE_TO_SUBPX(tile_x + 1) - PLAYER.bounds.left;
                     }
                 })
+#ifdef ENABLE_SHMUP_LEFT_COLLISION_METATILE
+                if (tile) {
+                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
+                } else {
+                    reset_collision_cache(DIR_LEFT);	
+                }                    
+#endif 
             }
         } else {
             tile_start = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
@@ -373,6 +426,13 @@ void shmup_update(void) BANKED {
                         PLAYER.pos.y = TILE_TO_SUBPX(tile_y) - EXCLUSIVE_OFFSET(PLAYER.bounds.bottom);
                     }
                 })
+#ifdef ENABLE_SHMUP_DOWN_COLLISION_METATILE
+                if (tile) {
+                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
+                } else {
+                    reset_collision_cache(DIR_DOWN);	
+                }                    
+#endif 
             } else { // DIR_UP
                 UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
                 tile = tile_col_test_range_x(COLLISION_BOTTOM, tile_y, tile_start, tile_end);
@@ -381,6 +441,13 @@ void shmup_update(void) BANKED {
                         PLAYER.pos.y = TILE_TO_SUBPX(tile_y + 1) - PLAYER.bounds.top;
                     }
                 })
+#ifdef ENABLE_SHMUP_UP_COLLISION_METATILE
+                if (tile) {
+                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
+                } else {
+                    reset_collision_cache(DIR_UP);	
+                }                    
+#endif 
             }
         }
     }    
@@ -444,7 +511,9 @@ void shmup_update(void) BANKED {
             return;
         }
 #endif
+#ifdef ENABLE_SHMUP_ENTER_METATILE
 		metatile_overlap_at_intersection(&PLAYER.bounds, &PLAYER.pos);
+#endif
     } else {
         // Check for actor collisions on even frames
         hit_actor = actor_overlapping_player();

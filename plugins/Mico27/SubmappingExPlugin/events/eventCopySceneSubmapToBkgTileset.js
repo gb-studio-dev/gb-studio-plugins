@@ -191,84 +191,22 @@ export const fields = [
 ];
 
 export const compile = (input, helpers) => {
-  const { options, _callNative, _stackPushConst, _rpn, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue } = helpers;
-  
-  const tmp0 = _declareLocal("tmp0", 1, true);
-  const tmp1 = _declareLocal("tmp1", 1, true);
-  const tmp2 = _declareLocal("tmp2", 1, true);
-  const tmp3 = _declareLocal("tmp3", 1, true);
-  const tmp4 = _declareLocal("tmp4", 1, true);
-  const tmp5 = _declareLocal("tmp5", 1, true);  
-  
-  
+  const { options, _callNative, _rpn, _stackPushScriptValue, _stackPushConst, _stackPop, _addComment } = helpers;
+    
   _addComment("Copy scene submap to background tileset");
   
-  variableSetToScriptValue(tmp0, input.source_x);
-  variableSetToScriptValue(tmp1, input.source_y);
-   _rpn()
-		  .ref(tmp1).int16(256).operator(".MUL")		// (source_y << 8) | source_x
-		  .ref(tmp0)        						      
-          .operator(".B_OR")
-          .refSet(tmp0)
-		  .stop();
-  
-  
-  
-  
-  variableSetToScriptValue(tmp1, input.dest_x);
-  variableSetToScriptValue(tmp2, input.dest_y);
-  
-   _rpn()
-		  .ref(tmp2).int16(256).operator(".MUL")		// (dest_y << 8) | dest_x
-		  .ref(tmp1)        						      
-          .operator(".B_OR")
-          .refSet(tmp1)
-		  .stop();
-  
-  variableSetToScriptValue(tmp2, input.w);
-  variableSetToScriptValue(tmp3, input.h);  
-  
-  _rpn()
-		  .ref(tmp3).int16(256).operator(".MUL")		// (h << 8) | w
-		  .ref(tmp2)        						      
-          .operator(".B_OR")
-          .refSet(tmp2)
-		  .stop();
-		  
-  if (input.copy_attr === "overlay"){
-	variableSetToScriptValue(tmp3, input.overlay_x);
-	variableSetToScriptValue(tmp4, input.overlay_y);  
-  
-	_rpn()
-		  .ref(tmp4).int16(256).operator(".MUL")		// (overlay_y << 8) | overlay_x
-		  .ref(tmp3)        						      
-          .operator(".B_OR")
-          .refSet(tmp3)
-		  .stop();
-	
-		  
-  }
-  
   if (input.use_far_ptr){
-	variableSetToScriptValue(tmp4, input.scene_bank);
-	variableSetToScriptValue(tmp5, input.scene_ptr);	
-  }
-  
-  
-		  
-  if (input.use_far_ptr){
-	  _stackPush(tmp5);
-	  _stackPush(tmp4);
+    _stackPushScriptValue(input.scene_ptr);
+    _stackPushScriptValue(input.scene_bank);
   } else {
-	const { scenes } = options;
+    const { scenes } = options;
 	const scene = scenes.find((s) => s.id === input.sceneId);
 	if (!scene) {
 		return;
 	}
-	_stackPushConst(`_${scene.symbol}`);
+    _stackPushConst(`_${scene.symbol}`);
 	_stackPushConst(`___bank_${scene.symbol}`); 
   }
-  
   if (input.copy_attr === "background"){
 	  _stackPushConst(1);
   } else if (input.copy_attr === "overlay"){
@@ -276,12 +214,40 @@ export const compile = (input, helpers) => {
   } else {
 	  _stackPushConst(0);
   }
-  _stackPush(tmp3);
-  _stackPush(tmp2);
-  _stackPush(tmp1);
-  _stackPush(tmp0);
-  		
+  if (input.copy_attr === "overlay"){
+    _stackPushScriptValue(input.overlay_x);
+    _stackPushScriptValue(input.overlay_y); 
+  } else {
+    _stackPushConst(0);
+    _stackPushConst(0);
+  }
+  _stackPushScriptValue(input.w);
+  _stackPushScriptValue(input.h);
+  _stackPushScriptValue(input.dest_x);
+  _stackPushScriptValue(input.dest_y);
+  _stackPushScriptValue(input.source_x);
+  _stackPushScriptValue(input.source_y);
+  
+  _rpn()  .ref(".ARG6").int16(256).operator(".MUL")		// (overlay_y << 8) | overlay_x
+		  .ref(".ARG7")        						      
+          .operator(".B_OR")
+          .refSet(".ARG7")
+		  .ref(".ARG4").int16(256).operator(".MUL")		// (h << 8) | w 
+		  .ref(".ARG5")        						      
+          .operator(".B_OR")
+          .refSet(".ARG6")
+		  .ref(".ARG2").int16(256).operator(".MUL")		// (dest_y << 8) | dest_x
+		  .ref(".ARG3")       							       
+          .operator(".B_OR")
+          .refSet(".ARG5")
+		  .ref(".ARG0").int16(256).operator(".MUL")     // (source_y << 8) | source_x
+		  .ref(".ARG1")       							        
+          .operator(".B_OR")
+          .refSet(".ARG4")
+          .stop();
+          
+  _stackPop(4);  		
   _callNative("copy_background_submap_to_tileset");
-  _stackPop(7);    
+  _stackPop(7);  
   
 };

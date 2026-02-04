@@ -5,6 +5,6 @@
   "url": "https://github.com/Mico27/gbs-ReserveSpriteTilesPlugin",
   "description": "Mark an actor to reserve a specified amount of tile space in the tileset VRAM. Useful if you are changing spritesheet via GBVM without having to use the change spritesheet event.",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "gbsVersion": ">=4.2.0"
 }

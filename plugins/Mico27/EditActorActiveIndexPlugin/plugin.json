@@ -5,6 +5,6 @@
   "url": "https://github.com/Mico27/gbs-EditActorActiveIndexPlugin",
   "description": "Allows editing the order of the actors in the active actors list used for rendering/OAM order.\nWARNING: this plugin modifies the following engine files:\n- actor.c\nAny other plugin that modifies any of these files will not be compatible with this plugin unless the files are manually merged.",
   "license": "MIT",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "gbsVersion": ">=4.2.0"
 }
