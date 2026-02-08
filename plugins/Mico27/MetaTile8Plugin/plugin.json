@@ -3,8 +3,8 @@
   "name": "Metatile (8px) Plugin",
   "author": "Mico27",
   "url": "https://github.com/Mico27/gbs-MetatilePlugin",
-  "description": "Integrates the concept of metatiles in gbstudio (8px version)",
+  "description": "Integrates the concept of metatiles in gbstudio (8px version)\nWARNING: this plugin modifies the following engine files:\n- collision.h\n- data_manager.h\n- load_save.h\n- projectiles.h\n- scroll.h\n- vm.i\n- vm_exceptions.h\n- adventure.h\n- platform.h\n- pointnclick.h\n- shmup.h\n- topdown.h\n- collision.c\n- core.c\n- data_manager.c\n- load_save.c\n- scroll.c\n- vm_scene.c\n- adventure.c\n- platform.c\n- pointnclick.c\n- shmup.c\n- topdown.c\nAny other plugin that modifies any of these files will not be compatible with this plugin unless the files are manually merged.",
   "license": "MIT",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "gbsVersion": ">=4.2.0"
 }

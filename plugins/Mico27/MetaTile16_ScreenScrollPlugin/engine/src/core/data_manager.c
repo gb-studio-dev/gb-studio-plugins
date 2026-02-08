@@ -16,7 +16,10 @@
 #include "data/spritesheet_none.h"
 #include "data/data_bootstrap.h"
 #include "scene_transition.h"
+#include "meta_tiles.h"
+#include "scene_stack_ex.h"
 #include "macro.h"
+
 
 #define ALLOC_BKG_TILES_TOWARDS_SPR
 
@@ -50,6 +53,7 @@ const far_ptr_t spritesheet_none_far = TO_FAR_PTR_T(spritesheet_none);
 
 scene_stack_item_t scene_stack[SCENE_STACK_SIZE];
 scene_stack_item_t * scene_stack_ptr;
+UBYTE scene_stack_count;
 
 UBYTE scene_sprites_base_tiles[MAX_SCENE_SPRITES];
 
@@ -57,16 +61,17 @@ void load_init(void) BANKED {
     actors_len = 0;
     player_sprite_len = 0;
     scene_stack_ptr = scene_stack;
+    scene_stack_count = 0;
 }
 
 void load_bkg_tileset(const tileset_t* tiles, UBYTE bank) BANKED {
 	#ifdef DISABLE_TILESET_LOAD_ON_TRANSITION
-	if ((!bank) || (!tiles) || is_transitioning_scene) return;    
-	#else
-	if ((!bank) || (!tiles)) return;
-	#endif
+        if ((!bank) || (!tiles) || is_transitioning_scene) return;    
+        #else
+        if ((!bank) || (!tiles)) return;
+    #endif
     UWORD n_tiles = ReadBankedUWORD(&(tiles->n_tiles), bank);
-
+    
     // load first background chunk, align to zero tile
     UBYTE * data = tiles->tiles;
     if (n_tiles < 128) {
@@ -75,18 +80,18 @@ void load_bkg_tileset(const tileset_t* tiles, UBYTE bank) BANKED {
     }
     SetBankedBkgData(0, 128, data, bank);
     n_tiles -= 128; data += 128 * 16;
-
+    
     // load second background chunk
     if (n_tiles < 128) {
         if (n_tiles < 65) {
             #ifdef ALLOC_BKG_TILES_TOWARDS_SPR
                 // new allocation style, align to 192-th tile
                 if ((UBYTE)n_tiles) SetBankedBkgData(192 - n_tiles, n_tiles, data, bank);
-            #else
+                #else
                 // old allocation style, align to 128-th tile
                 if ((UBYTE)n_tiles) SetBankedBkgData(128, n_tiles, data, bank);
             #endif
-        } else {
+            } else {
             // if greater than 64 allow overflow into UI, align to 128-th tile
             if ((UBYTE)n_tiles) SetBankedBkgData(128, n_tiles, data, bank);
         }
@@ -94,7 +99,7 @@ void load_bkg_tileset(const tileset_t* tiles, UBYTE bank) BANKED {
     }
     SetBankedBkgData(128, 128, data, bank);
     n_tiles -= 128; data += 128 * 16;
-
+    
     // if more than 256 - then it's a 360-tile logo, load rest to sprite area
     if ((UBYTE)n_tiles) SetBankedSpriteData(0, n_tiles, data, bank);
 }
@@ -102,28 +107,28 @@ void load_bkg_tileset(const tileset_t* tiles, UBYTE bank) BANKED {
 void load_background(const background_t* background, UBYTE bank) BANKED {
     background_t bkg;
     MemcpyBanked(&bkg, background, sizeof(bkg), bank);
-
+    
     image_bank = bkg.tilemap.bank;
     image_ptr = bkg.tilemap.ptr;
-
+    
     image_attr_bank = bkg.cgb_tilemap_attr.bank;
     image_attr_ptr = bkg.cgb_tilemap_attr.ptr;
-
+    
     image_tile_width = bkg.width;
     image_tile_height = bkg.height;
     image_width = TILE_TO_PX(image_tile_width);
     image_width_subpx = PX_TO_SUBPX(image_width);
     image_height = TILE_TO_PX(image_tile_height);
     image_height_subpx = PX_TO_SUBPX(image_height);
-
+    
     load_bkg_tileset(bkg.tileset.ptr, bkg.tileset.bank);
-#ifdef CGB
-    if ((_is_CGB) && (bkg.cgb_tileset.ptr)) {
-        VBK_REG = 1;
-        load_bkg_tileset(bkg.cgb_tileset.ptr, bkg.cgb_tileset.bank);
-        VBK_REG = 0;
-    }
-#endif
+    #ifdef CGB
+        if ((_is_CGB) && (bkg.cgb_tileset.ptr)) {
+            VBK_REG = 1;
+            load_bkg_tileset(bkg.cgb_tileset.ptr, bkg.cgb_tileset.bank);
+            VBK_REG = 0;
+        }
+    #endif
 }
 
 inline UBYTE load_sprite_tileset(UBYTE base_tile, const tileset_t * tileset, UBYTE bank) {
@@ -137,17 +142,17 @@ UBYTE load_sprite(UBYTE sprite_offset, const spritesheet_t * sprite, UBYTE bank)
     far_ptr_t data;
     ReadBankedFarPtr(&data, (void *)&sprite->tileset, bank);
     UBYTE n_tiles = load_sprite_tileset(sprite_offset, data.ptr, data.bank);
-#ifdef CGB
-    if (_is_CGB) {
-        ReadBankedFarPtr(&data, (void *)&sprite->cgb_tileset, bank);
-        if (data.ptr) {
-            VBK_REG = 1;
-            UBYTE n_cgb_tiles = load_sprite_tileset(sprite_offset, data.ptr, data.bank);
-            VBK_REG = 0;
-            if (n_cgb_tiles > n_tiles) return n_cgb_tiles;
+    #ifdef CGB
+        if (_is_CGB) {
+            ReadBankedFarPtr(&data, (void *)&sprite->cgb_tileset, bank);
+            if (data.ptr) {
+                VBK_REG = 1;
+                UBYTE n_cgb_tiles = load_sprite_tileset(sprite_offset, data.ptr, data.bank);
+                VBK_REG = 0;
+                if (n_cgb_tiles > n_tiles) return n_cgb_tiles;
+            }
         }
-    }
-#endif
+    #endif
     return n_tiles;
 }
 
@@ -176,14 +181,14 @@ UBYTE do_load_palette(palette_entry_t * dest, const palette_t * palette, UBYTE b
 inline void load_bkg_palette(const palette_t * palette, UBYTE bank) {
     UBYTE mask = do_load_palette(BkgPalette, palette, bank);
     DMG_palette[0] = ReadBankedUBYTE(palette->palette, bank);
-#ifdef SGB
-    if (_is_SGB) {
-        UBYTE sgb_palettes = SGB_PALETTES_NONE;
-        if (mask & 0b00110000) sgb_palettes |= SGB_PALETTES_01;
-        if (mask & 0b11000000) sgb_palettes |= SGB_PALETTES_23;
-        SGBTransferPalettes(sgb_palettes);
-    }
-#endif
+    #ifdef SGB
+        if (_is_SGB) {
+            UBYTE sgb_palettes = SGB_PALETTES_NONE;
+            if (mask & 0b00110000) sgb_palettes |= SGB_PALETTES_01;
+            if (mask & 0b11000000) sgb_palettes |= SGB_PALETTES_23;
+            SGBTransferPalettes(sgb_palettes);
+        }
+    #endif
 }
 
 inline void load_sprite_palette(const palette_t * palette, UBYTE bank) {
@@ -196,70 +201,70 @@ inline void load_sprite_palette(const palette_t * palette, UBYTE bank) {
 UBYTE load_scene(const scene_t * scene, UBYTE bank, UBYTE init_data) BANKED {
     UBYTE i;
     scene_t scn;
-
+    
     MemcpyBanked(&scn, scene, sizeof(scn), bank);
-
+    
     current_scene.bank  = bank;
     current_scene.ptr   = (void *)scene;
 	
-	scene_transition_reset();
-
     // Load scene
     scene_type      = scn.type;
     actors_len      = MIN(scn.n_actors + 1,     MAX_ACTORS);
     triggers_len    = MIN(scn.n_triggers,       MAX_TRIGGERS);
     projectiles_len = MIN(scn.n_projectiles,    MAX_PROJECTILE_DEFS);
     sprites_len     = MIN(scn.n_sprites,        MAX_SCENE_SPRITES);
-
+    
     collision_bank  = scn.collisions.bank;
     collision_ptr   = scn.collisions.ptr;
-
+    
 	#ifndef DISABLE_UI_TILESET_LOAD
-    // Load UI tiles, they may be overwritten by the following load_background()
-    ui_load_tiles();
-	#endif
-
+        // Load UI tiles, they may be overwritten by the following load_background()
+        ui_load_tiles();
+    #endif
+    
     // Load background + tiles
     load_background(scn.background.ptr, scn.background.bank);
-
+    
     load_bkg_palette(scn.palette.ptr, scn.palette.bank);
     load_sprite_palette(scn.sprite_palette.ptr, scn.sprite_palette.bank);
-
+    
     // Copy parallax settings
     memcpy(&parallax_rows, &scn.parallax_rows, sizeof(parallax_rows));
     if (scn.parallax_rows[0].next_y == 0) {
         scene_LCD_type = (scene_type == SCENE_TYPE_LOGO) ? LCD_fullscreen : LCD_simple;
-    } else {
+        } else {
         scene_LCD_type = LCD_parallax;
     }
-
+    
     scroll_x_min = scn.scroll_bounds.left;
     scroll_x_max = scn.scroll_bounds.right;
     scroll_y_min = scn.scroll_bounds.top;
     scroll_y_max = scn.scroll_bounds.bottom;
-
+    
     if (scene_type != SCENE_TYPE_LOGO) {
         // Load player
-#ifdef DISABLE_PLAYER_SPRITE_LOAD_ON_TRANSITION
-		if (is_transitioning_scene){
-			allocated_sprite_tiles = player_sprite_len;
-		} else {
-#endif
+        #ifdef DISABLE_PLAYER_SPRITE_LOAD_ON_TRANSITION
+            if (is_transitioning_scene){
+                allocated_sprite_tiles = player_sprite_len;
+                } else {
+            #endif
 			PLAYER.sprite = scn.player_sprite;
 			UBYTE n_loaded = load_sprite(PLAYER.base_tile = 0, scn.player_sprite.ptr, scn.player_sprite.bank);
 			allocated_sprite_tiles = player_sprite_len = (n_loaded > scn.reserve_tiles) ? n_loaded : scn.reserve_tiles;
-			load_animations(scn.player_sprite.ptr, scn.player_sprite.bank, ANIM_SET_DEFAULT, PLAYER.animations);
-			load_bounds(scn.player_sprite.ptr, scn.player_sprite.bank, &PLAYER.bounds);
-#ifdef DISABLE_PLAYER_SPRITE_LOAD_ON_TRANSITION
-		}
-#endif
-    } else {
+            if (!vm_pop_scene_stack_state) {
+                load_animations(scn.player_sprite.ptr, scn.player_sprite.bank, ANIM_SET_DEFAULT, PLAYER.animations);
+                load_bounds(scn.player_sprite.ptr, scn.player_sprite.bank, &PLAYER.bounds);
+            }
+            #ifdef DISABLE_PLAYER_SPRITE_LOAD_ON_TRANSITION
+            }
+        #endif
+        } else {
         // no player on logo, but still some little amount of actors may be present
         PLAYER.base_tile = allocated_sprite_tiles = 0x68;
         PLAYER.sprite = spritesheet_none_far;
         memset(PLAYER.animations, 0, sizeof(PLAYER.animations));
     }
-
+    
     // Load sprites
     if (sprites_len != 0) {
         far_ptr_t * scene_sprite_ptrs = scn.sprites.ptr;
@@ -272,25 +277,25 @@ UBYTE load_scene(const scene_t * scene, UBYTE bank, UBYTE init_data) BANKED {
             scene_sprite_ptrs++;
         }
     }
-
+    
     if (init_data) {
         camera_reset();
-
+        
         // Copy scene player hit scripts to player actor
         memcpy(&PLAYER.script, &scn.script_p_hit1, sizeof(far_ptr_t));
-
+        
         player_moving = FALSE;
-
+        
         // Load actors
         actors_active_head = NULL;
         actors_inactive_head = NULL;
-
+        
         // Add player to inactive, then activate
         CLR_FLAG(PLAYER.flags, ACTOR_FLAG_ACTIVE);
         actors_active_tail = &PLAYER;
         DL_PUSH_HEAD(actors_inactive_head, actors_active_tail);
         activate_actor(&PLAYER);
-
+        
         // Add other actors, activate pinned
         if (actors_len != 0) {
             actor_t * actor = actors + 1;
@@ -301,7 +306,7 @@ UBYTE load_scene(const scene_t * scene, UBYTE bank, UBYTE init_data) BANKED {
                     actor->base_tile = allocated_sprite_tiles;
                     UBYTE n_loaded = load_sprite(allocated_sprite_tiles, actor->sprite.ptr, actor->sprite.bank);
                     allocated_sprite_tiles += (n_loaded > actor->reserve_tiles) ? n_loaded : actor->reserve_tiles;
-                } else {
+                    } else {
                     // resolve and set base_tile for each actor
                     UBYTE idx = IndexOfFarPtr(scn.sprites.ptr, scn.sprites.bank, sprites_len, &actor->sprite);
                     actor->base_tile = (idx < sprites_len) ? scene_sprites_base_tiles[idx] : 0;
@@ -310,12 +315,11 @@ UBYTE load_scene(const scene_t * scene, UBYTE bank, UBYTE init_data) BANKED {
                 // add to inactive list by default
                 CLR_FLAG(actor->flags, ACTOR_FLAG_ACTIVE);
                 DL_PUSH_HEAD(actors_inactive_head, actor);
-
+                
                 // activate if the actor is pinned or persistent
                 if (CHK_FLAG(actor->flags, ACTOR_FLAG_PINNED | ACTOR_FLAG_PERSISTENT)) activate_actor(actor);
             }
-        }
-
+        }        
     } else {
         // reload sprite data for the unique actors
         if (actors_len != 0) {
@@ -325,36 +329,43 @@ UBYTE load_scene(const scene_t * scene, UBYTE bank, UBYTE init_data) BANKED {
                 if (actor->reserve_tiles) load_sprite(actor->base_tile, actor->sprite.ptr, actor->sprite.bank);
             }
         }
-        // set actors idle
-        actor_t *actor = actors_active_head;
-        while (actor) {
-            actor_set_anim_idle(actor);
-            actor = actor->next;
+        if (!vm_pop_scene_stack_state) {
+            // set actors idle
+            actor_t *actor = actors_active_head;
+            while (actor) {
+                actor_set_anim_idle(actor);
+                actor = actor->next;
+            }
         }
     }
-
-    // Init and Load projectiles
-    projectiles_init();
-    if (projectiles_len  != 0) {
-        projectile_def_t * projectile_def = projectile_defs;
-        MemcpyBanked(projectile_def, scn.projectiles.ptr, sizeof(projectile_def_t) * projectiles_len, scn.projectiles.bank);
-        for (i = projectiles_len; i != 0; i--, projectile_def++) {
-            // resolve and set base_tile for each projectile
-            UBYTE idx = IndexOfFarPtr(scn.sprites.ptr, scn.sprites.bank, sprites_len, &projectile_def->sprite);
-            projectile_def->base_tile = (idx < sprites_len) ? scene_sprites_base_tiles[idx] : 0;
+    if (!vm_pop_scene_stack_state) { 
+        // Init and Load projectiles
+        projectiles_init();
+        if (projectiles_len  != 0) {
+            projectile_def_t * projectile_def = projectile_defs;
+            MemcpyBanked(projectile_def, scn.projectiles.ptr, sizeof(projectile_def_t) * projectiles_len, scn.projectiles.bank);
+            for (i = projectiles_len; i != 0; i--, projectile_def++) {
+                // resolve and set base_tile for each projectile
+                UBYTE idx = IndexOfFarPtr(scn.sprites.ptr, scn.sprites.bank, sprites_len, &projectile_def->sprite);
+                projectile_def->base_tile = (idx < sprites_len) ? scene_sprites_base_tiles[idx] : 0;
+            }
         }
     }
-
     // Load triggers
     if (triggers_len != 0) {
         MemcpyBanked(&triggers, scn.triggers.ptr, sizeof(trigger_t) * triggers_len, scn.triggers.bank);
     }
-
+    if (!vm_pop_scene_stack_state) { 
+        metatile_reset();
+        scene_transition_reset();
+    }
     scroll_reset();
+    scroll_offset_x = 0;
+    scroll_offset_y = 0;
     trigger_reset();
-
+    
     emote_actor = NULL;
-
+    
     if ((init_data) && (scn.script_init.ptr != NULL)) {
         return (script_execute(scn.script_init.bank, scn.script_init.ptr, 0, 0) != 0);
     }

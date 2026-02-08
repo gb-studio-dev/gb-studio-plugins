@@ -43,6 +43,8 @@ UBYTE pending_w_i;
 UBYTE current_row, new_row;
 UBYTE current_col, new_col;
 
+UBYTE scroll_render_disabled;
+
 UWORD bkg_address_offset;
 
 static FASTUBYTE _save_bank;
@@ -64,8 +66,6 @@ void scroll_reset(void) BANKED {
     pending_h_i     = 0;
     scroll_x = 0x400;
 	scroll_y = 0x400;
-	metatile_bank = 0;
-	metatile_attr_bank = 0;
 }
 
 void scroll_update(void) BANKED {
@@ -193,6 +193,8 @@ void scroll_render_rows(INT16 scroll_x, INT16 scroll_y, BYTE row_offset, BYTE n_
     pending_w_i = 0;
     pending_h_i = 0;
 	
+    if (scroll_render_disabled) return;
+    
     UBYTE x = MAX(0, PX_TO_TILE(scroll_x) - SCREEN_PAD_LEFT);
     UBYTE y = MAX(0, PX_TO_TILE(scroll_y) + row_offset);
 
@@ -209,6 +211,8 @@ void scroll_queue_row(UBYTE x, UBYTE y) {
         // render it now before starting next row        
         scroll_load_pending_row();
     }
+    
+    if (scroll_render_disabled) return;
 		
     // Don't queue rows past image height
     if (y >= image_tile_height) {
@@ -229,7 +233,9 @@ void scroll_queue_col(UBYTE x, UBYTE y) {
         // render it now before starting next column
         scroll_load_pending_col();
     }
-		
+	
+    if (scroll_render_disabled) return;
+    
     pending_h_x = x;
     pending_h_y = y;
     pending_h_i = MIN(SCREEN_TILE_REFRES_H, image_tile_height - y);	

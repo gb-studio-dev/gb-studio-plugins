@@ -25,6 +25,9 @@ unsigned char* metatile_ptr;
 UBYTE metatile_attr_bank;
 unsigned char* metatile_attr_ptr;
 
+UBYTE metatile_collision_bank;
+unsigned char* metatile_collision_ptr;
+
 UBYTE image_tile_width_bit;
 
 script_event_t metatile_events[METATILE_EVENTS_SIZE];
@@ -52,8 +55,30 @@ UBYTE collided_metatile_source;
 UBYTE metatile_collisionx_cache[4];
 UBYTE metatile_collisiony_cache[4];
 
-void vm_load_meta_tiles(SCRIPT_CTX * THIS) OLDCALL BANKED {
+void metatile_reset(void) BANKED{
+    metatile_bank = 0;
+    metatile_ptr = NULL;
+	metatile_attr_bank = 0;
+    metatile_attr_ptr = NULL;
+    metatile_collision_bank = 0;
+    metatile_collision_ptr = NULL;
+}
+
+void load_meta_tiles(void) BANKED{
+    MemcpyBanked(&sram_collision_data, metatile_collision_ptr, 256, metatile_collision_bank);	
+	image_tile_width_bit = 1;
+	UBYTE width = (image_tile_width - 1);
+	while(width >>= 1){
+		image_tile_width_bit++;
+	}	
+	for (UBYTE y = 0; y < image_tile_height; y++) {
+		MemcpyBanked(sram_map_data + METATILE_MAP_OFFSET(0, y), image_ptr + (UWORD)(y * image_tile_width), image_tile_width, image_bank);
+	}	
 	scroll_reset();
+	scroll_update();
+}
+
+void vm_load_meta_tiles(SCRIPT_CTX * THIS) OLDCALL BANKED {	
 	uint8_t scene_bank = *(uint8_t *) VM_REF_TO_PTR(FN_ARG0);
 	const scene_t * scene_ptr = *(scene_t **) VM_REF_TO_PTR(FN_ARG1);	
 	scene_t scn;
@@ -64,21 +89,9 @@ void vm_load_meta_tiles(SCRIPT_CTX * THIS) OLDCALL BANKED {
     metatile_ptr = bkg.tilemap.ptr;
     metatile_attr_bank = bkg.cgb_tilemap_attr.bank;
     metatile_attr_ptr = bkg.cgb_tilemap_attr.ptr;
-	
-	MemcpyBanked(&sram_collision_data, scn.collisions.ptr, 256, scn.collisions.bank);
-	
-	image_tile_width_bit = 1;
-	UBYTE width = (image_tile_width - 1);
-	while(width >>= 1){
-		image_tile_width_bit++;
-	}
-	
-	for (UBYTE y = 0; y < image_tile_height; y++) {
-		MemcpyBanked(sram_map_data + METATILE_MAP_OFFSET(0, y), image_ptr + (UWORD)(y * image_tile_width), image_tile_width, image_bank);
-	}
-	
-	
-	scroll_update();
+    metatile_collision_bank = scn.collisions.bank;
+    metatile_collision_ptr = scn.collisions.ptr;
+    load_meta_tiles();
 }
 
 void vm_replace_meta_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {

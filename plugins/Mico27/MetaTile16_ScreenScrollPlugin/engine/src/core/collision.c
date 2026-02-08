@@ -44,7 +44,7 @@ UBYTE tile_col_test_range_y(UBYTE tile_mask, UBYTE tx, UBYTE ty_start, UBYTE ty_
     if (tile_hit_x >= image_tile_width || tile_hit_y >= image_tile_height) {
       return (!scene_transition_enabled && (COLLISION_ALL & tile_mask)) ? COLLISION_ALL : 0;
     }    
-	if (metatile_bank) {			
+	if (metatile_collision_bank) {			
 		UBYTE inc = UBYTE_LESS_THAN(ty_start, ty_end);		
 		UBYTE tile;
 		while (TRUE) {
@@ -105,7 +105,7 @@ UBYTE tile_col_test_range_x(UBYTE tile_mask, UBYTE ty, UBYTE tx_start, UBYTE tx_
     if (tile_hit_x >= image_tile_width || tile_hit_y >= image_tile_height) {
       return (!scene_transition_enabled && (COLLISION_ALL & tile_mask)) ? COLLISION_ALL : 0;
     }
-	if (metatile_bank) {
+	if (metatile_collision_bank) {
 		UBYTE inc = UBYTE_LESS_THAN(tx_start, tx_end);		
 		UBYTE tile;
 		while (TRUE) {
