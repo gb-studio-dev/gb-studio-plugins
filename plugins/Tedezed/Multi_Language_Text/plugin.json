@@ -1,0 +1,14 @@
+{
+  "type": "eventsPlugin",
+  "name": "Multi Language Text",
+  "author": "Tedezed",
+  "url": "https://github.com/Tedezed/gb-studio-plugins",
+  "description": "Multi-Language text events",
+  "images": [
+    "screenshots/show_case.png",
+    "screenshots/test_scene.png"
+  ],
+  "license": "MIT",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}
