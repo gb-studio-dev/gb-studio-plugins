@@ -48,13 +48,19 @@ INT16 transitioning_player_pos_x;
 INT16 transitioning_player_pos_y;
 
 void enable_transition_to_scene(void) BANKED {
-	camera_settings &= ~(CAMERA_LOCK_FLAG);
+	//camera_settings &= ~(CAMERA_LOCK_FLAG);
 	//camera_x = SCROLL_CAM_X;
 	//camera_y = SCROLL_CAM_Y;
 	scene_transition_enabled = 1;
 }
 
 void scene_transition_reset(void) BANKED {
+    if (image_height < SCREENHEIGHT){
+        camera_settings &= ~(CAMERA_LOCK_Y_FLAG);
+    }
+    if (image_width < SCREENWIDTH){
+        camera_settings &= ~(CAMERA_LOCK_X_FLAG);
+    }
 	up_scene.bank = 0;
 	right_scene.bank = 0;
 	down_scene.bank = 0;
@@ -138,32 +144,32 @@ void transition_to_scene_modal(UBYTE direction) BANKED {
         }
 		wait_vbl_done();
 		do {
-			script_runner_update();	
-			
-			if (!VM_ISLOCKED()){
-				camera_arrived = transition_camera_to();
-				player_arrived = transition_player_to();
-            }
-			input_update();		
-			ui_update();
+            script_runner_update();	
             
-			toggle_shadow_OAM();
-			camera_update();
-			scroll_update();
-			actors_update();
+            if (!VM_ISLOCKED()){
+                camera_arrived = transition_camera_to();
+                player_arrived = transition_player_to();
+            }
+            input_update();		
+            ui_update();
+            
+            toggle_shadow_OAM();
+            camera_update();
+            scroll_update();
+            actors_update();
             actors_render();
-			if (projectiles_active_head) {
+            if (projectiles_active_head) {
                 projectiles_update();
                 projectiles_render();
             }
-			activate_shadow_OAM();
+            activate_shadow_OAM();
             
-			game_time++;
-			wait_vbl_done();
-			
-			if (camera_arrived && player_arrived) {				
-				scroll_reset();
-				is_transitioning_scene = 0;
+            game_time++;
+            wait_vbl_done();
+            
+            if (camera_arrived && player_arrived) {				
+                scroll_reset();
+                is_transitioning_scene = 0;
             }
         } while (is_transitioning_scene);
     }
@@ -184,7 +190,7 @@ void transition_load_scene(UBYTE scene_bank, const scene_t * scene, BYTE t_scrol
 	toggle_shadow_OAM();
 	actors_update();
 	actors_render();
-    projectiles_render();
+	projectiles_render();
 	activate_shadow_OAM();
 	wait_vbl_done();
 	

@@ -99,8 +99,6 @@ void scroll_reset(void) BANKED {
 	} else {
 		scroll_x = 0x400;
 		scroll_y = 0x400;	
-		metatile_bank = 0;
-		metatile_attr_bank = 0;	
 		bkg_offset_x = 0;
 		bkg_offset_y = 0;		
 	}	
