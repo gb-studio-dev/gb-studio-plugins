@@ -83,6 +83,7 @@ typedef struct meta_tiles_stack_item_t {
     unsigned char* metatile_attr_ptr;
     UBYTE metatile_collision_bank;
     unsigned char* metatile_collision_ptr;
+    UBYTE image_tile_width_bit;
 } meta_tiles_stack_item_t;
 
 typedef struct scene_stack_item_ex_t {
@@ -178,7 +179,8 @@ static void push_meta_tiles_stack_item(void){
     meta_tiles_stack_item->metatile_attr_bank = metatile_attr_bank;
     meta_tiles_stack_item->metatile_attr_ptr = metatile_attr_ptr;
     meta_tiles_stack_item->metatile_collision_bank = metatile_collision_bank;
-    meta_tiles_stack_item->metatile_collision_ptr = metatile_collision_ptr;    
+    meta_tiles_stack_item->metatile_collision_ptr = metatile_collision_ptr; 
+    meta_tiles_stack_item->image_tile_width_bit = image_tile_width_bit;
 }
 
 void push_scene_stack_ex(void) BANKED {
@@ -279,7 +281,8 @@ static void pop_meta_tiles_stack_item(void){
     metatile_attr_bank = meta_tiles_stack_item->metatile_attr_bank;
     metatile_attr_ptr = meta_tiles_stack_item->metatile_attr_ptr;
     metatile_collision_bank = meta_tiles_stack_item->metatile_collision_bank;
-    metatile_collision_ptr = meta_tiles_stack_item->metatile_collision_ptr;      
+    metatile_collision_ptr = meta_tiles_stack_item->metatile_collision_ptr;
+    image_tile_width_bit = meta_tiles_stack_item->image_tile_width_bit;
 }
 
 UBYTE pop_scene_stack_ex(void) BANKED {
