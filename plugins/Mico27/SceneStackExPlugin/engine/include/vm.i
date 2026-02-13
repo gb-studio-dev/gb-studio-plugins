@@ -133,6 +133,15 @@ OP_VM_JUMP         = 0x09
         .db OP_VM_JUMP, #>LABEL, #<LABEL
 .endm
 
+OP_VM_RATE_LIMIT_CONST = 0x1C
+;-- If the last execution of the same instruction was less than N frames ago, jump to the specified label.
+; @param N Minimum number of frames between two executions of the same instruction.
+; @param IDX Variable to store last call time.
+; @param LABEL Jump label.
+.macro VM_RATE_LIMIT_CONST, N, IDX, LABEL
+        .db OP_VM_RATE_LIMIT_CONST, #>LABEL, #<LABEL, #>IDX, #<IDX, #>N, #<N
+.endm
+
 OP_VM_CALL_FAR     = 0x0A
 ;-- Calls far routine (inter-bank call).
 ; @param BANK Bank number of the routine.
@@ -1460,27 +1469,41 @@ OP_VM_MUSIC_STOP        = 0x61
 .endm
 
 OP_VM_MUSIC_MUTE        = 0x62
+.MUTE_CH1               = 1
+.MUTE_DUTY1             = 1
+.MUTE_CH2               = 2
+.MUTE_DUTY2             = 2
+.MUTE_CH3               = 4
+.MUTE_WAVE              = 4
+.MUTE_CH4               = 8
+.MUTE_NOISE             = 8
 ;-- Mutes/unmutes music channels.
 ; @param MASK Mute Mask. The 4 lower bits represent the 4 audio channels.
 ;
-; | `MASK`   | Channel 1 | Channel 2 | Channel 3 | Channel 4 |
+; It is possible to use channel definitions as follows:
+;
+;   VM_MUSIC_MUTE ^/(.MUTE_DUTY1 | .MUTE_NOISE)/
+;
+; That is muting music on the DUTY 1 and NOISE channels. Alternatively, you may pick the MASK value from the table below for the required combination:
+;
+; | `MASK`   | `Noise`   | `Wave`    | `Duty 2`  | `Duty 1`  |
 ; | -------- | --------- | --------- | --------- | --------- |
-; | `0b0000` | Muted     | Muted     | Muted     | Muted     |
-; | `0b0001` | Muted     | Muted     | Muted     | Not Muted |
-; | `0b0010` | Muted     | Muted     | Not Muted | Muted     |
-; | `0b0011` | Muted     | Muted     | Not Muted | Not Muted |
-; | `0b0100` | Muted     | Not Muted | Muted     | Muted     |
-; | `0b0101` | Muted     | Not Muted | Muted     | Not Muted |
-; | `0b0110` | Muted     | Not Muted | Not Muted | Muted     |
-; | `0b0111` | Muted     | Not Muted | Not Muted | Not Muted |
-; | `0b1000` | Not Muted | Muted     | Muted     | Muted     |
-; | `0b1001` | Not Muted | Muted     | Muted     | Not Muted |
-; | `0b1010` | Not Muted | Muted     | Not Muted | Muted     |
-; | `0b1011` | Not Muted | Muted     | Not Muted | Not Muted |
-; | `0b1100` | Not Muted | Not Muted | Muted     | Muted     |
-; | `0b1101` | Not Muted | Not Muted | Muted     | Not Muted |
-; | `0b1110` | Not Muted | Not Muted | Not Muted | Muted     |
-; | `0b1111` | Not Muted | Not Muted | Not Muted | Not Muted |
+; | `0b0000` | Not muted | Not muted | Not muted | Not muted |
+; | `0b0001` | Not muted | Not muted | Not muted | Muted     |
+; | `0b0010` | Not muted | Not muted | Muted     | Not muted |
+; | `0b0011` | Not muted | Not muted | Muted     | Muted     |
+; | `0b0100` | Not muted | Muted     | Not muted | Not muted |
+; | `0b0101` | Not muted | Muted     | Not muted | Muted     |
+; | `0b0110` | Not muted | Muted     | Muted     | Not muted |
+; | `0b0111` | Not muted | Muted     | Muted     | Muted     |
+; | `0b1000` | Muted     | Not muted | Not muted | Not muted |
+; | `0b1001` | Muted     | Not muted | Not muted | Muted     |
+; | `0b1010` | Muted     | Not muted | Muted     | Not muted |
+; | `0b1011` | Muted     | Not muted | Muted     | Muted     |
+; | `0b1100` | Muted     | Muted     | Not muted | Not muted |
+; | `0b1101` | Muted     | Muted     | Not muted | Muted     |
+; | `0b1110` | Muted     | Muted     | Muted     | Not muted |
+; | `0b1111` | Muted     | Muted     | Muted     | Muted     |
 .macro VM_MUSIC_MUTE MASK
         .db OP_VM_MUSIC_MUTE, #<MASK
 .endm
@@ -1508,7 +1531,7 @@ OP_VM_SFX_PLAY          = 0x66
 ;-- Plays a sound effect asset.
 ; @param BANK Bank number of the effect.
 ; @param ADDR Address of the effect.
-; @param MASK Mute mask of the effect.
+; @param MASK Mute mask of the effect, same as in VM_MUSIC_MUTE.
 ; @param PRIO Priority of the sound effect. Effects with higher priority will cancel the ones with less priority:
 ;   `.SFX_PRIORITY_MINIMAL` - Minmium priority for playback.
 ;   `.SFX_PRIORITY_NORMAL`  - Normal priority for playback.

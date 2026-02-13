@@ -3,6 +3,7 @@
 #include "data/states_defines.h"
 #include "states/pointnclick.h"
 
+#include "sincos.h"
 #include "actor.h"
 #include "camera.h"
 #include "data_manager.h"

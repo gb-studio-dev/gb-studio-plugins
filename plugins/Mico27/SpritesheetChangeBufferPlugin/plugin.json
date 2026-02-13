@@ -5,6 +5,6 @@
   "url": "https://github.com/Mico27/gbs-SpritesheetChangeBufferPlugin",
   "description": "Actors that uses the set actor spritesheet event have reserved space in the tileset VRAM. When using that event, the updating of the tileset might not happen on the same frame as the update of the tiles in the OAM, which can result in garbled tiles for a brief moment. This plugin create a buffer in the tileset VRAM to prevent the display of that visual glitch, this however means that the reserved space in the tileset VRAM will be doubled for that actor.\nWARNING: this plugin modifies the following engine files:\n- actor.c\n- data_manager.c\n- vm_actor.c\n- gbs_types.h\nAny other plugin that modifies any of these files will not be compatible with this plugin unless the files are manually merged.",
   "license": "MIT",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "gbsVersion": ">=4.2.0"
 }
