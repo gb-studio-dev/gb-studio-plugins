@@ -1,16 +1,16 @@
-export const id = "EVENT_UI_ALT_DISPLAY_TEXT_OVERLAY";
-export const name = "Alt Draw Text To Overlay";
-export const groups = ["EVENT_GROUP_MISC"];
+const id = "EVENT_UI_ALT_DISPLAY_TEXT_OVERLAY";
+const name = "Alt Load and Display Text To Overlay";
+const groups = ["EVENT_GROUP_MISC"];
 
-export const autoLabel = (fetchArg) => {
-  return `Alt Draw Text To Overlay`;
+const autoLabel = (fetchArg) => {
+  return `Alt Load and Display Text To Overlay`;
 };
 
 const wrap8Bit = (val) => (256 + (val % 256)) % 256;
 
 const decOct = (dec) => wrap8Bit(dec).toString(8).padStart(3, "0");
 
-export const fields = [
+const fields = [
   {
     key: "text",
     type: "textarea",
@@ -36,7 +36,7 @@ export const fields = [
   },
 ];
 
-export const compile = (input, helpers) => {
+const compile = (input, helpers) => {
   const {
     appendRaw,
 	_callNative,
@@ -55,4 +55,20 @@ export const compile = (input, helpers) => {
 	  _callNative("ui_alt_display_text"); 	  
     });
     _addNL();  
+};
+
+module.exports = {
+  id,
+  name,
+  autoLabel,
+  groups,
+  fields,
+  compile,
+  waitUntilAfterInitFade: false,
+  helper: {
+    type: "textdraw",
+    text: "text",
+    x: "x",
+    y: "y",
+  },
 };

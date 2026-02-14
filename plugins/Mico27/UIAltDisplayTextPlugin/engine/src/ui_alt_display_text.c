@@ -175,7 +175,7 @@ void ui_alt_display_text(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	} while (!ui_alt_text_drawn);    
 }
 
-void ui_alt_display_dialogue(SCRIPT_CTX * THIS) OLDCALL BANKED {
+void ui_alt_display_dialogue_modal(SCRIPT_CTX * THIS) OLDCALL BANKED {
 	THIS;
 	INPUT_RESET;
     ui_alt_text_drawn = text_ff = FALSE;
@@ -213,4 +213,37 @@ void ui_alt_display_dialogue(SCRIPT_CTX * THIS) OLDCALL BANKED {
 		input_update();
 		
 	} while (!ui_alt_text_drawn);    
+}
+
+UBYTE ui_alt_display_dialogue(void * THIS, UBYTE start, UWORD * stack_frame) OLDCALL BANKED {
+    THIS;
+    UBYTE play_sound, speed_wait = FALSE;
+	if (start){
+        INPUT_RESET;
+        ui_alt_text_drawn = text_ff = FALSE;
+        ui_alt_current_text_speed = 0;        
+    }
+     // all drawn - nothing to do
+	if (!ui_alt_text_drawn) {
+		// too fast - wait
+		if ((text_ff_joypad) && (INPUT_A_OR_B_PRESSED)) {
+			text_ff = TRUE;
+		} else {
+			if (game_time & ui_alt_current_text_speed) {
+				speed_wait = TRUE;
+			}
+		}
+		// render next char
+		if (!speed_wait){
+			do {
+				play_sound = ui_alt_draw_text_buffer_char();
+			} while (((text_ff) || (text_draw_speed == 0)) && (!ui_alt_text_drawn));
+			// play sound
+			if ((play_sound) && (text_sound_bank != SFX_STOP_BANK)) music_play_sfx(text_sound_bank, text_sound_data, text_sound_mask, MUSIC_SFX_PRIORITY_NORMAL);
+		}
+				
+        ((SCRIPT_CTX *)THIS)->waitable = TRUE;
+        return FALSE;
+	}
+    return TRUE;      
 }

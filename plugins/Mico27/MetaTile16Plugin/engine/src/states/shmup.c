@@ -3,6 +3,7 @@
 #include "data/states_defines.h"
 #include "states/shmup.h"
 
+#include "sincos.h"
 #include "actor.h"
 #include "camera.h"
 #include "scroll.h"
