@@ -1,0 +1,69 @@
+{
+  "version": "4.2.0-e34",
+  "fields": [
+    {
+      "key": "REPLACE_PALETTE_0",
+      "label": "Replace Palette 1",
+      "group": "Gradient FX",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
+      "key": "REPLACE_PALETTE_1",
+      "label": "Replace Palette 2",
+      "group": "Gradient FX",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
+      "key": "REPLACE_PALETTE_2",
+      "label": "Replace Palette 3",
+      "group": "Gradient FX",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
+      "key": "REPLACE_PALETTE_3",
+      "label": "Replace Palette 4",
+      "group": "Gradient FX",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
+      "key": "REPLACE_PALETTE_4",
+      "label": "Replace Palette 5",
+      "group": "Gradient FX",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 0
+    },
+    {
+      "key": "REPLACE_PALETTE_5",
+      "label": "Replace Palette 6",
+      "group": "Gradient FX",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 0
+    },
+    {
+      "key": "REPLACE_PALETTE_6",
+      "label": "Replace Palette 7",
+      "group": "Gradient FX",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 0
+    },
+    {
+      "key": "REPLACE_PALETTE_7",
+      "label": "Replace Palette 8 (UI)",
+      "group": "Gradient FX",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 0
+    }
+  ]
+}

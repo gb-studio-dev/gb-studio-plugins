@@ -1,0 +1,11 @@
+{
+  "type": "enginePlugin",
+  "name": "Background Gradient FX",
+  "author": "Pau Tomàs",
+  "url": "https://github.com/pau-tomas/gbs-bg-background-gradient-plugin",
+  "license": "MIT",
+  "description": "An experimental GB Studio plugin that creates a gradient effect for scene backgrounds.\nWARNING: This plugin isn’t compatible with other features that use scanline interrupts. Features such as background text drawing, dialogue rendering on top, parallax scrolling, or Logo scenes may not work as expected across the entire project and not just in scenes where Background Gradient FX is enabled. Other plugins that rely on scanline interrupts are also unlikely to work properly.\nHow to Use:\n- Copy the Background Gradient FX folder into your project's plugin folder.\nUse the Init Background Gradient FX Colors event to set the gradient’s start and end colors.\nUse the Enable Background Gradient FX event to activate the effect.\nBy default, the plugin replaces the first color of Background Palettes 1–4 with the gradient color. You can change which palettes are replaced in the Gradient FX section of the Project Settings page.\nUse the Disable Background Gradient FX event to turn the effect off.",
+  "images": ["screenshots/gradientfx.png"],
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0"
+}
