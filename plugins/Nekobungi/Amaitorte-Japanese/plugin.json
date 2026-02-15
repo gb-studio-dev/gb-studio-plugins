@@ -2,7 +2,6 @@
 	"type": "assetPack",
 	"name": "Amaitorte Japanese Font",
 	"author": "Nekobungi Sumire",
-	"url": "https://amaitorte.jp/",
 	"description": "Amaitorte Japanese is a 7x7 pixel font containing Japanese hiragana, katakana, and alphanumeric characters.\n日本語のひらがな、カタカナと英数を含む7x7ピクセルのフォントです。どのようなゲームにでも汎用的に使えるオーソドックスな字形。パレットを利用した色変更（最大3色）機能付き。\nインストール後、プロジェクト設定のUI設定でデフォルトフォントに「Amaitorte Japanese」を選択し、セリフの途中で色を変えるには「!F」と入力します。文字の色は背景パレット8で設定可能です。",
 	"license": "OFL-1.1",
 	"images": [
