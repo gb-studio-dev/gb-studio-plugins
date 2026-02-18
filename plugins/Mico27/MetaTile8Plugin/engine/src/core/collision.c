@@ -105,10 +105,11 @@ UBYTE tile_col_test_range_x(UBYTE tile_mask, UBYTE ty, UBYTE tx_start, UBYTE tx_
       return COLLISION_ALL & tile_mask ? COLLISION_ALL : 0;
     }
 	if (metatile_collision_bank) {
+        UWORD metatile_y_offset = METATILE_Y_OFFSET(ty);
 		UBYTE inc = UBYTE_LESS_THAN(tx_start, tx_end);		
 		UBYTE tile;
 		while (TRUE) {
-			tile = sram_collision_data[sram_map_data[METATILE_MAP_OFFSET(tile_hit_x, ty)]];
+			tile = sram_collision_data[sram_map_data[(metatile_y_offset + tile_hit_x)]];
 			if (tile & tile_mask) {
 				return tile;
 			}

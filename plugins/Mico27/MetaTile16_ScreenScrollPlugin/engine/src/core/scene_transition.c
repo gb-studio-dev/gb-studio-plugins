@@ -132,14 +132,14 @@ void transition_to_scene_modal(UBYTE direction) BANKED {
 		wait_vbl_done();		
 		if (direction == DIRECTION_RIGHT){
 			scroll_x = (SUBPX_TO_PX(camera_x) - (SCREENWIDTH >> 1)) - 8;
-            } else if (direction == DIRECTION_DOWN){
+        } else if (direction == DIRECTION_DOWN){
 			if (image_height < SCREENHEIGHT){
-				scroll_render_rows(draw_scroll_x, draw_scroll_y, image_tile_height, PX_TO_TILE(SCREENHEIGHT - image_height));
+                scroll_render_rows(draw_scroll_x, draw_scroll_y, 0, PX_TO_TILE(SCREENHEIGHT - image_height));
             }
 			scroll_y = (SUBPX_TO_PX(camera_y) - (SCREENHEIGHT >> 1)) - 8;			
-            } else if (direction == DIRECTION_LEFT){
+        } else if (direction == DIRECTION_LEFT){
 			scroll_x = (SUBPX_TO_PX(camera_x) - (SCREENWIDTH >> 1));
-            } else if (direction == DIRECTION_UP){
+        } else if (direction == DIRECTION_UP){
 			scroll_y = (SUBPX_TO_PX(camera_y) - (SCREENHEIGHT >> 1)) + 8;
         }
 		wait_vbl_done();

@@ -16,8 +16,12 @@
 
 #define SRAM_MAP_WIDTH 16
 #define SRAM_MAP_HEIGHT 16
-#define METATILE_MAP_OFFSET(x,y)  (((y & 0xFE) << 3) + (x >> 1))
-#define TILE_MAP_OFFSET(metatile_idx,x,y)  (((metatile_idx & 0xF0) << 2) + ((metatile_idx & 15) << 1) + ((y & 1) << 5) + (x & 1))
+#define METATILE_X_OFFSET(x) (x >> 1)
+#define METATILE_Y_OFFSET(y) ((y & 0xFE) << 3)
+#define TILE_X_OFFSET(x) (x & 1)
+#define TILE_Y_OFFSET(y) ((y & 1) << 5)
+#define METATILE_MAP_OFFSET(x, y)  (METATILE_Y_OFFSET(y) + METATILE_X_OFFSET(x))
+#define TILE_MAP_OFFSET(metatile_idx,x,y)  (UWORD)(((metatile_idx & 0xF0) << 2) + ((metatile_idx & 15) << 1) + TILE_Y_OFFSET(y) + TILE_X_OFFSET(x))
 
 #define MAX_MAP_DATA_SIZE (SRAM_MAP_WIDTH * SRAM_MAP_HEIGHT)
 

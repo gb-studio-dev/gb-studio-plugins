@@ -242,24 +242,29 @@ void scroll_queue_col(UBYTE x, UBYTE y) {
 	scroll_load_pending_col();
 }
 
+inline UBYTE get_metatile_tile(UWORD metatile_offset) {
+	return sram_map_data[metatile_offset];	
+}
+
 
 void load_metatile_row(const UBYTE* from, UBYTE x, UBYTE y, UBYTE width, UBYTE bank) NONBANKED {
 	_save_bank = CURRENT_BANK;
-	UBYTE i;
 	SWITCH_ROM(bank);
-	for (i = 0; i != width; i++) {
-		set_vram_byte((UBYTE*)(0x9800 + bkg_address_offset), *(from + (UWORD)sram_map_data[METATILE_MAP_OFFSET(x + i, y)]));
+    UWORD metatile_y_offset = METATILE_Y_OFFSET(y);
+	width = width + x;
+	for (x; x != width; x++) {
+		set_vram_byte((UBYTE*)(0x9800 + bkg_address_offset), *(from + (UWORD)sram_map_data[(metatile_y_offset + x)]));
 		bkg_address_offset = (bkg_address_offset & 0xFFE0) + ((bkg_address_offset + 1) & 31);
 	}
 	SWITCH_ROM(_save_bank);		
 }
 
 void load_metatile_col(const UBYTE* from, UBYTE x, UBYTE y, UBYTE height, UBYTE bank) NONBANKED {
-	_save_bank = CURRENT_BANK;
-	UBYTE i;	
+	_save_bank = CURRENT_BANK;	
 	SWITCH_ROM(bank);	
-	for (i = 0; i != height; i++) {
-		set_vram_byte((UBYTE*)(0x9800 + bkg_address_offset), *(from + (UWORD)sram_map_data[METATILE_MAP_OFFSET(x, y + i)]));
+	height = height + y;
+	for (y; y != height; y++) {
+		set_vram_byte((UBYTE*)(0x9800 + bkg_address_offset), *(from + (UWORD)sram_map_data[METATILE_MAP_OFFSET(x, y)]));
 		bkg_address_offset = (bkg_address_offset + 32) & 1023;
 	}
 	SWITCH_ROM(_save_bank);		
