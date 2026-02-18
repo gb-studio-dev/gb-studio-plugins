@@ -52,11 +52,6 @@ UBYTE collided_metatile_source;
 UBYTE metatile_collisionx_cache[4];
 UBYTE metatile_collisiony_cache[4];
 
-UWORD get_metatile_offset(UBYTE x, UBYTE y) NONBANKED {
-	UBYTE metatile_idx = sram_map_data[(((y & 0xFE) << 3) + (x >> 1))];
-	return (((metatile_idx & 0xF0) << 2) + ((metatile_idx & 15) << 1) + ((y & 1) << 5) + (x & 1));	
-}
-
 void metatile_reset(void) BANKED{
     metatile_bank = 0;
     metatile_ptr = NULL;
@@ -73,8 +68,9 @@ void load_meta_tiles(void) BANKED{
 	for (UBYTE y = 0; y < half_height; y++) {
 		MemcpyBanked(sram_map_data + METATILE_MAP_OFFSET(0, y << 1), image_ptr + (UWORD)(y * half_width), half_width, image_bank);
 	}
-	scroll_reset();
-	scroll_update();
+    if (!is_transitioning_scene){
+        scroll_reset();
+    }
 }
 
 void vm_load_meta_tiles(SCRIPT_CTX * THIS) OLDCALL BANKED {	

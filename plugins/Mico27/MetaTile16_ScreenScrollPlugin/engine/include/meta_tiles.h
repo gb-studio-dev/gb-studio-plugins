@@ -45,7 +45,6 @@ extern UBYTE collided_metatile_y;
 extern UBYTE collided_metatile_dir;
 extern UBYTE collided_metatile_source;
 
-UWORD get_metatile_offset(UBYTE x, UBYTE y) NONBANKED;
 void metatile_reset(void) BANKED;
 void load_meta_tiles(void) BANKED;
 void replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit) BANKED;
