@@ -277,20 +277,14 @@ void scroll_queue_col(UBYTE x, UBYTE y) {
 	scroll_load_pending_col();
 }
 
-
-inline UWORD get_metatile_offset(UBYTE metatile_ptr, UBYTE tile_ptr) {
-	UBYTE metatile_idx = sram_map_data[(metatile_ptr)];
-	return (((metatile_idx & 0xF0) << 2) + ((metatile_idx & 15) << 1) + tile_ptr);	
-}
-
 void load_metatile_row(const UBYTE* from, UBYTE x, UBYTE y, UBYTE width, UBYTE bank) NONBANKED {
 	_save_bank = CURRENT_BANK;
 	SWITCH_ROM(bank);
-    UBYTE metatile_ptr = ((y & 0xFE) << 3);
-    UBYTE tile_ptr = ((y & 1) << 5);
+    UBYTE metatile_y_offset = METATILE_Y_OFFSET(y);
+    UBYTE tile_y_offset = TILE_Y_OFFSET(y);
     width = width + x;
 	for (x; x != width; x++) {
-		set_vram_byte((UBYTE*)(0x9800 + bkg_address_offset), *(from + get_metatile_offset(metatile_ptr + (x >> 1), tile_ptr + (x & 1))));
+		set_vram_byte((UBYTE*)(0x9800 + bkg_address_offset), *(from + get_metatile_tile(metatile_y_offset + METATILE_X_OFFSET(x), tile_y_offset + TILE_X_OFFSET(x))));
 		bkg_address_offset = (bkg_address_offset & 0xFFE0) + ((bkg_address_offset + 1) & 31);
 	}
 	SWITCH_ROM(_save_bank);		
@@ -299,11 +293,11 @@ void load_metatile_row(const UBYTE* from, UBYTE x, UBYTE y, UBYTE width, UBYTE b
 void load_metatile_col(const UBYTE* from, UBYTE x, UBYTE y, UBYTE height, UBYTE bank) NONBANKED {
 	_save_bank = CURRENT_BANK;
 	SWITCH_ROM(bank);
-    UBYTE metatile_ptr = (x >> 1);
-    UBYTE tile_ptr = (x & 1);
+    UBYTE metatile_x_offset = METATILE_X_OFFSET(x);
+    UBYTE tile_x_offset = TILE_X_OFFSET(x);
     height = height + y;
 	for (y; y != height; y++) {
-		set_vram_byte((UBYTE*)(0x9800 + bkg_address_offset), *(from + get_metatile_offset(metatile_ptr + ((y & 0xFE) << 3), tile_ptr + ((y & 1) << 5))));
+		set_vram_byte((UBYTE*)(0x9800 + bkg_address_offset), *(from + get_metatile_tile(METATILE_Y_OFFSET(y) + metatile_x_offset, TILE_Y_OFFSET(y) + tile_x_offset)));
 		bkg_address_offset = (bkg_address_offset + 32) & 1023;
 	}
 	SWITCH_ROM(_save_bank);		

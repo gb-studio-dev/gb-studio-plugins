@@ -1,6 +1,7 @@
 #pragma bank 255
 
 #include "collision.h"
+#include "meta_tiles.h"
 #include "math.h"
 
 UBYTE tile_hit_x = 0;
@@ -43,11 +44,13 @@ UBYTE tile_col_test_range_y(UBYTE tile_mask, UBYTE tx, UBYTE ty_start, UBYTE ty_
     if (tile_hit_x >= image_tile_width || tile_hit_y >= image_tile_height) {
       return COLLISION_ALL & tile_mask ? COLLISION_ALL : 0;
     }    
-	if (metatile_collision_bank) {			
+	if (metatile_collision_bank) {
+        UWORD metatile_x_offset = METATILE_X_OFFSET(tx);
+        UWORD tile_x_offset = TILE_X_OFFSET(tx);        
 		UBYTE inc = UBYTE_LESS_THAN(ty_start, ty_end);		
 		UBYTE tile;
 		while (TRUE) {
-			tile = sram_collision_data[TILE_MAP_OFFSET(sram_map_data[METATILE_MAP_OFFSET(tx, tile_hit_y)], tx, tile_hit_y)];
+            tile = sram_collision_data[get_metatile_tile(metatile_x_offset + METATILE_Y_OFFSET(tile_hit_y), tile_x_offset + TILE_Y_OFFSET(tile_hit_y))];
 			if (tile & tile_mask) {
 				return tile;
 			}
@@ -105,10 +108,12 @@ UBYTE tile_col_test_range_x(UBYTE tile_mask, UBYTE ty, UBYTE tx_start, UBYTE tx_
       return COLLISION_ALL & tile_mask ? COLLISION_ALL : 0;
     }
 	if (metatile_collision_bank) {
+        UWORD metatile_y_offset = METATILE_Y_OFFSET(ty);
+        UWORD tile_y_offset = TILE_Y_OFFSET(ty);
 		UBYTE inc = UBYTE_LESS_THAN(tx_start, tx_end);		
 		UBYTE tile;
 		while (TRUE) {
-			tile = sram_collision_data[TILE_MAP_OFFSET(sram_map_data[METATILE_MAP_OFFSET(tile_hit_x, ty)], tile_hit_x, ty)];
+            tile = sram_collision_data[get_metatile_tile(metatile_y_offset + METATILE_X_OFFSET(tile_hit_x), tile_y_offset + TILE_X_OFFSET(tile_hit_x))];
 			if (tile & tile_mask) {
 				return tile;
 			}

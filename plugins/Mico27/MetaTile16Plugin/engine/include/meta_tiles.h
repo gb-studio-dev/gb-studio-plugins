@@ -1,8 +1,12 @@
 #ifndef META_TILES_H
 #define META_TILES_H
 
-#define METATILE_MAP_OFFSET(x, y)  (((y >> 1) << image_tile_width_bit) + (x >> 1))
-#define TILE_MAP_OFFSET(metatile_idx,x,y)  (UWORD)(((metatile_idx >> 4) << 6) + ((metatile_idx & 15) << 1) + ((y & 1) << 5) + (x & 1))
+#define METATILE_X_OFFSET(x) (x >> 1)
+#define METATILE_Y_OFFSET(y) ((y >> 1) << image_tile_width_bit)
+#define TILE_X_OFFSET(x) (x & 1)
+#define TILE_Y_OFFSET(y) ((y & 1) << 5)
+#define METATILE_MAP_OFFSET(x, y)  (METATILE_Y_OFFSET(y) + METATILE_X_OFFSET(x))
+#define TILE_MAP_OFFSET(metatile_idx,x,y)  (UWORD)(((metatile_idx & 0xF0) << 2) + ((metatile_idx & 15) << 1) + TILE_Y_OFFSET(y) + TILE_X_OFFSET(x))
 //The metatile scene must be 256x256 made of 16x16 for a total of 256 unique metatiles
 #include <gbdk/platform.h>
 #include "gbs_types.h"
@@ -47,6 +51,11 @@ extern UBYTE collided_metatile_x;
 extern UBYTE collided_metatile_y;
 extern UBYTE collided_metatile_dir;
 extern UBYTE collided_metatile_source;
+
+inline UWORD get_metatile_tile(UWORD metatile_offset, UWORD tile_offset) {
+	UBYTE metatile_idx = sram_map_data[(metatile_offset)];
+	return (((metatile_idx & 0xF0) << 2) + ((metatile_idx & 15) << 1) + tile_offset);	
+}
 
 void metatile_reset(void) BANKED;
 void load_meta_tiles(void) BANKED;
