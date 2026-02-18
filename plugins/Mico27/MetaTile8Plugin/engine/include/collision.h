@@ -14,9 +14,8 @@
 #define COLLISION_ALL 0xF
 #define TILE_PROP_LADDER 0x10
 
-#define SRAM_MAP_WIDTH 128
-#define SRAM_MAP_HEIGHT 16
-#define METATILE_MAP_OFFSET(x, y)  ((y << image_tile_width_bit) + x)
+#define METATILE_Y_OFFSET(y) (y << image_tile_width_bit)
+#define METATILE_MAP_OFFSET(x, y)  (METATILE_Y_OFFSET(y) + x)
 
 #define MAX_MAP_DATA_SIZE (MAX_MAP_DATA_WIDTH * MAX_MAP_DATA_HEIGHT) // 256 x 27 (Always make sure the width is a power of 2 if edited, cannot exceed 256)
 #define SRAM_MAP_DATA_PTR (0xA000 + (0x2000 - MAX_MAP_DATA_SIZE))

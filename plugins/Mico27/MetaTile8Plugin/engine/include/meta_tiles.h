@@ -1,7 +1,8 @@
 #ifndef META_TILES_H
 #define META_TILES_H
 
-#define METATILE_MAP_OFFSET(x, y)  ((y << image_tile_width_bit) + x)
+#define METATILE_Y_OFFSET(y) (y << image_tile_width_bit)
+#define METATILE_MAP_OFFSET(x, y)  (METATILE_Y_OFFSET(y) + x)
 //The metatile scene must be 128x128 made of 8x8 for a total of 256 unique metatiles
 #include <gbdk/platform.h>
 #include "gbs_types.h"

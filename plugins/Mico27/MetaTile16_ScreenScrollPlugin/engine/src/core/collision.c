@@ -46,8 +46,8 @@ UBYTE tile_col_test_range_y(UBYTE tile_mask, UBYTE tx, UBYTE ty_start, UBYTE ty_
       return (!scene_transition_enabled && (COLLISION_ALL & tile_mask)) ? COLLISION_ALL : 0;
     }    
 	if (metatile_collision_bank) {
-        UWORD metatile_x_offset = METATILE_X_OFFSET(tx);
-        UWORD tile_x_offset = TILE_X_OFFSET(tx);    
+        UBYTE metatile_x_offset = METATILE_X_OFFSET(tx);
+        UBYTE tile_x_offset = TILE_X_OFFSET(tx);    
 		UBYTE inc = UBYTE_LESS_THAN(ty_start, ty_end);		
 		UBYTE tile;
 		while (TRUE) {
@@ -109,8 +109,8 @@ UBYTE tile_col_test_range_x(UBYTE tile_mask, UBYTE ty, UBYTE tx_start, UBYTE tx_
       return (!scene_transition_enabled && (COLLISION_ALL & tile_mask)) ? COLLISION_ALL : 0;
     }
 	if (metatile_collision_bank) {
-        UWORD metatile_y_offset = METATILE_Y_OFFSET(ty);
-        UWORD tile_y_offset = TILE_Y_OFFSET(ty);
+        UBYTE metatile_y_offset = METATILE_Y_OFFSET(ty);
+        UBYTE tile_y_offset = TILE_Y_OFFSET(ty);
 		UBYTE inc = UBYTE_LESS_THAN(tx_start, tx_end);		
 		UBYTE tile;
 		while (TRUE) {
