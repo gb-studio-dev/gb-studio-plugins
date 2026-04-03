@@ -1,0 +1,10 @@
+{
+  "name": "Zone",
+  "type": "eventsPlugin",
+  "author": "Morphoice",
+  "description": "Rectangular zone check with enter/exit detection. Defines a tile-based rectangular area and fires callbacks when the player crosses the zone boundary. State variable tracking with separate enter and exit event callbacks.",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0",
+  "license": "MIT",
+  "url": "https://www.morphoice.com/gameboy/downloads#zone"
+}
