@@ -6,5 +6,8 @@
   "description": "Alternate method of displaying text (uses font loaded in tileset VRAM instead of writing text to tileset VRAM)",
   "license": "MIT",
   "version": "4.2.3",
-  "gbsVersion": ">=4.2.3"
+  "gbsVersion": ">=4.2.3",
+  "preserveFiles": [
+    "char_tileset_mapping.c"
+  ]  
 }
