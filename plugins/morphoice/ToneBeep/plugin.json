@@ -1,0 +1,10 @@
+{
+  "name": "Tone Beep",
+  "type": "enginePlugin",
+  "author": "Morphoice",
+  "description": "Patterned pulse-wave beep sequencer for warning tones, radar locks, and alert sounds. Runs on CH1 or CH2 with automatic music driver muting. 5 built-in warning patterns with dual-channel independent operation.",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0",
+  "license": "MIT",
+  "url": "https://www.morphoice.com/gameboy/downloads#tonebeep"
+}

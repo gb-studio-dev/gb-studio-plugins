@@ -1,0 +1,10 @@
+{
+  "name": "Handheld Camera",
+  "type": "enginePlugin",
+  "author": "Morphoice",
+  "description": "Smooth handheld camera sway and screen shake effect. Applies randomized, eased offsets to scroll_offset_x/scroll_offset_y to simulate organic camera movement. Configurable amplitude (0-8px per axis), speed (5 presets from slow drift to raw shake), and smoothness (4 levels). Uses 8.8 fixed-point math for sub-pixel easing. Independent X/Y axis control — disable either axis by setting amplitude to 0.",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0",
+  "license": "MIT",
+  "url": "https://www.morphoice.com/gameboy/downloads#handheldcamera"
+}

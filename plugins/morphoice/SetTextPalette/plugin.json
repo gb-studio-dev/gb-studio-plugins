@@ -1,0 +1,10 @@
+{
+  "name": "Set Text Palette",
+  "type": "eventsPlugin",
+  "author": "Morphoice",
+  "description": "Set the CGB palette and background fill color for text rendering. Fixes white spacer tiles that appear when drawing text on dark backgrounds. Select any of the 8 BG palettes (0-7) with white or black background fill.",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0",
+  "license": "MIT",
+  "url": "https://www.morphoice.com/gameboy/downloads#settextpalette"
+}
