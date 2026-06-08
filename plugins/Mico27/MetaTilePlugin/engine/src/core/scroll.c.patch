@@ -49,20 +49,15 @@ Index: src\core\scroll.c
 -    scroll_x        = 0x7FFF;
 -    scroll_y        = 0x7FFF;
 -
--    game_time       = 0; // was in scroll_render_rows() - that is insane, here is not the best place either 
+-    game_time       = 0; // was in scroll_render_rows() - that is insane, here is not the best place either
 +    scroll_x = 0x400;
 +    scroll_y = 0x400;
  }
  
  void scroll_update(void) BANKED {
      INT16 x, y;
-@@ -110,38 +113,38 @@
-         } else {
-             shift_scroll_x = draw_scroll_x >> port->shift;
-         }
- 
--        port->shadow_scx = shift_scroll_x;        
-+        port->shadow_scx = shift_scroll_x;
+@@ -114,13 +117,13 @@
+         port->shadow_scx = shift_scroll_x;
          UBYTE shift_col = PX_TO_TILE(shift_scroll_x);
  
          // If column is +/- 1 just render next column
@@ -77,13 +72,7 @@ Index: src\core\scroll.c
              UBYTE x = MAX(0, shift_col - SCREEN_PAD_LEFT);
              scroll_load_col(x, port->start_tile, port->tile_height);
          } else if (current_col != new_col) {
-             // If column differs by more than 1 render entire viewport
-             scroll_render_rows(shift_scroll_x, 0, port->start_tile, port->tile_height);
--        }  
--        return FALSE;   
-+        }
-+        return FALSE;
-     } else {
+@@ -132,16 +135,16 @@
          // last parallax slice OR no parallax
          port->shadow_scx = draw_scroll_x;
  
@@ -137,13 +126,8 @@ Index: src\core\scroll.c
      UBYTE y = MAX(0, PX_TO_TILE(scroll_y) + row_offset);
  
      for (BYTE i = 0; i != n_rows && y != image_tile_height; ++i, y++) {
-@@ -201,20 +206,23 @@
- 
- void scroll_queue_row(UBYTE x, UBYTE y) {
-     while (pending_w_i) {
-         // If previous row wasn't fully rendered
--        // render it now before starting next row        
-+        // render it now before starting next row
+@@ -205,16 +210,19 @@
+         // render it now before starting next row
          scroll_load_pending_row();
      }
  
@@ -162,7 +146,7 @@ Index: src\core\scroll.c
  
  void scroll_queue_col(UBYTE x, UBYTE y) {
      while (pending_h_i) {
-@@ -222,90 +230,153 @@
+@@ -222,82 +230,153 @@
          // render it now before starting next column
          scroll_load_pending_col();
      }
@@ -197,6 +181,10 @@ Index: src\core\scroll.c
 +    SWITCH_ROM(_save_bank);
 +}
  
+-#ifdef CGB
+-    if (_is_CGB) {  // Color Row Load
+-        SWITCH_ROM(image_attr_bank);
+-        set_bkg_submap_attributes(pending_w_x, pending_w_y, width, 1, image_attr_ptr, image_tile_width);
 +void load_metatile_col(const UBYTE* from, UBYTE x, UBYTE y, UBYTE height, UBYTE bank) NONBANKED {
 +    _save_bank = CURRENT_BANK;
 +    SWITCH_ROM(bank);
@@ -212,17 +200,27 @@ Index: src\core\scroll.c
 +        set_vram_byte((UBYTE*)(0x9800 + bkg_address_offset), *(from + (UWORD)sram_map_data[METATILE_MAP_OFFSET(x, y)]));
 +#endif
 +        bkg_address_offset = (bkg_address_offset + 32) & 1023;
-+    }
-+    SWITCH_ROM(_save_bank);
-+}
-+
+     }
+-#endif
+-    // DMG Row Load
+-    SWITCH_ROM(image_bank);
+-    set_bkg_submap(pending_w_x, pending_w_y, width, 1, image_ptr, image_tile_width);
+-
+-    pending_w_x += width;
+-    pending_w_i -= width;
+-
+     SWITCH_ROM(_save_bank);
+ }
+ 
+-
+-void scroll_load_row(UBYTE x, UBYTE y) NONBANKED {
 +void set_bkg_submap_banked(const UBYTE* ptr, UBYTE x, UBYTE y, UBYTE width, UBYTE height, UBYTE source_width, UBYTE bank) NONBANKED {
-+    _save_bank = CURRENT_BANK;
+     _save_bank = CURRENT_BANK;
 +    SWITCH_ROM(bank);
 +    set_bkg_submap(x, y, width, height, ptr, source_width);
 +    SWITCH_ROM(_save_bank);
 +}
-+
+ 
 +void scroll_load_row(UBYTE x, UBYTE y) {
 +    UBYTE width = MIN(SCREEN_TILE_REFRES_W, image_tile_width);
 +    // DMG Row Load
@@ -233,71 +231,55 @@ Index: src\core\scroll.c
 +        set_bkg_submap_banked(image_ptr, x, y, width, 1, image_tile_width, image_bank);
 +    }
  #ifdef CGB
-     if (_is_CGB) {  // Color Row Load
+-    if (_is_CGB) {  // Color Column Load
 -        SWITCH_ROM(image_attr_bank);
-         VBK_REG = 1;
--        set_bkg_submap(pending_w_x, pending_w_y, width, 1, image_attr_ptr, image_tile_width);
+-        set_bkg_submap_attributes(x, y, SCREEN_TILE_REFRES_W, 1, image_attr_ptr, image_tile_width);
++    if (_is_CGB) {  // Color Row Load
++        VBK_REG = 1;
 +        if (metatile_attr_bank){
 +            bkg_address_offset = ((UWORD)get_bkg_xy_addr(x & 31, y & 31)) - 0x9800;
 +            load_metatile_row(metatile_attr_ptr, x, y, width, metatile_attr_bank);
 +        } else {
 +            set_bkg_submap_banked(image_attr_ptr, x, y, width, 1, image_tile_width, image_attr_bank);
 +        }
-         VBK_REG = 0;
++        VBK_REG = 0;
      }
  #endif
--    // DMG Row Load
--    SWITCH_ROM(image_bank);
--    set_bkg_submap(pending_w_x, pending_w_y, width, 1, image_ptr, image_tile_width);
--
--    pending_w_x += width;
--    pending_w_i -= width;
--
--    SWITCH_ROM(_save_bank);
- }
- 
--
--void scroll_load_row(UBYTE x, UBYTE y) NONBANKED {
--    _save_bank = CURRENT_BANK;
--
++}
++
 +/* Update pending (up to 5) rows */
 +void scroll_load_pending_row(void) {
 +    UBYTE width = MIN(pending_w_i, PENDING_BATCH_SIZE);
-+    // DMG Row Load
+     // DMG Row Load
+-    SWITCH_ROM(image_bank);
+-    set_bkg_submap(x, y, MIN(SCREEN_TILE_REFRES_W, image_tile_width), 1, image_ptr, image_tile_width);
+-
+-    SWITCH_ROM(_save_bank);
 +    if (metatile_bank){
 +        bkg_address_offset = ((UWORD)get_bkg_xy_addr(pending_w_x & 31, pending_w_y & 31)) - 0x9800;
 +        load_metatile_row(metatile_ptr, pending_w_x, pending_w_y, width, metatile_bank);
 +    } else {
 +        set_bkg_submap_banked(image_ptr, pending_w_x, pending_w_y, width, 1, image_tile_width, image_bank);
 +    }
- #ifdef CGB
--    if (_is_CGB) {  // Color Column Load
++#ifdef CGB
 +    if (_is_CGB) {  // Color Row Load
-         VBK_REG = 1;
--        SWITCH_ROM(image_attr_bank);
--        set_bkg_submap(x, y, SCREEN_TILE_REFRES_W, 1, image_attr_ptr, image_tile_width);
++        VBK_REG = 1;
 +        if (metatile_attr_bank){
 +            bkg_address_offset = ((UWORD)get_bkg_xy_addr(pending_w_x & 31, pending_w_y & 31)) - 0x9800;
 +            load_metatile_row(metatile_attr_ptr, pending_w_x, pending_w_y, width, metatile_attr_bank);
 +        } else {
 +            set_bkg_submap_banked(image_attr_ptr, pending_w_x, pending_w_y, width, 1, image_tile_width, image_attr_bank);
 +        }
-         VBK_REG = 0;
-     }
- #endif
--    // DMG Row Load
--    SWITCH_ROM(image_bank);
--    set_bkg_submap(x, y, MIN(SCREEN_TILE_REFRES_W, image_tile_width), 1, image_ptr, image_tile_width);
--
--    SWITCH_ROM(_save_bank);
++        VBK_REG = 0;
++    }
++#endif
 +    pending_w_x += width;
 +    pending_w_i -= width;
  }
  
 -void scroll_load_col(UBYTE x, UBYTE y, UBYTE height) NONBANKED {
 -    _save_bank = CURRENT_BANK;
-- 
-+
+ 
 +void scroll_load_col(UBYTE x, UBYTE y, UBYTE height) {
 +    // DMG Column Load
 +    if (metatile_bank){
@@ -309,15 +291,15 @@ Index: src\core\scroll.c
  #ifdef CGB
      if (_is_CGB) {  // Color Column Load
 -        SWITCH_ROM(image_attr_bank);
-         VBK_REG = 1;
--        set_bkg_submap(x, y, 1, height, image_attr_ptr, image_tile_width);
+-        set_bkg_submap_attributes(x, y, 1, height, image_attr_ptr, image_tile_width);
++        VBK_REG = 1;
 +        if (metatile_attr_bank){
 +            bkg_address_offset = ((UWORD)get_bkg_xy_addr(x & 31, y & 31)) - 0x9800;
 +            load_metatile_col(metatile_attr_ptr, x, y, height, metatile_attr_bank);
 +        } else {
 +            set_bkg_submap_banked(image_attr_ptr, x, y, 1, height, image_tile_width, image_attr_bank);
 +        }
-         VBK_REG = 0;
++        VBK_REG = 0;
      }
  #endif
 -    // DMG Column Load
@@ -342,15 +324,15 @@ Index: src\core\scroll.c
  #ifdef CGB
      if (_is_CGB) {  // Color Column Load
 -        SWITCH_ROM(image_attr_bank);
-         VBK_REG = 1;
--        set_bkg_submap(pending_h_x, pending_h_y, 1, height, image_attr_ptr, image_tile_width);
+-        set_bkg_submap_attributes(pending_h_x, pending_h_y, 1, height, image_attr_ptr, image_tile_width);
++        VBK_REG = 1;
 +        if (metatile_attr_bank){
 +            bkg_address_offset = ((UWORD)get_bkg_xy_addr(pending_h_x & 31, pending_h_y & 31)) - 0x9800;
 +            load_metatile_col(metatile_attr_ptr, pending_h_x, pending_h_y, height, metatile_attr_bank);
 +        } else {
 +            set_bkg_submap_banked(image_attr_ptr, pending_h_x, pending_h_y, 1, height, image_tile_width, image_attr_bank);
 +        }
-         VBK_REG = 0;
++        VBK_REG = 0;
      }
  #endif
 -    // DMG Column Load

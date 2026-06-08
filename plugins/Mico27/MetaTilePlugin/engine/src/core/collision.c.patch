@@ -79,13 +79,7 @@ Index: src\core\collision.c
      UBYTE inc = UBYTE_LESS_THAN(tx_start, tx_end);
      SWITCH_ROM(collision_bank);
      UBYTE* tile_ptr = collision_ptr + (ty * (UINT16)image_tile_width) + tx_start;
-@@ -72,9 +101,48 @@
-         }
-         if (tile_hit_x >= image_tile_width) {
-           SWITCH_ROM(_save);
-           return COLLISION_ALL & tile_mask ? COLLISION_ALL : 0;
--        }                
-+        }
+@@ -77,4 +106,43 @@
      }
      SWITCH_ROM(_save);
      return 0;

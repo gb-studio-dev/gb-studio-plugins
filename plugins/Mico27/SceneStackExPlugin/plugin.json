@@ -5,8 +5,8 @@
   "url": "https://github.com/Mico27/gbs-SceneStackExPlugin",
   "description": "Saving the scene in stack in GBStudio only saves the scene address and the Player position into the stack. This plugin adds an extanded version saving the scene to the stack which puts pretty much everything from the scene.",
   "license": "MIT",
-  "version": "4.2.3",
-  "gbsVersion": ">=4.2.3",
+  "version": "4.3.0",
+  "gbsVersion": ">=4.3.0",
   "order": -9,
   "engineAltRules": [
     {

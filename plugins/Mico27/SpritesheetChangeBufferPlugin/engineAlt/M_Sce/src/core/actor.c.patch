@@ -2,45 +2,19 @@ Index: src\core\actor.c
 ===================================================================
 --- src\core\actor.c
 +++ src\core\actor.c
-@@ -36,9 +36,9 @@
+@@ -1,5 +1,5 @@
+-#pragma bank 255
++﻿#pragma bank 255
  
- const BYTE emote_offsets[] = {2, 1, 0, -1, -2, -3, -4, -5, -6, -5, -4, -3, -2, -1, 0};
+ #include "actor.h"
  
- const metasprite_t emote_metasprite_8_16[]  = {
--    {8, 8, 0, 7}, {0, 8, 2, 7}, 
-+    {8, 8, 0, 7}, {0, 8, 2, 7},
-     {metasprite_end}
- };
- 
- const metasprite_t emote_metasprite_8_8[]  = {
-@@ -84,9 +84,9 @@
- void actors_update(void) BANKED {
-     actor_t *actor;
-     static uint8_t screen_tile16_x, screen_tile16_y, screen_tile16_x_end, screen_tile16_y_end;
-     static uint8_t actor_tile16_x, actor_tile16_y;
--    static uint8_t tmp_iterator; 
-+    static uint8_t tmp_iterator;
-     static FASTUBYTE actor_flags;
- 
-     // Convert scroll pos to 16px tile coordinates
-     // allowing full range of scene to be represented in 7 bits
-@@ -146,9 +146,9 @@
-                         SET_FLAG(actor->flags, ACTOR_FLAG_DISABLED);
-                     } else {
-                         if (CHK_FLAG(actor_flags, ACTOR_FLAG_DISABLED)) {
-                             CLR_FLAG(actor->flags, ACTOR_FLAG_DISABLED);
--                        }                        
-+                        }
-                         deactivate_actor_impl(actor);
-                     }
-                 } else {
-                     SET_FLAG(actor->flags, ACTOR_FLAG_DISABLED);
-@@ -211,25 +211,25 @@
+ #include <gbdk/platform.h>
+@@ -211,12 +211,12 @@
  
          if (!(window_hide_actors && (screen_x + 8 > WX_REG) && (screen_y - 8 > WY_REG))) {
              SWITCH_ROM(PLAYER.sprite.bank);
              spritesheet_t *sprite = PLAYER.sprite.ptr;
--    
+-
 +            UBYTE base_tile = PLAYER.base_tile + (PLAYER.using_sprite_buffer ? PLAYER.reserve_tiles: 0);
              allocated_hardware_sprites += move_metasprite(
                  *(sprite->metasprites + PLAYER.frame),
@@ -50,21 +24,6 @@ Index: src\core\actor.c
                  screen_x,
                  screen_y
              );
-         }
-     }
--    
-+
-     // Render all actors
-     for (actor = PLAYER.prev; (actor); actor = actor->prev){
-         if (CHK_FLAG(actor->flags, ACTOR_FLAG_HIDDEN | ACTOR_FLAG_DISABLED)) {
-            continue;
-         }
--        
-+
-         if (CHK_FLAG(actor->flags, ACTOR_FLAG_PINNED)) {
-             screen_x = SUBPX_TO_PX(actor->pos.x);
-             screen_y = SUBPX_TO_PX(actor->pos.y);
-         } else {
 @@ -241,12 +241,12 @@
              continue;
          }
@@ -80,14 +39,3 @@ Index: src\core\actor.c
              screen_x,
              screen_y
          );
-@@ -321,9 +321,9 @@
-             if (actor == &PLAYER || CHK_FLAG(actor->flags, ACTOR_FLAG_PERSISTENT)) {
-                 SET_FLAG(actor->flags, ACTOR_FLAG_DISABLED);
-             } else {
-                 return;
--            } 
-+            }
-         }
-     }
- 
-     SET_FLAG(actor->flags, ACTOR_FLAG_ACTIVE);

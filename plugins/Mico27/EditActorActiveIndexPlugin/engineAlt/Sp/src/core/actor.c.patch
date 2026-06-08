@@ -2,6 +2,13 @@ Index: src\core\actor.c
 ===================================================================
 --- src\core\actor.c
 +++ src\core\actor.c
+@@ -1,5 +1,5 @@
+-﻿#pragma bank 255
++#pragma bank 255
+ 
+ #include "actor.h"
+ 
+ #include <gbdk/platform.h>
 @@ -16,8 +16,10 @@
  #include "collision.h"
  #include "ui.h"
@@ -167,7 +174,7 @@ Index: src\core\actor.c
      offset.x = PLAYER.pos.x;
      offset.y = PLAYER.pos.y;
      point_translate_dir_word(&offset, PLAYER.dir, PX_TO_SUBPX(grid_size));
--    actor_t *actor = &PLAYER;
+-    actor_t *actor = PLAYER.prev;
 +    actor_t *actor = actors_active_tail;
  
      const UWORD a_left   = offset.x + PLAYER.bounds.left;

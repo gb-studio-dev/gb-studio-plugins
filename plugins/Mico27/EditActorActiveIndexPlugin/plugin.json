@@ -5,8 +5,8 @@
   "url": "https://github.com/Mico27/gbs-EditActorActiveIndexPlugin",
   "description": "Allows editing the order of the actors in the active actors list used for rendering/OAM order. This plugins allow sorting actor depending on their vertical position and enable flickering for when more than 10 sprite tile are on a given scanline or then the 40 sprite tile on-screen limit is exceeded.",
   "license": "MIT",
-  "version": "4.2.3",
-  "gbsVersion": ">=4.2.3",
+  "version": "4.3.0",
+  "gbsVersion": ">=4.3.0",
   "order": -1,
   "engineAltRules": [
     {

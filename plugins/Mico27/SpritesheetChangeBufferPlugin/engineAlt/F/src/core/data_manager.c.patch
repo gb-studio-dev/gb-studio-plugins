@@ -2,7 +2,7 @@ Index: src\core\data_manager.c
 ===================================================================
 --- src\core\data_manager.c
 +++ src\core\data_manager.c
-@@ -206,10 +206,16 @@
+@@ -207,10 +207,16 @@
  
      if (scene_type != SCENE_TYPE_LOGO) {
          // Load player
@@ -19,7 +19,7 @@ Index: src\core\data_manager.c
          load_bounds(scn.player_sprite.ptr, scn.player_sprite.bank, &PLAYER.bounds);
      } else {
          // no player on logo, but still some little amount of actors may be present
-@@ -256,10 +262,11 @@
+@@ -257,10 +263,11 @@
              for (i = actors_len - 1; i != 0; i--, actor++) {
                  if (actor->reserve_tiles) {
                      // exclusive sprites allocated separately to avoid overwriting if modified

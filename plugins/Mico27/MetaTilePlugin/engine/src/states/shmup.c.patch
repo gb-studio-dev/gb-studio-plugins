@@ -12,29 +12,7 @@ Index: src\states\shmup.c
  // Feature Flags --------------------------------------------------------------
  // Optional feature flags, set in 'state_defines.h'
  
-@@ -101,9 +102,9 @@
-     camera_offset_x = 0;
-     camera_offset_y = 0;
-     camera_deadzone_x = 0;
-     camera_deadzone_y = 0;
--    
-+
-     shooter_direction = PLAYER.dir;
- 
-     if (shooter_direction == DIR_LEFT) {
-         // Right to left scrolling
-@@ -131,9 +132,9 @@
-         IF_FREE_MOVEMENT(camera_settings &= ~CAMERA_LOCK_Y_FLAG);
-     }
- 
-     shooter_reached_end = FALSE;
--    
-+
-     // Initialize camera position for unlocked movement
-     IF_FREE_MOVEMENT({
-         camera_x = add_signed_clamped_u16(PLAYER.pos.x, PX_TO_SUBPX(camera_offset_x),
-             PX_TO_SUBPX(SCREEN_WIDTH_HALF),
-@@ -266,18 +267,28 @@
+@@ -266,14 +267,24 @@
                  UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
                  tile = tile_col_test_range_x(COLLISION_TOP, tile_y, tile_start, tile_end);
                  if (tile) {
@@ -58,12 +36,7 @@ Index: src\states\shmup.c
                  }
              }
          }
--        
-+
-         if (angle != ANGLE_0DEG && angle != ANGLE_180DEG) { // Moved horizontally
-             // Step X
-             tile_start = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
-             tile_end   = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
+ 
 @@ -285,14 +296,24 @@
                  UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
                  tile = tile_col_test_range_y(COLLISION_LEFT, tile_x, tile_start, tile_end);
@@ -120,7 +93,7 @@ Index: src\states\shmup.c
          } else {
              tile_start = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
              tile_end   = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
-@@ -391,19 +426,33 @@
+@@ -391,16 +426,30 @@
                      if (tile) {
                          PLAYER.pos.y = TILE_TO_SUBPX(tile_y) - EXCLUSIVE_OFFSET(PLAYER.bounds.bottom);
                      }
@@ -149,12 +122,8 @@ Index: src\states\shmup.c
 +#endif
              }
          }
--    }    
-+    }
+     }
  
-     IF_FREE_MOVEMENT({
-         // Keep player within screen bounds
-         if (IS_DIR_HORIZONTAL(shooter_direction)) {
 @@ -462,9 +511,11 @@
              // Trigger appeared on screen edge
              return;

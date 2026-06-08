@@ -185,7 +185,7 @@ void vm_submap_metatiles(SCRIPT_CTX * THIS) OLDCALL BANKED {
 #else
         MemcpyBanked(sram_map_data + METATILE_MAP_OFFSET(dest_x, current_y), tilemap_ptr + (UWORD)(((source_y + i) * bkg.width) + source_x), width, bkg.tilemap.bank);
 #endif
-        if (commit){
+        if (commit && !is_transitioning_scene){
             bkg_address_offset = ((UWORD)get_bkg_xy_addr((dest_x + bkg_offset_x) & 31, (current_y + bkg_offset_y) & 31)) - 0x9800;
             load_metatile_row(metatile_ptr, dest_x, current_y, width, metatile_bank);
             #ifdef CGB
@@ -243,7 +243,7 @@ static void impl_replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit
     y -= y & 1;
 #endif
     sram_map_data[METATILE_MAP_OFFSET(x, y)] = tile_id;
-    if (commit){
+    if (commit && !is_transitioning_scene){
     #ifdef CGB
         if (_is_CGB) {
             VBK_REG = 1;

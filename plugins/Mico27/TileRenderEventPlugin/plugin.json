@@ -5,8 +5,8 @@
   "url": "https://github.com/Mico27/GBS-TileRenderEventPlugin",
   "description": "Can register scripts to be run when a row/column/whole screen is rendered.",
   "license": "MIT",
-  "version": "4.2.3",
-  "gbsVersion": ">=4.2.3",
+  "version": "4.3.0",
+  "gbsVersion": ">=4.3.0",
   "order": -1,
   "engineAltRules": [
     {

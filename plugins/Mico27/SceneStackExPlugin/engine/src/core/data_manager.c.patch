@@ -2,6 +2,13 @@ Index: src\core\data_manager.c
 ===================================================================
 --- src\core\data_manager.c
 +++ src\core\data_manager.c
+@@ -1,5 +1,5 @@
+-#pragma bank 255
++﻿#pragma bank 255
+ 
+ #include <string.h>
+ 
+ #include "system.h"
 @@ -15,8 +15,9 @@
  #include "palette.h"
  #include "data/spritesheet_none.h"
@@ -30,7 +37,7 @@ Index: src\core\data_manager.c
  
  void load_bkg_tileset(const tileset_t* tiles, UBYTE bank) BANKED {
      if ((!bank) && (!tiles)) return;
-@@ -234,10 +237,12 @@
+@@ -235,10 +238,12 @@
          // Load player
          PLAYER.sprite = scn.player_sprite;
          UBYTE n_loaded = load_sprite(PLAYER.base_tile = 0, scn.player_sprite.ptr, scn.player_sprite.bank);
@@ -45,7 +52,7 @@ Index: src\core\data_manager.c
          // no player on logo, but still some little amount of actors may be present
          PLAYER.base_tile = allocated_sprite_tiles = 0x68;
          PLAYER.sprite = spritesheet_none_far;
-@@ -306,25 +311,28 @@
+@@ -307,25 +312,28 @@
                  // exclusive sprites allocated separately to avoid overwriting if modified
                  if (actor->reserve_tiles) load_sprite(actor->base_tile, actor->sprite.ptr, actor->sprite.bank);
              }
@@ -89,7 +96,7 @@ Index: src\core\data_manager.c
      }
  
      // Load triggers
-@@ -332,8 +340,10 @@
+@@ -333,8 +341,10 @@
          MemcpyBanked(&triggers, scn.triggers.ptr, sizeof(trigger_t) * triggers_len, scn.triggers.bank);
      }
  

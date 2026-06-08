@@ -5,6 +5,6 @@
   "url": "https://github.com/Mico27/gbs-replaceTilesetTilesPlugin",
   "description": "Replace tileset tiles in VRAM",
   "license": "MIT",
-  "version": "4.2.3",
-  "gbsVersion": ">=4.2.3"
+  "version": "4.3.0",
+  "gbsVersion": ">=4.3.0"
 }
