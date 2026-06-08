@@ -27,10 +27,10 @@ const compile = (input, helpers) => {
   const {
     _loadStructuredText,
   } = helpers;
-  		
-	const inputTexts = Array.isArray(input.text) ? input.text : [input.text];
+
+    const inputTexts = Array.isArray(input.text) ? input.text : [input.text];
     inputTexts.forEach((inputText, textIndex) => {
-	  _loadStructuredText(inputText);	  
+      _loadStructuredText(inputText);
     });
 };
 

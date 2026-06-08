@@ -113,15 +113,15 @@ export const hexDec = (hex) => parseInt(hex, 16);
 export const compile = (input, helpers) => {
   const { options, _paletteLoad, _paletteColor } = helpers;
   const paletteIds = [
-		input.palette0,
-		input.palette1,
-		input.palette2,
-		input.palette3,
-		input.palette4,
-		input.palette5,
-		input.palette6,
-		input.palette7,
-	];
+        input.palette0,
+        input.palette1,
+        input.palette2,
+        input.palette3,
+        input.palette4,
+        input.palette5,
+        input.palette6,
+        input.palette7,
+    ];
     const { palettes, settings, scene } = options;
 
     let mask = 0;

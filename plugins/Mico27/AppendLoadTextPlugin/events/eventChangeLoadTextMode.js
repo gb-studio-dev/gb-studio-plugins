@@ -24,7 +24,7 @@ const fields = [
 const compile = (input, helpers) => {
   const {
     _setConstMemUInt8,
-  } = helpers;  		
+  } = helpers;
     _setConstMemUInt8("load_text_mode", input.load_text_mode || 0);
 };
 

@@ -1,0 +1,34 @@
+Index: src\core\data_manager.c
+===================================================================
+--- src\core\data_manager.c
++++ src\core\data_manager.c
+@@ -236,10 +236,16 @@
+ 
+     if (scene_type != SCENE_TYPE_LOGO) {
+         // Load player
+         PLAYER.sprite = scn.player_sprite;
++        PLAYER.reserve_tiles = scn.reserve_tiles;
++        PLAYER.using_sprite_buffer = 0;
+         UBYTE n_loaded = load_sprite(PLAYER.base_tile = 0, scn.player_sprite.ptr, scn.player_sprite.bank);
+         allocated_sprite_tiles = (n_loaded > scn.reserve_tiles) ? n_loaded : scn.reserve_tiles;
++        if (scn.reserve_tiles){
++            //double allocated sprite tiles for buffer
++            allocated_sprite_tiles = allocated_sprite_tiles << 1;
++        }
+         if (!vm_pop_scene_stack_state) {
+             load_animations(scn.player_sprite.ptr, scn.player_sprite.bank, ANIM_SET_DEFAULT, PLAYER.animations);
+             load_bounds(scn.player_sprite.ptr, scn.player_sprite.bank, &PLAYER.bounds);
+         }
+@@ -288,10 +294,11 @@
+             for (i = actors_len - 1; i != 0; i--, actor++) {
+                 if (actor->reserve_tiles) {
+                     // exclusive sprites allocated separately to avoid overwriting if modified
+                     actor->base_tile = allocated_sprite_tiles;
++                    actor->using_sprite_buffer = 0;
+                     UBYTE n_loaded = load_sprite(allocated_sprite_tiles, actor->sprite.ptr, actor->sprite.bank);
+-                    allocated_sprite_tiles += (n_loaded > actor->reserve_tiles) ? n_loaded : actor->reserve_tiles;
++                    allocated_sprite_tiles += (((n_loaded > actor->reserve_tiles) ? n_loaded : actor->reserve_tiles) << 1);
+                 } else {
+                     // resolve and set base_tile for each actor
+                     UBYTE idx = IndexOfFarPtr(scn.sprites.ptr, scn.sprites.bank, sprites_len, &actor->sprite);
+                     actor->base_tile = (idx < sprites_len) ? scene_sprites_base_tiles[idx] : 0;

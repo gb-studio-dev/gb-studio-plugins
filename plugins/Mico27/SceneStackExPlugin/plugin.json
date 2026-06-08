@@ -3,12 +3,61 @@
   "name": "Extended Scene Stack Plugin",
   "author": "Mico27",
   "url": "https://github.com/Mico27/gbs-SceneStackExPlugin",
-  "description": "Saving the scene in stack in GBStudio only saves the scene address and the Player position into the stack. This plugin adds an extanded version saving the scene to the stack which puts pretty much everything from the scene. The plugin also adds failsafes when exceeding the stack or trying to pop an empty stack to the default scene stack and the extended scene stack.\nWARNING: this plugin modifies the following engine files:\n- data_manager.h\n- load_save.h\n- projectiles.h\n- scene_stack_ex.h\n- vm.i\n- vm_exceptions.h\n- core.c\n- data_manager.c\n- load_save.c\n- vm_scene.c\nAny other plugin that modifies any of these files will not be compatible with this plugin unless the files are manually merged. (This plugin is not needed if you are using the metatile plugins, as they are already integrated in those plugins)",
+  "description": "Saving the scene in stack in GBStudio only saves the scene address and the Player position into the stack. This plugin adds an extanded version saving the scene to the stack which puts pretty much everything from the scene.",
   "license": "MIT",
-  "version": "1.2.0",
-  "gbsVersion": ">=4.2.2"
+  "version": "4.3.0",
+  "gbsVersion": ">=4.3.0",
+  "order": -9,
+  "engineAltRules": [
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/MetaTilePlugin"
+        ]
+      },
+      "use": "Scr_M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "MetaTilePlugin"
+        ]
+      },
+      "use": "Scr_M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/MetaTilePlugin"
+        ]
+      },
+      "use": "M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "MetaTilePlugin"
+        ]
+      },
+      "use": "M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin"
+        ]
+      },
+      "use": "Scr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin"
+        ]
+      },
+      "use": "Scr"
+    }
+  ]
 }
-
-
-
-

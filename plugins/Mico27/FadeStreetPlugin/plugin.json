@@ -3,8 +3,133 @@
   "name": "Fade Street",
   "author": "Mico27",
   "url": "https://github.com/Mico27/gbs-fadestreet",
-  "description": "Toolset for animation color palettes and custom fading.\nWARNING: this plugin modifies the following engine files:\n- data_manager.c\n- fade_manager.c\n- interrupts.c\n- vm_palette.c\nAny other plugin that modifies any of these files will not be compatible with this plugin unless the files are manually merged.",
+  "description": "Toolset for animation color palettes and custom fading.",
   "license": "MIT",
-  "version": "1.2.0",
-  "gbsVersion": ">=4.2.2"
+  "version": "4.3.0",
+  "gbsVersion": ">=4.3.0",
+  "order": -4,
+  "engineAltRules": [
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/MetaTilePlugin",
+          "Mico27/SceneStackExPlugin"
+        ]
+      },
+      "use": "Scr_M_Sce"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "MetaTilePlugin",
+          "SceneStackExPlugin"
+        ]
+      },
+      "use": "Scr_M_Sce"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/MetaTilePlugin",
+          "Mico27/SceneStackExPlugin"
+        ]
+      },
+      "use": "M_Sce"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "MetaTilePlugin",
+          "SceneStackExPlugin"
+        ]
+      },
+      "use": "M_Sce"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/MetaTilePlugin"
+        ]
+      },
+      "use": "Scr_M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "MetaTilePlugin"
+        ]
+      },
+      "use": "Scr_M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/SceneStackExPlugin"
+        ]
+      },
+      "use": "Scr_Sce"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "SceneStackExPlugin"
+        ]
+      },
+      "use": "Scr_Sce"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/MetaTilePlugin"
+        ]
+      },
+      "use": "M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "MetaTilePlugin"
+        ]
+      },
+      "use": "M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/SceneStackExPlugin"
+        ]
+      },
+      "use": "Sce"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "SceneStackExPlugin"
+        ]
+      },
+      "use": "Sce"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin"
+        ]
+      },
+      "use": "Scr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin"
+        ]
+      },
+      "use": "Scr"
+    }
+  ]
 }

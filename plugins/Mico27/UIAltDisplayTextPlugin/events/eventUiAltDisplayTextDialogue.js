@@ -2,12 +2,9 @@ const l10n = require("../helpers/l10n").default;
 const id = "EVENT_UI_ALT_DISPLAY_TEXT_DIALOGUE";
 const name = "Alt Display Text In Dialogue";
 const groups = ["EVENT_GROUP_DIALOGUE"];
-
 const autoLabel = (fetchArg) => {
   return `Alt Display Text In Dialogue`;
 };
-
-
 const fields = [
   {
     key: "__section",
@@ -21,7 +18,6 @@ const fields = [
       presets: l10n("FIELD_PRESETS"),
     },
   },
-
   {
     label: l10n("FIELD_TEXT_IN_LOGO_WARNING"),
     labelVariant: "warning",
@@ -32,9 +28,7 @@ const fields = [
       },
     ],
   },
-
   // Text Section
-
   {
     key: "text",
     type: "textarea",
@@ -64,7 +58,6 @@ const fields = [
       },
     ],
   },
-
   // Layout Section
   {
     type: "group",
@@ -416,7 +409,6 @@ const fields = [
     ],
   },
 ];
-
 const userPresetsGroups = [
   {
     id: "text",
@@ -457,14 +449,11 @@ const userPresetsGroups = [
     selected: true,
   },
 ];
-
 const userPresetsIgnore = ["__section"];
-
 const textNumLines = (input) => {
   // eslint-disable-next-line no-control-regex
   return (input.match(/(\n|\r|\x0a|\x0d|\\012|\\015)/g)?.length ?? 0) + 1;
 };
-
 const calculateTextBoxHeight = (
   textLines,
   textY,
@@ -481,10 +470,8 @@ const calculateTextBoxHeight = (
     ),
   );
 }
-
 const wrap8Bit = (val) => (256 + (val % 256)) % 256;
 const decOct = (dec) => wrap8Bit(dec).toString(8).padStart(3, "0");
-
 const textDialogue = (
     inputText = " ",
     avatarId,
@@ -508,7 +495,6 @@ const textDialogue = (
     _idle, _declareLocal, stackPtr, _setConst, _invoke, _assertStackNeutral, _setMemUInt8, _stackPop, _addNL, _loadStructuredText} = helpers;
     const { scene, avatars } = options;
     const input = Array.isArray(inputText) ? inputText : [inputText];
-
     const overlayInSpeed =
       speedIn === -1
         ? ".OVERLAY_IN_SPEED"
@@ -521,7 +507,6 @@ const textDialogue = (
         : speedOut === -3
           ? ".OVERLAY_SPEED_INSTANT"
           : speedOut;
-
     const initialNumLines = input.map(textNumLines);
     const maxNumLines = Math.max.apply(null, initialNumLines);
     const textBoxHeight = calculateTextBoxHeight(
@@ -532,7 +517,6 @@ const textDialogue = (
       maxHeight,
       showFrame,
     );
-
     const isModal = closeWhen !== "notModal";
     const renderOnTop = position === "top" && !scene.parallax;
     const textBoxY = renderOnTop ? 0 : 18 - textBoxHeight;
@@ -540,15 +524,12 @@ const textDialogue = (
     const y = decOct(Math.max(1, 1 + textY));
     const textPosSequence =
       textX !== 0 || textY !== 0 ? `\\003\\${x}\\${y}` : "";
-
     _addComment("Alt Text Dialogue");
-
     if (renderOnTop) {
       _stackPushConst(0);
       _getMemUInt8(".ARG0", "overlay_cut_scanline");
       _setConstMemUInt8("overlay_cut_scanline", textBoxHeight * 8 - 1);
     }
-
     input.forEach((text, textIndex) => {
       let avatarIndex = undefined;
       if (avatarId) {
@@ -557,7 +538,6 @@ const textDialogue = (
           avatarIndex = undefined;
         }
       }
-
       if (clearPrevious) {
         _overlayClear(
           0,
@@ -569,7 +549,6 @@ const textDialogue = (
           false,
         );
       }
-
       // Animate first dialogue window of sequence on screen
       if (textIndex === 0) {
         _overlayMoveTo(
@@ -578,7 +557,6 @@ const textDialogue = (
           ".OVERLAY_SPEED_INSTANT",
         );
         _overlayMoveTo(0, textBoxY, overlayInSpeed);
-
         _overlaySetScroll(
           textX + (avatarId ? 2 : 0),
           textY,
@@ -586,17 +564,13 @@ const textDialogue = (
           textHeight,
           ".UI_COLOR_WHITE",
         );
-        
         _overlayWait(false, [".UI_WAIT_WINDOW"]);
       }
-
       const decoratedText = `${_getAvatarCode(
         avatarIndex,
       )}${textPosSequence}${_injectScrollCode(text, textHeight)}`;
-
       _loadStructuredText(decoratedText);
       _invoke("ui_alt_display_dialogue", 0, ".ARG0");
-      
       if (isModal) {
         const waitFlags = [
           ".UI_WAIT_WINDOW",
@@ -629,7 +603,6 @@ const textDialogue = (
             _idle();
         }
       }
-
       // Animate final dialogue window of sequence off screen
       if (textIndex === input.length - 1) {
         if (isModal) {
@@ -642,24 +615,18 @@ const textDialogue = (
         }
       }
     });
-
     // Reset scanline when rendering on top (as long as it wasn't non-modal)
     if (isModal && renderOnTop) {
       _overlayMoveTo(0, 18, ".OVERLAY_SPEED_INSTANT");
       _idle();
       _setMemUInt8("overlay_cut_scanline", ".ARG0");
     }
-
     if (renderOnTop) {
       _stackPop(1);
     }
-
     _addNL();
   };
-
-
 const compile = (input, helpers) => {
-  
   let closeDelayFrames = 0;
   if (input.closeDelayUnits === "frames") {
     closeDelayFrames =
@@ -688,7 +655,6 @@ const compile = (input, helpers) => {
     helpers
   );
 };
-
 module.exports = {
   id,
   name,

@@ -1,0 +1,30 @@
+Index: src\core\vm_actor.c
+===================================================================
+--- src\core\vm_actor.c
++++ src\core\vm_actor.c
+@@ -497,9 +497,11 @@
+ 
+ void vm_actor_set_spritesheet(SCRIPT_CTX * THIS, INT16 idx, UBYTE spritesheet_bank, const spritesheet_t *spritesheet) OLDCALL BANKED {
+     UBYTE * n_actor = VM_REF_TO_PTR(idx);
+     actor_t * actor = actors + *n_actor;
+-    load_sprite(actor->base_tile, spritesheet, spritesheet_bank);
++    actor->using_sprite_buffer = !actor->using_sprite_buffer;
++    UBYTE base_tile = actor->base_tile + (actor->using_sprite_buffer ? actor->reserve_tiles: 0);
++    load_sprite(base_tile, spritesheet, spritesheet_bank);
+     actor->sprite.bank = spritesheet_bank;
+     actor->sprite.ptr = (void *)spritesheet;
+     load_animations(spritesheet, spritesheet_bank, ANIM_SET_DEFAULT, actor->animations);
+     load_bounds(spritesheet, spritesheet_bank, &actor->bounds);
+@@ -560,9 +562,11 @@
+     gbs_farptr_t * params = VM_REF_TO_PTR(idxB);
+     UBYTE spritesheet_bank = (UBYTE)(params->BANK);
+     const spritesheet_t *spritesheet = params->DATA;
+ 
+-    load_sprite(actor->base_tile, spritesheet, spritesheet_bank);
++    actor->using_sprite_buffer = !actor->using_sprite_buffer;
++    UBYTE base_tile = actor->base_tile + (actor->using_sprite_buffer ? actor->reserve_tiles: 0);
++    load_sprite(base_tile, spritesheet, spritesheet_bank);
+     actor->sprite.bank = spritesheet_bank;
+     actor->sprite.ptr = (void *)spritesheet;
+     load_animations(spritesheet, spritesheet_bank, ANIM_SET_DEFAULT, actor->animations);
+     load_bounds(spritesheet, spritesheet_bank, &actor->bounds);

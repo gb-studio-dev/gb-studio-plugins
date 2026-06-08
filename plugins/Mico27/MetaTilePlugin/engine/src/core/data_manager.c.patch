@@ -1,0 +1,34 @@
+Index: src\core\data_manager.c
+===================================================================
+--- src\core\data_manager.c
++++ src\core\data_manager.c
+@@ -1,5 +1,5 @@
+-#pragma bank 255
++﻿#pragma bank 255
+ 
+ #include <string.h>
+ 
+ #include "system.h"
+@@ -14,8 +14,9 @@
+ #include "ui.h"
+ #include "palette.h"
+ #include "data/spritesheet_none.h"
+ #include "data/data_bootstrap.h"
++#include "meta_tiles.h"
+ #include "macro.h"
+ 
+ #define ALLOC_BKG_TILES_TOWARDS_SPR
+ 
+@@ -332,9 +333,12 @@
+     if (triggers_len != 0) {
+         MemcpyBanked(&triggers, scn.triggers.ptr, sizeof(trigger_t) * triggers_len, scn.triggers.bank);
+     }
+ 
++    metatile_reset();
+     scroll_reset();
++    scroll_offset_x = 0;
++    scroll_offset_y = 0;
+     trigger_reset();
+ 
+     emote_actor = NULL;
+ 

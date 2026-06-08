@@ -32,8 +32,8 @@ const fields = [
 const compile = (input, helpers) => {
   const {
     _setTextLayer,
-  } = helpers;  		
-	_setTextLayer(valuesMap[input.location] ?? ".TEXT_LAYER_BKG");
+  } = helpers;
+    _setTextLayer(valuesMap[input.location] ?? ".TEXT_LAYER_BKG");
 };
 
 module.exports = {

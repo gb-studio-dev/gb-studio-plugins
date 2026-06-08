@@ -37,12 +37,12 @@ const fields = [
 
 const compile = (input, helpers) => {
   const { _callNative, _stackPushConst, _stackPop, _addComment } = helpers;
-      
+
   _addComment("Save Game Data Using Save Config");
-    
-  _stackPushConst(input.saveSlot);  	
+
+  _stackPushConst(input.saveSlot);
   _callNative("vm_data_save_ex");
-  _stackPop(1);   
+  _stackPop(1);
 };
 
 module.exports = {

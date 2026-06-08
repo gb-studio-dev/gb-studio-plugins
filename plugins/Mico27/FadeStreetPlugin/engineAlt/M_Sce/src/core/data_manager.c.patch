@@ -1,0 +1,57 @@
+Index: src\core\data_manager.c
+===================================================================
+--- src\core\data_manager.c
++++ src\core\data_manager.c
+@@ -163,37 +163,14 @@
+ }
+ 
+ UBYTE do_load_palette(palette_entry_t * dest, const palette_t * palette, UBYTE bank) BANKED {
+     UBYTE mask = ReadBankedUBYTE(&palette->mask, bank);
+-    palette_entry_t * sour = palette->cgb_palette;
+-    for (UBYTE i = mask; (i); i >>= 1, dest++) {
+-        if ((i & 1) == 0) continue;
+-        MemcpyBanked(dest, sour, sizeof(palette_entry_t), bank);
+-        sour++;
+-    }
++    dest;
++    palette;
++    bank;
+     return mask;
+ }
+ 
+-inline void load_bkg_palette(const palette_t * palette, UBYTE bank) {
+-    UBYTE mask = do_load_palette(BkgPalette, palette, bank);
+-    DMG_palette[0] = ReadBankedUBYTE(palette->palette, bank);
+-#ifdef SGB
+-    if (_is_SGB) {
+-        UBYTE sgb_palettes = SGB_PALETTES_NONE;
+-        if (mask & 0b00110000) sgb_palettes |= SGB_PALETTES_01;
+-        if (mask & 0b11000000) sgb_palettes |= SGB_PALETTES_23;
+-        SGBTransferPalettes(sgb_palettes);
+-    }
+-#endif
+-}
+-
+-inline void load_sprite_palette(const palette_t * palette, UBYTE bank) {
+-    do_load_palette(SprPalette, palette, bank);
+-    UWORD data = ReadBankedUWORD(palette->palette, bank);
+-    DMG_palette[1] = (UBYTE)data;
+-    DMG_palette[2] = (UBYTE)(data >> 8);
+-}
+-
+ UBYTE load_scene(const scene_t * scene, UBYTE bank, UBYTE init_data) BANKED {
+     UBYTE i;
+     scene_t scn;
+ 
+@@ -217,11 +194,8 @@
+ 
+     // Load background + tiles
+     load_background(scn.background.ptr, scn.background.bank);
+ 
+-    load_bkg_palette(scn.palette.ptr, scn.palette.bank);
+-    load_sprite_palette(scn.sprite_palette.ptr, scn.sprite_palette.bank);
+-
+     // Copy parallax settings
+     memcpy(&parallax_rows, &scn.parallax_rows, sizeof(parallax_rows));
+     if (scn.parallax_rows[0].next_y == 0) {
+         scene_LCD_type = (scene_type == SCENE_TYPE_LOGO) ? LCD_fullscreen : LCD_simple;

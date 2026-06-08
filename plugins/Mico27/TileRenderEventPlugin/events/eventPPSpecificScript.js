@@ -11,7 +11,7 @@ const fields = [
         options: [
           ["0", "Render column"],
           ["1", "Render row"],
-		  ["2", "Render all"],
+          ["2", "Render all"],
         ],
     },
     {
@@ -36,7 +36,7 @@ const fields = [
         ],
       },
   ];
-  
+
   const compile = (input, helpers) => {
     const {appendRaw, _compileSubScript, _addComment, vm_call_native, event } = helpers;
     const ScriptRef = _compileSubScript("render_event", input.script, "test_symbol"+input.render_event);
@@ -51,7 +51,7 @@ const fields = [
     appendRaw(`VM_CALL_NATIVE b_assign_render_script, _assign_render_script`);
     appendRaw(`VM_POP 3`);
   };
-  
+
   module.exports = {
     id,
     name,
@@ -60,5 +60,4 @@ const fields = [
     compile,
     allowedBeforeInitFade: true,
   };
-  
-  
+

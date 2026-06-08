@@ -29,7 +29,7 @@ export const autoLabel = (fetchArg) => {
   return `Set simulated input`;
 };
 
-export const fields = [  
+export const fields = [
   {
     key: "input",
     label: "Input",
@@ -41,13 +41,13 @@ export const fields = [
 
 export const compile = (input, helpers) => {
   const { _callNative, _stackPushConst, _stackPop, _addComment } = helpers;
-  
+
   const inputValue = inputDec(input.input);
-    
+
   _addComment(`Set Simulated Input`);
-  
+
   _stackPushConst(inputValue);
   _callNative("vm_set_simulated_input");
   _stackPop(1);
-  
+
 };

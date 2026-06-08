@@ -8,7 +8,7 @@ export const autoLabel = (fetchArg) => {
   return `Set actor active index`;
 };
 
-export const fields = [  
+export const fields = [
   {
     key: "actorId",
     label: l10n("ACTOR"),
@@ -30,19 +30,19 @@ export const fields = [
 
 export const compile = (input, helpers) => {
   const { _callNative, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue, setActorId } = helpers;
-  
+
   const tmp0 = _declareLocal("tmp0", 1, true);
   const tmp1 = _declareLocal("tmp1", 1, true);
-    
+
   setActorId(tmp0, input.actorId);
   variableSetToScriptValue(tmp1, input.activeIdx);
-    
+
   _addComment("Set actor active index");
-    
+
   _stackPush(tmp1);
   _stackPush(tmp0);
-  		
+
   _callNative("set_actor_active_index");
-  _stackPop(2);   
-  
+  _stackPop(2);
+
 };

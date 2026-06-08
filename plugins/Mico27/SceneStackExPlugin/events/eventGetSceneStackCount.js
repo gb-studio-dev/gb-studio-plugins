@@ -12,17 +12,17 @@ export const autoLabel = (fetchArg) => {
 
 export const fields = [
   {
-  	key: "output",
-  	label: "Variable",
-  	type: "variable",
-  	defaultValue: "LAST_VARIABLE",
+      key: "output",
+      label: "Variable",
+      type: "variable",
+      defaultValue: "LAST_VARIABLE",
   },
-    
+
 ];
 
 export const compile = (input, helpers) => {
-    
-    const { _getMemUInt8, getVariableAlias } = helpers;    
+
+    const { _getMemUInt8, getVariableAlias } = helpers;
     const variableAlias = getVariableAlias(input.output);
-    _getMemUInt8(variableAlias, "scene_stack_count");    
+    _getMemUInt8(variableAlias, "scene_stack_count");
 };

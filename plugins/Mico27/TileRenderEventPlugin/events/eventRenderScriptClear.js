@@ -11,11 +11,11 @@ const fields = [
         options: [
           ["0", "Render column"],
           ["1", "Render row"],
-		  ["2", "Render all"],
+          ["2", "Render all"],
         ],
     },
   ];
-  
+
   const compile = (input, helpers) => {
     const {appendRaw, _addComment} = helpers;
 
@@ -26,7 +26,7 @@ const fields = [
     appendRaw(`VM_CALL_NATIVE b_clear_render_script, _clear_render_script`);
     appendRaw(`VM_POP 1`);
   };
-  
+
   module.exports = {
     id,
     name,
@@ -35,5 +35,4 @@ const fields = [
     compile,
     allowedBeforeInitFade: true,
   };
-  
-  
+

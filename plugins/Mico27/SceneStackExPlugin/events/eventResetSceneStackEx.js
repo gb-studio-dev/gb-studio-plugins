@@ -18,8 +18,8 @@ export const fields = [
 ];
 
 export const compile = (input, helpers) => {
-    
+
     const { _callNative } = helpers;
     _callNative("vm_reset_scene_stack_ex");
-    
+
 };

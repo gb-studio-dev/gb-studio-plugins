@@ -15,7 +15,7 @@ export const fields = [].concat(
       key: `rom_data_symbol`,
       label: "Custom data symbol",
       type: "text",
-    }, 
+    },
     {
       key: "tilesetCount",
       label: "Tileset count",
@@ -28,10 +28,10 @@ export const fields = [].concat(
   ],
   Array(4096)
     .fill()
-    .reduce((arr, _, i) => {      
+    .reduce((arr, _, i) => {
       arr.push({
     type: "group",
-	wrapItems: false,
+    wrapItems: false,
     conditions: [
       {
         key: "tilesetCount",
@@ -39,7 +39,7 @@ export const fields = [].concat(
       },
     ],
     fields: [
-	  {
+      {
         key: `tilesetId_${i}`,
         type: "tileset",
         label: `tileset ${i + 1}`,
@@ -48,56 +48,56 @@ export const fields = [].concat(
     ],
   });
       return arr;
-    }, []),  
+    }, []),
 );
 
 export const compile = (input, helpers) => {
-  
+
   const { options, writeAsset, _getAvailableSymbol } = helpers;
-  
+
   const { tilesets } = options;
-  
+
   let tilesetsIncludes = "";
   let tilesetsData = "";
-    
+
   for (let i = 0; i < input.tilesetCount; i++){
       const tileset = tilesets.find((t) => t.id === input[`tilesetId_${i}`]) ?? tilesets[0];
       if (!tileset) {
           continue;
       }
-      tilesetsIncludes += `#include "data/${tileset.symbol}.h"\n	  `
-	  tilesetsData += `TO_FAR_PTR_T(${tileset.symbol}),\n	 	 `;
+      tilesetsIncludes += `#include "data/${tileset.symbol}.h"\n      `
+      tilesetsData += `TO_FAR_PTR_T(${tileset.symbol}),\n          `;
   }
-  
+
   const tilesets_symbol = _getAvailableSymbol(input.rom_data_symbol);
-  
+
   writeAsset(
       `${tilesets_symbol}.c`,
       `#pragma bank 255
-	  
-	  #include "data/${tilesets_symbol}.h"
-	  #include "bankdata.h"
-	  ${tilesetsIncludes}
-	  
-	  BANKREF(${tilesets_symbol})
-	  
-	  const far_ptr_t ${tilesets_symbol}[] = {
-	 	 ${tilesetsData}
-	  };`
-	);
-	  
+
+      #include "data/${tilesets_symbol}.h"
+      #include "bankdata.h"
+      ${tilesetsIncludes}
+
+      BANKREF(${tilesets_symbol})
+
+      const far_ptr_t ${tilesets_symbol}[] = {
+          ${tilesetsData}
+      };`
+    );
+
   writeAsset(
-	  `${tilesets_symbol}.h`,
-	  `#ifndef __${tilesets_symbol}_INCLUDE__
-	  #define __${tilesets_symbol}_INCLUDE__
-	  
-	  #include "bankdata.h"
-	  	  	  
-	  BANKREF_EXTERN(${tilesets_symbol})
-	  extern const far_ptr_t ${tilesets_symbol}[];
-	  
-	  #endif
-	  `
-    );  
-  
+      `${tilesets_symbol}.h`,
+      `#ifndef __${tilesets_symbol}_INCLUDE__
+      #define __${tilesets_symbol}_INCLUDE__
+
+      #include "bankdata.h"
+
+      BANKREF_EXTERN(${tilesets_symbol})
+      extern const far_ptr_t ${tilesets_symbol}[];
+
+      #endif
+      `
+    );
+
 };

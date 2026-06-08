@@ -48,21 +48,21 @@ export const fields = [
             },
         ],
     },
-    
+
 ];
 
 export const compile = (input, helpers) => {
-    
+
     const { _callNative, _stackPushConst, _addComment, _fadeIn, _ifConst, _compilePath, _declareLocal, getNextLabel, _addNL, _jump, _label, _stackPop } = helpers;
-    
+
     const hasPoppedRef = _declareLocal("has_popped", 1, true);
     const popLabel = getNextLabel();
     const endLabel = getNextLabel();
-    _addComment(`Push scene stack`);        
-    _callNative("vm_push_scene_stack_ex");    
+    _addComment(`Push scene stack`);
+    _callNative("vm_push_scene_stack_ex");
     _stackPushConst(hasPoppedRef);
     _callNative("vm_poll_stack_pop");
-    _stackPop(1);    
+    _stackPop(1);
     _ifConst(".EQ", hasPoppedRef, 1, popLabel, 0);
     _addNL();
     _compilePath(input.push);
@@ -73,6 +73,6 @@ export const compile = (input, helpers) => {
         _fadeIn(true);
     }
     _label(endLabel);
-    
+
     _addNL();
 };

@@ -29,7 +29,7 @@ export const autoLabel = (fetchArg) => {
   return `Start simulated inputs`;
 };
 
-export const fields = [  
+export const fields = [
   {
     key: "input_cancel",
     label: "Cancel sequence input",
@@ -54,21 +54,21 @@ export const fields = [
 export const compile = (input, helpers) => {
   const { _callNative, _rpn, _stackPushConst, _compileSubScript, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue, event } = helpers;
   const {input_sequence, input_cancel, input_sequence_completed} = input;
-  
+
   const inputCancelValue = inputDec(input_cancel);
-  
+
   const script_ref = _compileSubScript("input", input_sequence, "simulated_input_0");
-  
+
   const completed_script_ref = _compileSubScript("input", input_sequence_completed, "simulated_input_complete_0");
-  
+
   _addComment(`Simulated Inputs Attach`);
-  
+
   _stackPushConst(`_${completed_script_ref}`);
-  _stackPushConst(`___bank_${completed_script_ref}`);  
+  _stackPushConst(`___bank_${completed_script_ref}`);
   _stackPushConst(`_${script_ref}`);
-  _stackPushConst(`___bank_${script_ref}`);  
+  _stackPushConst(`___bank_${script_ref}`);
   _stackPushConst(inputCancelValue);
   _callNative("vm_attach_simulate_input");
   _stackPop(5);
-  
+
 };

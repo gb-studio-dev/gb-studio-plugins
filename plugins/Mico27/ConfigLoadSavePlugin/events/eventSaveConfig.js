@@ -9,13 +9,13 @@ const subGroups = {
 
 const fields = [].concat(
   [
-	{
+    {
         label: "⚠️ To peek data using save configuration, use the \"Store Variable from Game Data In Variable by Index\" event"
     },
-	{
+    {
         label: "⚠️ To save data using save configuration, use the \"Save Game Data Using Save Config\" event"
     },
-	{
+    {
         label: "⚠️ To load data using save configuration, use the \"Load Game Data Using Save Config\" event"
     },
     {
@@ -30,7 +30,7 @@ const fields = [].concat(
   ],
   Array(768)
     .fill()
-    .reduce((arr, _, i) => {      
+    .reduce((arr, _, i) => {
       arr.push({
         key: `variableDest${i}`,
         conditions: [
@@ -40,21 +40,21 @@ const fields = [].concat(
           },
         ],
         label: `Variable at index ${i}`,
-		description: `Variable at index ${i}`,
-		type: "variable",
-		defaultValue: "LAST_VARIABLE",
+        description: `Variable at index ${i}`,
+        type: "variable",
+        defaultValue: "LAST_VARIABLE",
       });
       return arr;
-    }, []),  
+    }, []),
 );
 
 const compile = (input, helpers) => {
-  const { getVariableAlias, writeAsset } = helpers;  
+  const { getVariableAlias, writeAsset } = helpers;
   let save_points = "";
-  for (let i = 0; i < input.variableAmount; i++){	  
-	  save_points += `SAVEPOINT(script_memory[${getVariableAlias(input[`variableDest${i}`])}],${i}),\n`;
+  for (let i = 0; i < input.variableAmount; i++){
+      save_points += `SAVEPOINT(script_memory[${getVariableAlias(input[`variableDest${i}`])}],${i}),\n`;
   }
-  
+
   writeAsset(
       `save_points.c`,
       `#pragma bank 255
@@ -69,7 +69,7 @@ BANKREF(save_points)
 
 
 const save_point_t save_points[] = {
-	${save_points}
+    ${save_points}
     // terminator
     SAVEPOINTS_END
 };`
@@ -85,7 +85,7 @@ const save_point_t save_points[] = {
 typedef struct save_point_t {
     void * target;
     size_t size;
-	uint8_t id;
+    uint8_t id;
 } save_point_t;
 
 #define SAVEPOINT(A, ID) {&(A), sizeof(A), (ID)}

@@ -76,8 +76,8 @@ const compile = (input, helpers) => {
     if (input.wait_btn_any){
         waitFlags.push(".UI_WAIT_BTN_ANY");
     }
-    _overlayWait(input.modal, waitFlags);    
-    
+    _overlayWait(input.modal, waitFlags);
+
 };
 
 module.exports = {

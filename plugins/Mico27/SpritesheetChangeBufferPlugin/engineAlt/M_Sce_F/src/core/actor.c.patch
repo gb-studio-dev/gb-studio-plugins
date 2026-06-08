@@ -1,0 +1,41 @@
+Index: src\core\actor.c
+===================================================================
+--- src\core\actor.c
++++ src\core\actor.c
+@@ -1,5 +1,5 @@
+-#pragma bank 255
++﻿#pragma bank 255
+ 
+ #include "actor.h"
+ 
+ #include <gbdk/platform.h>
+@@ -211,12 +211,12 @@
+ 
+         if (!(window_hide_actors && (screen_x + 8 > WX_REG) && (screen_y - 8 > WY_REG))) {
+             SWITCH_ROM(PLAYER.sprite.bank);
+             spritesheet_t *sprite = PLAYER.sprite.ptr;
+-
++            UBYTE base_tile = PLAYER.base_tile + (PLAYER.using_sprite_buffer ? PLAYER.reserve_tiles: 0);
+             allocated_hardware_sprites += move_metasprite(
+                 *(sprite->metasprites + PLAYER.frame),
+-                PLAYER.base_tile,
++                base_tile,
+                 allocated_hardware_sprites,
+                 screen_x,
+                 screen_y
+             );
+@@ -241,12 +241,12 @@
+             continue;
+         }
+         SWITCH_ROM(actor->sprite.bank);
+         spritesheet_t *sprite = actor->sprite.ptr;
+-
++        UBYTE base_tile = actor->base_tile + (actor->using_sprite_buffer ? actor->reserve_tiles: 0);
+         allocated_hardware_sprites += move_metasprite(
+             *(sprite->metasprites + actor->frame),
+-            actor->base_tile,
++            base_tile,
+             allocated_hardware_sprites,
+             screen_x,
+             screen_y
+         );

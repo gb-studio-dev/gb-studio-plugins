@@ -44,7 +44,7 @@ const compile = (input, helpers) => {
   const {
     _displayText,
   } = helpers;
-  	_displayText(input.preserve_pos, (input.use_start_tile)? input.start_tile: null);
+      _displayText(input.preserve_pos, (input.use_start_tile)? input.start_tile: null);
 };
 
 module.exports = {

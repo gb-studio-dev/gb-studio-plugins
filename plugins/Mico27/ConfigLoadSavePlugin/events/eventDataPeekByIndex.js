@@ -18,13 +18,13 @@ const fields = [
   {
     type: "group",
     fields: [
-	  {
-		key: `variableSource`,
-		label: "Saved data index",
-		description: "Saved data index",
-		type: "number",
-		defaultValue: 0,
-	  }, 
+      {
+        key: `variableSource`,
+        label: "Saved data index",
+        description: "Saved data index",
+        type: "number",
+        defaultValue: 0,
+      },
       {
         key: "saveSlot",
         label: l10n("FIELD_SAVE_SLOT"),
@@ -56,26 +56,26 @@ const fields = [
 
 const compile = (input, helpers) => {
 
-    const { _declareLocal, getVariableAlias, getNextLabel, _addComment, _ifConst, _setVariableConst, _label, _addNL, _stackPushConst, _callNative, _stackPop } = helpers;  
-    
+    const { _declareLocal, getVariableAlias, getNextLabel, _addComment, _ifConst, _setVariableConst, _label, _addNL, _stackPushConst, _callNative, _stackPop } = helpers;
+
   const variableDestAlias = getVariableAlias(input.variableDest);
   //const foundLabel = getNextLabel();
-  
+
   _addComment(
     `Store ${input.variableSource} from save slot ${input.saveSlot} into ${variableDestAlias}`
-  );  
-  
-  _stackPushConst(variableDestAlias);   
-  _stackPushConst(1); 
-  _stackPushConst(input.variableSource); 
-  _stackPushConst(input.saveSlot);  		
+  );
+
+  _stackPushConst(variableDestAlias);
+  _stackPushConst(1);
+  _stackPushConst(input.variableSource);
+  _stackPushConst(input.saveSlot);
   _callNative("vm_data_peek_ex");
-  _stackPop(4);  
+  _stackPop(4);
   //_ifConst(".EQ", peekValueRef, 1, foundLabel, 0);
   //_setVariableConst(input.variableDest, 0);
   //_label(foundLabel);
   _addNL();
-  
+
 };
 
 module.exports = {

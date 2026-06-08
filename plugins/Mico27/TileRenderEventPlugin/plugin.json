@@ -3,8 +3,61 @@
   "name": "Tile Render Event Plugin",
   "author": "Mico27",
   "url": "https://github.com/Mico27/GBS-TileRenderEventPlugin",
-  "description": "Can register scripts to be run when a row/column/whole screen is rendered.\nWARNING: this plugin modifies the following engine files:\n- scroll.h\n- scroll.c\nAny other plugin that modifies any of these files will not be compatible with this plugin unless the files are manually merged.",
+  "description": "Can register scripts to be run when a row/column/whole screen is rendered.",
   "license": "MIT",
-  "version": "1.2.0",
-  "gbsVersion": ">=4.2.2"
+  "version": "4.3.0",
+  "gbsVersion": ">=4.3.0",
+  "order": -1,
+  "engineAltRules": [
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/MetaTilePlugin"
+        ]
+      },
+      "use": "Scr_M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "MetaTilePlugin"
+        ]
+      },
+      "use": "Scr_M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/MetaTilePlugin"
+        ]
+      },
+      "use": "M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "MetaTilePlugin"
+        ]
+      },
+      "use": "M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin"
+        ]
+      },
+      "use": "Scr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin"
+        ]
+      },
+      "use": "Scr"
+    }
+  ]
 }

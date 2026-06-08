@@ -1,0 +1,83 @@
+Index: src\states\topdown.c
+===================================================================
+--- src\states\topdown.c
++++ src\states\topdown.c
+@@ -11,8 +11,9 @@
+ #include "input.h"
+ #include "trigger.h"
+ #include "math.h"
+ #include "vm.h"
++#include "meta_tiles.h"
+ 
+ #ifndef INPUT_TOPDOWN_INTERACT
+ #define INPUT_TOPDOWN_INTERACT INPUT_A
+ #endif
+@@ -52,9 +53,11 @@
+         if (trigger_activate_at_intersection(&PLAYER.bounds, &PLAYER.pos, FALSE)) {
+             // Landed on a trigger
+             return;
+         }
+-
++#ifdef ENABLE_TOPDOWN_ENTER_METATILE
++        metatile_overlap_at_intersection(&PLAYER.bounds, &PLAYER.pos);
++#endif
+         // Check input to set player movement
+         if (INPUT_RECENT_LEFT) {
+             player_moving = TRUE;
+             new_dir = DIR_LEFT;
+@@ -64,8 +67,13 @@
+             tile_end   = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
+             UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
+             if (tile_col_test_range_y(COLLISION_RIGHT, tile_x - 1, tile_start, tile_end)) {
+                 player_moving = FALSE;
++#ifdef ENABLE_TOPDOWN_LEFT_COLLISION_METATILE
++                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
++            } else {
++                reset_collision_cache(DIR_LEFT);
++#endif
+             }
+         } else if (INPUT_RECENT_RIGHT) {
+             player_moving = TRUE;
+             new_dir = DIR_RIGHT;
+@@ -75,8 +83,13 @@
+             tile_end   = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
+             UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
+             if (tile_col_test_range_y(COLLISION_LEFT, tile_x + 1, tile_start, tile_end)) {
+                 player_moving = FALSE;
++#ifdef ENABLE_TOPDOWN_RIGHT_COLLISION_METATILE
++                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
++            } else {
++                reset_collision_cache(DIR_RIGHT);
++#endif
+             }
+         } else if (INPUT_RECENT_UP) {
+             player_moving = TRUE;
+             new_dir = DIR_UP;
+@@ -86,8 +99,13 @@
+             tile_end   = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
+             UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
+             if (tile_col_test_range_x(COLLISION_BOTTOM, tile_y - 1, tile_start, tile_end)) {
+                 player_moving = FALSE;
++#ifdef ENABLE_TOPDOWN_UP_COLLISION_METATILE
++                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
++            } else {
++                reset_collision_cache(DIR_UP);
++#endif
+             }
+         } else if (INPUT_RECENT_DOWN) {
+             player_moving = TRUE;
+             new_dir = DIR_DOWN;
+@@ -97,8 +115,13 @@
+             tile_end   = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
+             UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
+             if (tile_col_test_range_x(COLLISION_TOP, tile_y + 1, tile_start, tile_end)) {
+                 player_moving = FALSE;
++#ifdef ENABLE_TOPDOWN_DOWN_COLLISION_METATILE
++                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
++            } else {
++                reset_collision_cache(DIR_DOWN);
++#endif
+             }
+         }
+ 
+         // Update direction animation

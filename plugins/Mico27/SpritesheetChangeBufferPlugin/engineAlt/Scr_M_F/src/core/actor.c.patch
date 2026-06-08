@@ -1,0 +1,19 @@
+Index: src\core\actor.c
+===================================================================
+--- src\core\actor.c
++++ src\core\actor.c
+@@ -217,12 +217,12 @@
+             continue;
+         }
+         SWITCH_ROM(actor->sprite.bank);
+         spritesheet_t *sprite = actor->sprite.ptr;
+-
++        UBYTE base_tile = actor->base_tile + (actor->using_sprite_buffer ? actor->reserve_tiles: 0);
+         allocated_hardware_sprites += move_metasprite(
+             *(sprite->metasprites + actor->frame),
+-            actor->base_tile,
++            base_tile,
+             allocated_hardware_sprites,
+             screen_x,
+             screen_y
+         );

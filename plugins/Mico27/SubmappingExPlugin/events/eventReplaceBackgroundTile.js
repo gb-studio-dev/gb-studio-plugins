@@ -26,7 +26,7 @@ export const fields = [
       type: "number",
       value: 0,
     },
-  }, 
+  },
   {
     key: `tile_id`,
     label: "Tile id",
@@ -35,15 +35,15 @@ export const fields = [
       type: "number",
       value: 0,
     },
-  }, 
+  },
 ];
 
-export const compile = (input, helpers) => {  
-  const { _callNative, _stackPushScriptValue, _stackPop, _addComment } = helpers;  
-  _addComment("Replace background tile");  
+export const compile = (input, helpers) => {
+  const { _callNative, _stackPushScriptValue, _stackPop, _addComment } = helpers;
+  _addComment("Replace background tile");
   _stackPushScriptValue(input.tile_id);
   _stackPushScriptValue(input.y);
-  _stackPushScriptValue(input.x);  		
+  _stackPushScriptValue(input.x);
   _callNative("vm_replace_background_tile");
-  _stackPop(3);   
+  _stackPop(3);
 };

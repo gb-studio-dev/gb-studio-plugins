@@ -30,11 +30,11 @@ export const fields = [
 ];
 
 export const compile = (input, helpers) => {
-    
+
     const { _callNative, fadeOut } = helpers;
     if (input.fadeSpeed > 0){
         fadeOut(input.fadeSpeed);
     }
     _callNative("vm_pop_all_scene_stack_ex");
-    
+
 };

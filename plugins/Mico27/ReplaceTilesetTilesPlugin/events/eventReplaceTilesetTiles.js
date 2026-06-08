@@ -15,7 +15,7 @@ export const fields = [
     type: "tileset",
     label: "tileset",
     defaultValue: "LAST_TILESET",
-  }, 
+  },
   {
     key: `idx_target_tile`,
     label: "Target Tile Index",
@@ -48,19 +48,19 @@ export const fields = [
 
 export const compile = (input, helpers) => {
   const { options, _callNative, _stackPushConst, _stackPush, _stackPop, _addComment, _declareLocal, _stackPushScriptValue, _replaceTile } = helpers;
-  
+
   const { tilesets } = options;
   const tileset = tilesets.find((t) => t.id === input.tilesetId) ?? tilesets[0];
   if (!tileset) {
     return;
   }
-      
+
   _stackPushScriptValue(input.idx_target_tile);
   _stackPushScriptValue(input.idx_start_tile);
-    
+
   _addComment("Replace tiles");
-  
+
   _replaceTile(".ARG1", tileset.symbol, ".ARG0", input.tile_length);
-  
+
   _stackPop(2);
 };

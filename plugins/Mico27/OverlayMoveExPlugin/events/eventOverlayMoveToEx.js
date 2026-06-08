@@ -13,42 +13,42 @@ export const autoLabel = (fetchArg) => {
 
 export const fields = [
   {
-  	key: `x`,
-  	label: l10n("FIELD_X"),
+      key: `x`,
+      label: l10n("FIELD_X"),
     description: l10n("FIELD_X_DESC"),
-  	type: "value",
-  	width: "50%",
-  	defaultValue: {
+      type: "value",
+      width: "50%",
+      defaultValue: {
         type: "number",
         value: 0,
-  	},
+      },
     unitsField: "units",
     unitsDefault: "tiles",
     unitsAllowed: ["tiles", "pixels"],
   },
   {
-  	key: `y`,
-  	label: l10n("FIELD_Y"),
+      key: `y`,
+      label: l10n("FIELD_Y"),
     description: l10n("FIELD_Y_DESC"),
-  	type: "value",
-  	width: "50%",
-  	defaultValue: {
+      type: "value",
+      width: "50%",
+      defaultValue: {
         type: "number",
         value: 0,
-  	},
+      },
     unitsField: "units",
     unitsDefault: "tiles",
     unitsAllowed: ["tiles","pixels"],
   },
   {
-  	key: `sppf`,
-  	label: "Subpixels per frame",
-  	type: "value",
-  	width: "50%",
-  	defaultValue: {
+      key: `sppf`,
+      label: "Subpixels per frame",
+      type: "value",
+      width: "50%",
+      defaultValue: {
         type: "number",
         value: 0,
-  	},  
+      },
   },
 ];
 
@@ -71,14 +71,14 @@ const scriptValueToPixels = (value, units) => {
 };
 
 export const compile = (input, helpers) => {
-  const { _invoke, _stackPushScriptValue, _stackPushConst, _setConst, _declareLocal, _localRef  } = helpers;    
+  const { _invoke, _stackPushScriptValue, _stackPushConst, _setConst, _declareLocal, _localRef  } = helpers;
     _stackPushConst(0);
-    _stackPushConst(0);    
+    _stackPushConst(0);
     const valueX = scriptValueToPixels(input.x, input.units);
     const valueY = scriptValueToPixels(input.y, input.units);
     _stackPushScriptValue(valueX);
     _stackPushScriptValue(valueY);
     _stackPushScriptValue(input.sppf);
     _invoke("vm_overlay_move_to_ex", 5, ".ARG4");
-    
+
 };

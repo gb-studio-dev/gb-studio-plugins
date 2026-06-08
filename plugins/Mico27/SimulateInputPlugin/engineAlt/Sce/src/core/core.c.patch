@@ -1,0 +1,54 @@
+Index: src\core\core.c
+===================================================================
+--- src\core\core.c
++++ src\core\core.c
+@@ -15,8 +15,9 @@
+ #include "linked_list.h"
+ #include "ui.h"
+ #include "input.h"
+ #include "events.h"
++#include "simulate_input.h"
+ #include "data_manager.h"
+ #include "music_manager.h"
+ #include "fade_manager.h"
+ #include "scroll.h"
+@@ -54,8 +55,9 @@
+     camera_init();
+     actors_init();
+     ui_init();
+     events_init(FALSE);
++    simulate_input_init(FALSE);
+     timers_init(FALSE);
+     music_init_events(FALSE);
+     scene_stack_init();
+ }
+@@ -73,8 +75,9 @@
+                     script_execute(BANK(bootstrap_script), bootstrap_script, 0, 0);
+                     break;
+                 }
+                 if (!VM_ISLOCKED()) {
++                    simulate_input_update();
+                     if (joy != 0) events_update();                      // update joypad events (must be the first)
+                     if (!pause_state_update) state_update();                                     // update current scene, depending on its type
+                     if ((game_time & 0x0F) == 0x00) timers_update();    // update timers
+                     music_events_update();                              // update music events
+@@ -89,8 +92,9 @@
+                 if (projectiles_active_head) {
+                     projectiles_update();                               // update projectiles
+                     projectiles_render();                               // render projectiles
+                 }
++
+                 ui_update();
+                 actors_handle_player_collision();
+ 
+                 game_time++;
+@@ -125,8 +129,9 @@
+                         // reset timers on scene change
+                         timers_init(FALSE);
+                         // reset input events on scene change
+                         events_init(FALSE);
++                        simulate_input_init(FALSE);
+                         // reset music events
+                         music_init_events(FALSE);
+                         // load scene
+                         far_ptr_t scene;
