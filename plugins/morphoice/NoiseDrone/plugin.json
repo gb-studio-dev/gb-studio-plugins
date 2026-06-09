@@ -1,0 +1,10 @@
+{
+  "name": "Noise Drone",
+  "type": "enginePlugin",
+  "author": "Morphoice",
+  "description": "Continuous noise channel drone generator with portamento pitch sliding. Uses the Game Boy CH4 noise channel for atmospheric drones, engine sounds, ocean surf loops, or environmental ambience. 23-step pitch table with 15-bit and 7-bit LFSR modes.",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0",
+  "license": "MIT",
+  "url": "https://www.morphoice.com/gameboy/downloads#noisedrone"
+}

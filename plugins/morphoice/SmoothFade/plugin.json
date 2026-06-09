@@ -1,0 +1,10 @@
+{
+  "name": "Smooth Fade",
+  "type": "enginePlugin",
+  "author": "Morphoice",
+  "description": "Replaces the default harsh palette swap fade with smooth linear interpolation across all 64 CGB palette entries. Supports fade to white, black, or custom RGB color. Three speed presets (8/16/32 steps). LUT-free inline interpolation saves 96 bytes WRAM. Includes Set Fade Color event plugin for custom RGB targets.",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0",
+  "license": "MIT",
+  "url": "https://www.morphoice.com/gameboy/downloads#smoothfade"
+}
