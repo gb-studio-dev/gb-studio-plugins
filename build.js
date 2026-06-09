@@ -1,5 +1,6 @@
 import {
   existsSync,
+  rmSync,
   cpSync,
   mkdirSync,
   readFileSync,
@@ -93,6 +94,9 @@ console.log(
 // Utility function to zip a plugin folder
 function zipPluginFolder(pluginDir, zipFilePath) {
   try {
+    if (existsSync(zipFilePath)) {
+      rmSync(zipFilePath);  // delete stale zip first
+    }
     // Run the zip command from inside the plugin folder
     execSync(`zip -r "${zipFilePath}" .`, { cwd: pluginDir, stdio: "inherit" });
     console.log(`Successfully zipped ${pluginDir}`);
