@@ -11,7 +11,7 @@ const folderPath = path.join(__dirname, "dist");
 
 const waitFor = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
-app.get("*", async (req, res) => {
+app.get("/{*splat}", async (req, res) => {
   const decodedPath = decodeURIComponent(req.path);
   const filePath = path.join(folderPath, decodedPath);
   try {
