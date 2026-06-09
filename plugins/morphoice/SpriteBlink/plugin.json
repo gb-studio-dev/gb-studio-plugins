@@ -1,0 +1,10 @@
+{
+  "name": "Sprite Blink",
+  "type": "enginePlugin",
+  "author": "Morphoice",
+  "description": "Per-pixel eye blink animation for up to 2 actors via direct VRAM writes during VBlank. Supports 4 eye shapes (1x1, 2x1, 1x2, 2x2 L-shape), configurable pixel coordinates, and blink color. Eyes only blink when the actor faces down. Randomized blink timing for natural appearance. Requires a core interrupts.c override to hook into VBL_isr.",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.2.0",
+  "license": "MIT",
+  "url": "https://www.morphoice.com/gameboy/downloads#spriteblink"
+}
