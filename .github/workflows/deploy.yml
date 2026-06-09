@@ -13,29 +13,27 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "24.16.0"
+          package-manager-cache: false
 
       - name: Enable Corepack
         run: corepack enable
 
       - name: Install Dependencies
-        run: |
-          yarn
+        run: yarn
 
       - name: Create dist directory
-        run: |
-          mkdir ./dist
+        run: mkdir ./dist
 
       - name: Generate output
-        run: |
-          yarn run build
+        run: yarn run build
 
       - name: Upload Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: "./dist"
 
@@ -54,4 +52,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
