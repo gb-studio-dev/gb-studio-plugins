@@ -29,18 +29,12 @@ export const fields = [
 
 export const compile = (input, helpers) => {
 
-  const { _callNative, _stackPush, _stackPushConst, _stackPop, _addComment, _declareLocal, variableSetToScriptValue } = helpers;
-
-  const tmp0 = _declareLocal("tmp0", 1, true);
-  const tmp1 = _declareLocal("tmp1", 1, true);
-
-  variableSetToScriptValue(tmp0, input.metatile_id);
-  variableSetToScriptValue(tmp1, input.collision);
+  const { _callNative, _stackPop, _addComment, _stackPushScriptValue } = helpers;
 
   _addComment("Replace collision");
 
-  _stackPush(tmp1);
-  _stackPush(tmp0);
+  _stackPushScriptValue(input.collision);
+  _stackPushScriptValue(input.metatile_id);
 
   _callNative("vm_replace_collision");
   _stackPop(2);

@@ -37,21 +37,15 @@ export const fields = [
 
 export const compile = (input, helpers) => {
 
-  const { _callNative, _stackPushConst, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue, getVariableAlias } = helpers;
-
-  const tmp0 = _declareLocal("tmp0", 1, true);
-  const tmp1 = _declareLocal("tmp1", 1, true);
-
-  variableSetToScriptValue(tmp0, input.x);
-  variableSetToScriptValue(tmp1, input.y);
+  const { _callNative, _stackPushConst, _stackPop, _addComment, getVariableAlias, _stackPushScriptValue } = helpers;
 
   const variableAlias = getVariableAlias(input.output);
 
   _addComment("Get metatile collision at position");
 
   _stackPushConst(variableAlias);
-  _stackPush(tmp1);
-  _stackPush(tmp0);
+  _stackPushScriptValue(input.y);
+  _stackPushScriptValue(input.x);
 
   _callNative("vm_get_collision_at_pos");
   _stackPop(3);
