@@ -46,23 +46,14 @@ export const fields = [
 
 export const compile = (input, helpers) => {
 
-  const { _callNative, _stackPush, _stackPushConst, _stackPop, _addComment, _declareLocal, variableSetToScriptValue } = helpers;
-
-  const tmp0 = _declareLocal("tmp0", 1, true);
-  const tmp1 = _declareLocal("tmp1", 1, true);
-  const tmp2 = _declareLocal("tmp2", 1, true);
-  const tmp3 = _declareLocal("tmp3", 1, true);
-
-  variableSetToScriptValue(tmp0, input.x);
-  variableSetToScriptValue(tmp1, input.y);
-  variableSetToScriptValue(tmp2, input.metatile_id);
+  const { _callNative, _stackPushConst, _stackPop, _addComment, _stackPushScriptValue } = helpers;
 
   _addComment("Replace metatile");
 
   _stackPushConst((input.commit)? 1: 0);
-  _stackPush(tmp2);
-  _stackPush(tmp1);
-  _stackPush(tmp0);
+  _stackPushScriptValue(input.metatile_id);
+  _stackPushScriptValue(input.y);
+  _stackPushScriptValue(input.x);
 
   _callNative("vm_replace_meta_tile");
   _stackPop(4);
