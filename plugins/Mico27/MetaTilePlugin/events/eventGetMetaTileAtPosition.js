@@ -37,16 +37,25 @@ export const fields = [
 
 export const compile = (input, helpers) => {
 
-  const { _callNative, _stackPushConst, _stackPop, _addComment, getVariableAlias, _stackPushScriptValue } = helpers;
-
+  const { _callNative, _stackPushConst, _stackPop, _addComment, getVariableAlias, _stackPushScriptValue, _isIndirectVariable, _declareLocal, _setInd } = helpers;
+  
   const variableAlias = getVariableAlias(input.output);
+  let dest = variableAlias;
+  if (_isIndirectVariable(input.output)) {
+    const metatile_result = _declareLocal("metatile_result", 1, true);
+    dest = metatile_result;
+  }
 
   _addComment("Get metatile at position");
 
-  _stackPushConst(variableAlias);
+  _stackPushConst(dest);
   _stackPushScriptValue(input.y);
   _stackPushScriptValue(input.x);
 
   _callNative("vm_get_sram_tile_id_at_pos");
   _stackPop(3);
+  
+  if (_isIndirectVariable(input.output)) {
+    _setInd(variableAlias, dest);
+  }
 };

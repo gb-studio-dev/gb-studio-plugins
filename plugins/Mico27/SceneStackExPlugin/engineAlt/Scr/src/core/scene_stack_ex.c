@@ -336,5 +336,8 @@ void vm_poll_stack_pop(SCRIPT_CTX * THIS) OLDCALL BANKED {
 }
 
 void vm_get_stack_size(SCRIPT_CTX * THIS) OLDCALL BANKED {
-    script_memory[*(int16_t*)VM_REF_TO_PTR(FN_ARG0)] = sizeof(scene_stacks_ex);
+    int16_t idx = *(int16_t *)VM_REF_TO_PTR(FN_ARG0);
+    UWORD * A;
+    if (idx < 0) A = THIS->stack_ptr + idx - 1; else A = script_memory + idx;
+    *A = sizeof(scene_stacks_ex);
 }

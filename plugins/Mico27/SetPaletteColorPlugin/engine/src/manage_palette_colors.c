@@ -70,45 +70,50 @@ void set_palette_colors(SCRIPT_CTX * THIS) OLDCALL BANKED {
 
 void get_palette_colors(SCRIPT_CTX * THIS) OLDCALL BANKED {
     int16_t palettes = *(int16_t*)VM_REF_TO_PTR(FN_ARG0);
-    int16_t color0Var = *(int16_t*)VM_REF_TO_PTR(FN_ARG1);
-    int16_t color1Var = *(int16_t*)VM_REF_TO_PTR(FN_ARG2);
-    int16_t color2Var = *(int16_t*)VM_REF_TO_PTR(FN_ARG3);
-    int16_t color3Var = *(int16_t*)VM_REF_TO_PTR(FN_ARG4);
+    uint8_t palette_from_idx = palettes & 7;
+    int16_t * color0Var;
+    int16_t * color1Var;
+    int16_t * color2Var;
+    int16_t * color3Var;
+    int16_t idx = *(int16_t *)VM_REF_TO_PTR(FN_ARG1);
+    if (idx < 0) color0Var = THIS->stack_ptr + idx - 2; else color0Var = script_memory + idx;
+    idx = *(int16_t *)VM_REF_TO_PTR(FN_ARG2);
+    if (idx < 0) color1Var = THIS->stack_ptr + idx - 3; else color1Var = script_memory + idx;
+    idx = *(int16_t *)VM_REF_TO_PTR(FN_ARG3);
+    if (idx < 0) color2Var = THIS->stack_ptr + idx - 4; else color2Var = script_memory + idx;
+    idx = *(int16_t *)VM_REF_TO_PTR(FN_ARG4);
+    if (idx < 0) color3Var = THIS->stack_ptr + idx - 5; else color3Var = script_memory + idx;
 
-    UBYTE palette_from_idx = palettes & 7;
-    UBYTE is_sprite = (palettes >> 3) & 1;
-    UBYTE is_dmg = (palettes >> 4) & 1;
-
-    if (is_dmg) {
-        if (is_sprite){
+    if ((palettes >> 4) & 1) { //is dmg
+        if ((palettes >> 3) & 1){ //is sprite
             switch (palette_from_idx & 1) {
                 case 0:
-                    script_memory[color0Var] = ((DMG_palette[1] >> 2) & 3);
-                    script_memory[color1Var] = ((DMG_palette[1] >> 4) & 3);
-                    script_memory[color2Var] = ((DMG_palette[1] >> 6) & 3);
+                    *color0Var = ((DMG_palette[1] >> 2) & 3);
+                    *color1Var = ((DMG_palette[1] >> 4) & 3);
+                    *color2Var = ((DMG_palette[1] >> 6) & 3);
                     break;
                 case 1:
-                    script_memory[color0Var] = ((DMG_palette[2] >> 2) & 3);
-                    script_memory[color1Var] = ((DMG_palette[2] >> 4) & 3);
-                    script_memory[color2Var] = ((DMG_palette[2] >> 6) & 3);
+                    *color0Var = ((DMG_palette[2] >> 2) & 3);
+                    *color1Var = ((DMG_palette[2] >> 4) & 3);
+                    *color2Var = ((DMG_palette[2] >> 6) & 3);
                     break;
             }
         } else {
-            script_memory[color0Var] = ((DMG_palette[0]) & 3);
-            script_memory[color1Var] = ((DMG_palette[0] >> 2) & 3);
-            script_memory[color2Var] = ((DMG_palette[0] >> 4) & 3);
-            script_memory[color3Var] = ((DMG_palette[0] >> 6) & 3);
+            *color0Var = ((DMG_palette[0]) & 3);
+            *color1Var = ((DMG_palette[0] >> 2) & 3);
+            *color2Var = ((DMG_palette[0] >> 4) & 3);
+            *color3Var = ((DMG_palette[0] >> 6) & 3);
         }
     } else {
-        if (is_sprite){
-            script_memory[color0Var] = SprPalette[palette_from_idx].c1;
-            script_memory[color1Var] = SprPalette[palette_from_idx].c2;
-            script_memory[color2Var] = SprPalette[palette_from_idx].c3;
+        if ((palettes >> 3) & 1){ //is sprite
+            *color0Var = SprPalette[palette_from_idx].c1;
+            *color1Var = SprPalette[palette_from_idx].c2;
+            *color2Var = SprPalette[palette_from_idx].c3;
         } else {
-            script_memory[color0Var] = BkgPalette[palette_from_idx].c0;
-            script_memory[color1Var] = BkgPalette[palette_from_idx].c1;
-            script_memory[color2Var] = BkgPalette[palette_from_idx].c2;
-            script_memory[color3Var] = BkgPalette[palette_from_idx].c3;
+            *color0Var = BkgPalette[palette_from_idx].c0;
+            *color1Var = BkgPalette[palette_from_idx].c1;
+            *color2Var = BkgPalette[palette_from_idx].c2;
+            *color3Var = BkgPalette[palette_from_idx].c3;
         }
     }
 }

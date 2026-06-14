@@ -124,7 +124,7 @@ export const fields = [
 ];
 
 export const compile = (input, helpers) => {
-  const { _callNative, _rpn, _stackPushConst, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue, getVariableAlias } = helpers;
+  const { _callNative, _rpn, _stackPushConst, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue, getVariableAlias, _isIndirectVariable, _setInd } = helpers;
   const {is_gbc, is_sprite} = input;
 
 
@@ -132,7 +132,7 @@ export const compile = (input, helpers) => {
 
   variableSetToScriptValue(tmp_palette_idx, input.palette_idx);
 
-  _addComment("Set colors of a palette");
+  _addComment("Get colors of a palette");
 
   _rpn()  .ref(tmp_palette_idx)  // ((tmp_palette_idx) & 7)
           .int16((is_sprite)? 8: 0)
@@ -142,18 +142,57 @@ export const compile = (input, helpers) => {
           .refSet(tmp_palette_idx)
           .stop();
 
-    const color0Alias = getVariableAlias(input.color0);
-    const color1Alias = getVariableAlias(input.color1);
-    const color2Alias = getVariableAlias(input.color2);
-    const color3Alias = (!is_sprite)? getVariableAlias(input.color3): 0;
 
-  _stackPushConst(color3Alias);
-  _stackPushConst(color2Alias);
-  _stackPushConst(color1Alias);
-  _stackPushConst(color0Alias);
+  const color0Alias = getVariableAlias(input.color0);
+  let color0Dest = color0Alias;
+  if (_isIndirectVariable(input.color0)) {
+    const color0_result = _declareLocal("color0_result", 1, true);
+    color0Dest = color0_result;
+  }
+  
+  const color1Alias = getVariableAlias(input.color1);
+  let color1Dest = color1Alias;
+  if (_isIndirectVariable(input.color1)) {
+    const color1_result = _declareLocal("color1_result", 1, true);
+    color1Dest = color1_result;
+  }
+  
+  const color2Alias = getVariableAlias(input.color2);
+  let color2Dest = color2Alias;
+  if (_isIndirectVariable(input.color1)) {
+    const color2_result = _declareLocal("color2_result", 1, true);
+    color2Dest = color2_result;
+  }
+  
+  const color3Alias = (!is_sprite)? getVariableAlias(input.color3): 0;
+  let color3Dest = color3Alias;
+  if (!is_sprite && _isIndirectVariable(input.color3)) {
+    const color3_result = _declareLocal("color3_result", 1, true);
+    color3Dest = color3_result;
+  }
+
+  _stackPushConst(color3Dest);
+  _stackPushConst(color2Dest);
+  _stackPushConst(color1Dest);
+  _stackPushConst(color0Dest);
   _stackPush(tmp_palette_idx);
 
   _callNative("get_palette_colors");
   _stackPop(5);
 
+  if (_isIndirectVariable(input.color0)) {
+    _setInd(color0Alias, color0Dest);
+  }
+  
+  if (_isIndirectVariable(input.color1)) {
+    _setInd(color1Alias, color1Dest);
+  }
+  
+  if (_isIndirectVariable(input.color2)) {
+    _setInd(color2Alias, color2Dest);
+  }
+  
+  if (!is_sprite && _isIndirectVariable(input.color3)) {
+    _setInd(color3Alias, color3Dest);
+  }
 };
