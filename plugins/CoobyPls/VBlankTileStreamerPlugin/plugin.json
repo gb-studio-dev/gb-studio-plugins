@@ -1,0 +1,10 @@
+{
+  "type": "enginePlugin",
+  "name": "Coobsoft VBlank Tile Streamer",
+  "author": "CoobyPls",
+  "url": "https://github.com/CoobyPls/SecretOfEvermoreGB/tree/coobsoft/vblank-plugin-demo",
+  "description": "Streams registered sprite tiles into a reusable actor over multiple frames during VBlank, useful for temporary spell effects and other graphics that do not need to stay loaded in sprite VRAM.",
+  "license": "MIT",
+  "version": "1.0.0",
+  "gbsVersion": ">=4.3.0"
+}
