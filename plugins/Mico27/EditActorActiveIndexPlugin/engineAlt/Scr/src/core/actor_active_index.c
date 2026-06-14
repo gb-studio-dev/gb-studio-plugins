@@ -48,6 +48,9 @@ void set_actor_active_index(SCRIPT_CTX * THIS) OLDCALL BANKED {
 
 void get_actor_active_index(SCRIPT_CTX * THIS) OLDCALL BANKED {
     UBYTE actor_idx = *(uint8_t *)VM_REF_TO_PTR(FN_ARG0);
+    int16_t idx = *(int16_t*)VM_REF_TO_PTR(FN_ARG1);
+    int16_t * A;
+    if (idx < 0) A = THIS->stack_ptr + idx - 2; else A = script_memory + idx;
     actor_t * actor = actors + actor_idx;
     if (CHK_FLAG(actor->flags, ACTOR_FLAG_ACTIVE)){
         actor_t * target_actor = actors_active_head;
@@ -60,7 +63,7 @@ void get_actor_active_index(SCRIPT_CTX * THIS) OLDCALL BANKED {
             active_idx++;
             target_actor = target_actor->next;
         }
-        script_memory[*(int16_t*)VM_REF_TO_PTR(FN_ARG1)] = active_idx;
+        *A = active_idx;
     }
 }
 

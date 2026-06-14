@@ -5,7 +5,7 @@
   "url": "https://github.com/Mico27/gbs-MetatilePlugin",
   "description": "Integrates the concept of metatiles in gbstudio",
   "license": "MIT",
-  "version": "4.3.0",
+  "version": "4.3.1",
   "gbsVersion": ">=4.3.0",
   "order": -12,
   "engineAltRules": [

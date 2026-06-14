@@ -52,8 +52,8 @@ void copy_background_submap_to_overlay_base(SCRIPT_CTX * THIS) OLDCALL BANKED {
     UBYTE source_y = (bkg_pos >> 8) & 0xFF;
     UBYTE dest_x = dest_pos & 0xFF;
     UBYTE dest_y = (dest_pos >> 8) & 0xFF;
-    UBYTE width = (wh & 0xFF) & 31;
-    UBYTE height = ((wh >> 8) & 0xFF) & 31;
+    UBYTE width = (wh & 0xFF);
+    UBYTE height = ((wh >> 8) & 0xFF);
 
     scene_t scn;
     MemcpyBanked(&scn, scene_ptr, sizeof(scn), scene_bank);
@@ -85,8 +85,8 @@ void copy_background_submap_to_background(SCRIPT_CTX * THIS) OLDCALL BANKED {
     uint8_t source_y = *(int8_t*)VM_REF_TO_PTR(FN_ARG1);
     uint8_t dest_x = *(int8_t*)VM_REF_TO_PTR(FN_ARG2);
     uint8_t dest_y = *(int8_t*)VM_REF_TO_PTR(FN_ARG3);
-    uint8_t width = *(int8_t*)VM_REF_TO_PTR(FN_ARG4) & 31;
-    uint8_t height = *(int8_t*)VM_REF_TO_PTR(FN_ARG5) & 31;
+    uint8_t width = *(int8_t*)VM_REF_TO_PTR(FN_ARG4);
+    uint8_t height = *(int8_t*)VM_REF_TO_PTR(FN_ARG5);
     uint8_t scene_bank = *(uint8_t *) VM_REF_TO_PTR(FN_ARG6);
     const scene_t * scene_ptr = *(scene_t **) VM_REF_TO_PTR(FN_ARG7);
     scene_t scn;
@@ -125,8 +125,8 @@ void copy_background_submap_to_background_base(SCRIPT_CTX * THIS) OLDCALL BANKED
     UBYTE source_y = (bkg_pos >> 8) & 0xFF;
     UBYTE dest_x = dest_pos & 0xFF;
     UBYTE dest_y = (dest_pos >> 8) & 0xFF;
-    UBYTE width = (wh & 0xFF) & 31;
-    UBYTE height = ((wh >> 8) & 0xFF) & 31;
+    UBYTE width = (wh & 0xFF);
+    UBYTE height = ((wh >> 8) & 0xFF);
 
     scene_t scn;
     MemcpyBanked(&scn, scene_ptr, sizeof(scn), scene_bank);
@@ -165,8 +165,8 @@ void copy_background_submap_to_tileset(SCRIPT_CTX * THIS) OLDCALL BANKED {
     UBYTE source_y = (source_pos >> 8) & 0xFF;
     UBYTE dest_x = dest_pos & 0xFF;
     UBYTE dest_y = (dest_pos >> 8) & 0xFF;
-    UBYTE width = (wh & 0xFF) & 31;
-    UBYTE height = ((wh >> 8) & 0xFF) & 31;
+    UBYTE width = (wh & 0xFF);
+    UBYTE height = ((wh >> 8) & 0xFF);
     UBYTE overlay_x = overlay_pos & 0xFF;
     UBYTE overlay_y = (overlay_pos >> 8) & 0xFF;
 

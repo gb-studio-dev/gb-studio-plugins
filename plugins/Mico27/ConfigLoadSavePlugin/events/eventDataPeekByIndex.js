@@ -56,25 +56,29 @@ const fields = [
 
 const compile = (input, helpers) => {
 
-    const { _declareLocal, getVariableAlias, getNextLabel, _addComment, _ifConst, _setVariableConst, _label, _addNL, _stackPushConst, _callNative, _stackPop } = helpers;
-
-  const variableDestAlias = getVariableAlias(input.variableDest);
-  //const foundLabel = getNextLabel();
+    const { _declareLocal, getVariableAlias, getNextLabel, _addComment, _ifConst, _setVariableConst, _label, _addNL, _stackPushConst, _callNative, _stackPop, _isIndirectVariable, _setInd } = helpers;
+  
+  const variableAlias = getVariableAlias(input.variableDest);
+  let dest = variableAlias;
+  if (_isIndirectVariable(input.variableDest)) {
+    const dataResultRef = _declareLocal("data_result", 1, true);
+    dest = dataResultRef;
+  }
 
   _addComment(
-    `Store ${input.variableSource} from save slot ${input.saveSlot} into ${variableDestAlias}`
+    `Store ${input.variableSource} from save slot ${input.saveSlot} into ${variableAlias}`
   );
 
-  _stackPushConst(variableDestAlias);
+  _stackPushConst(dest);
   _stackPushConst(1);
   _stackPushConst(input.variableSource);
   _stackPushConst(input.saveSlot);
   _callNative("vm_data_peek_ex");
   _stackPop(4);
-  //_ifConst(".EQ", peekValueRef, 1, foundLabel, 0);
-  //_setVariableConst(input.variableDest, 0);
-  //_label(foundLabel);
-  _addNL();
+  
+  if (_isIndirectVariable(input.variableDest)) {
+    _setInd(variableAlias, dest);
+  }
 
 };
 

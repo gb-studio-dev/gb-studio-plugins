@@ -26,20 +26,28 @@ export const fields = [
 ];
 
 export const compile = (input, helpers) => {
-  const { _callNative, _stackPush, _stackPop, _addComment, _declareLocal, setActorId, getVariableAlias, _stackPushConst } = helpers;
-
-  const tmp0 = _declareLocal("tmp0", 1, true);
-
-  setActorId(tmp0, input.actorId);
+  const { _callNative, _stackPush, _stackPop, _addComment, _declareLocal, setActorId, getVariableAlias, _stackPushConst, _isIndirectVariable, _setInd } = helpers;
 
   const variableAlias = getVariableAlias(input.variable);
+  let dest = variableAlias;
+  if (_isIndirectVariable(input.variable)) {
+    const index_result = _declareLocal("index_result", 1, true);
+    dest = index_result;
+  }
+  
+  const tmp0 = _declareLocal("tmp0", 1, true);
+  setActorId(tmp0, input.actorId);
 
   _addComment("Get actor active index");
 
-  _stackPushConst(variableAlias);
+  _stackPushConst(dest);
   _stackPush(tmp0);
 
   _callNative("get_actor_active_index");
   _stackPop(2);
+  
+  if (_isIndirectVariable(input.variable)) {
+    _setInd(variableAlias, dest);
+  }
 
 };
