@@ -1,0 +1,26 @@
+#ifndef COOBSOFT_VBLANK_STREAMER_H
+#define COOBSOFT_VBLANK_STREAMER_H
+
+#include <gbdk/platform.h>
+#include "vm.h"
+
+#define VSTREAM_STATUS_IDLE 0u
+#define VSTREAM_STATUS_BUSY 1u
+#define VSTREAM_STATUS_COMPLETE 2u
+#define VSTREAM_STATUS_BUSY_REJECTED 3u
+#define VSTREAM_STATUS_INVALID_CONFIG 4u
+#define VSTREAM_STATUS_CLAMPED 5u
+#define VSTREAM_STATUS_FAILED 6u
+#define VSTREAM_STATUS_EXPERIMENTAL 7u
+#define VSTREAM_STATUS_BAD_ACTOR 8u
+#define VSTREAM_STATUS_BAD_ASSET_SLOT 9u
+
+void vstream_configure(SCRIPT_CTX *THIS) OLDCALL BANKED;
+void vstream_start(SCRIPT_CTX *THIS) OLDCALL BANKED;
+void vstream_update(SCRIPT_CTX *THIS) OLDCALL BANKED;
+void vstream_get_status(SCRIPT_CTX *THIS) OLDCALL BANKED;
+void vstream_cancel(SCRIPT_CTX *THIS) OLDCALL BANKED;
+void vstream_face_actor_to_tile(SCRIPT_CTX *THIS) OLDCALL BANKED;
+void vstream_tick(void) BANKED;
+
+#endif
