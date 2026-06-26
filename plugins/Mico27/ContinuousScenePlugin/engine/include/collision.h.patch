@@ -1,0 +1,62 @@
+Index: include\collision.h
+===================================================================
+--- include\collision.h
++++ include\collision.h
+@@ -4,24 +4,37 @@
+ #include <gbdk/platform.h>
+ 
+ #include "math.h"
+ #include "bankdata.h"
++#include "scroll.h"
++#include "data/states_defines.h"
+ 
+ #define COLLISION_TOP 0x1
+ #define COLLISION_BOTTOM 0x2
+ #define COLLISION_LEFT 0x4
+ #define COLLISION_RIGHT 0x8
+ #define COLLISION_ALL 0xF
+ #define TILE_PROP_LADDER 0x10
+ 
++#define DIRECTION_TOP_FLAG 0x01
++#define DIRECTION_RIGHT_FLAG 0x02
++#define DIRECTION_BOTTOM_FLAG 0x04
++#define DIRECTION_LEFT_FLAG 0x08
++#define DIRECTION_TOP_LEFT_FLAG 0x10
++#define DIRECTION_TOP_RIGHT_FLAG 0x20
++#define DIRECTION_BOTTOM_RIGHT_FLAG 0x40
++#define DIRECTION_BOTTOM_LEFT_FLAG 0x80
++
+ extern UBYTE collision_bank;
+ extern unsigned char *collision_ptr;
+ extern UBYTE image_tile_width;
+ extern UBYTE image_tile_height;
+ 
+ extern UBYTE tile_hit_x;
+ extern UBYTE tile_hit_y;
+ 
++extern UBYTE continuous_scene_enabled;
++
+ /**
+  * Check if point is within positioned bounding box.
+  *
+  * @param bb Pointer to bounding box
+@@ -76,9 +89,9 @@
+  * @param ty_start Starting tile y-coordinate
+  * @param ty_end Ending tile y-coordinate
+  * @return First matching tile value found, or 0 if none matched, COLLISION_ALL if out of bounds
+  */
+-UBYTE tile_col_test_range_y(UBYTE tile_mask, UBYTE tx, UBYTE ty_start, UBYTE ty_end) NONBANKED;
++UBYTE tile_col_test_range_y(UBYTE tile_mask, UBYTE tx, UBYTE ty_start, UBYTE ty_end) BANKED;
+ 
+ /**
+  * Test for a tile matching mask in a horizontal range from tx_start to tx_end at row ty.
+  * Updates globals tile_hit_x and tile_hit_y which can be read afterwards to determine which tile matched
+@@ -88,7 +101,7 @@
+  * @param tx_start Starting tile x-coordinate
+  * @param tx_end Ending tile x-coordinate
+  * @return First matching tile value found, or 0 if none matched, COLLISION_ALL if out of bounds
+  */
+-UBYTE tile_col_test_range_x(UBYTE tile_mask, UBYTE ty, UBYTE tx_start, UBYTE tx_end) NONBANKED;
++UBYTE tile_col_test_range_x(UBYTE tile_mask, UBYTE ty, UBYTE tx_start, UBYTE tx_end) BANKED;
+ 
+ #endif

@@ -1,0 +1,103 @@
+Index: src\core\data_manager.c
+===================================================================
+--- src\core\data_manager.c
++++ src\core\data_manager.c
+@@ -17,8 +17,9 @@
+ #include "data/data_bootstrap.h"
+ #include "data/states_defines.h"
+ #include "scene_transition.h"
+ #include "macro.h"
++#include "scene_stack_ex.h"
+ 
+ #define ALLOC_BKG_TILES_TOWARDS_SPR
+ 
+ #define EMOTE_SPRITE_SIZE       4
+@@ -50,15 +51,17 @@
+ const far_ptr_t spritesheet_none_far = TO_FAR_PTR_T(spritesheet_none);
+ 
+ scene_stack_item_t scene_stack[SCENE_STACK_SIZE];
+ scene_stack_item_t * scene_stack_ptr;
++UBYTE scene_stack_count;
+ 
+ UBYTE scene_sprites_base_tiles[MAX_SCENE_SPRITES];
+ 
+ void load_init(void) BANKED {
+     actors_len = 0;
+     player_sprite_len = 0;
+     scene_stack_ptr = scene_stack;
++    scene_stack_count = 0;
+ }
+ 
+ void load_bkg_tileset(const tileset_t* tiles, UBYTE bank) BANKED {
+     #ifdef DISABLE_TILESET_LOAD_ON_TRANSITION
+@@ -246,10 +249,12 @@
+     #endif
+             PLAYER.sprite = scn.player_sprite;
+             UBYTE n_loaded = load_sprite(PLAYER.base_tile = 0, scn.player_sprite.ptr, scn.player_sprite.bank);
+             allocated_sprite_tiles = player_sprite_len = (n_loaded > scn.reserve_tiles) ? n_loaded : scn.reserve_tiles;
+-            load_animations(scn.player_sprite.ptr, scn.player_sprite.bank, ANIM_SET_DEFAULT, PLAYER.animations);
+-            load_bounds(scn.player_sprite.ptr, scn.player_sprite.bank, &PLAYER.bounds);
++            if (!vm_pop_scene_stack_state) {
++                load_animations(scn.player_sprite.ptr, scn.player_sprite.bank, ANIM_SET_DEFAULT, PLAYER.animations);
++                load_bounds(scn.player_sprite.ptr, scn.player_sprite.bank, &PLAYER.bounds);
++            }
+     #ifdef DISABLE_PLAYER_SPRITE_LOAD_ON_TRANSITION
+         }
+     #endif
+     } else {
+@@ -321,34 +326,39 @@
+                 // exclusive sprites allocated separately to avoid overwriting if modified
+                 if (actor->reserve_tiles) load_sprite(actor->base_tile, actor->sprite.ptr, actor->sprite.bank);
+             }
+         }
+-        // set actors idle
+-        actor_t *actor = actors_active_head;
+-        while (actor) {
+-            actor_set_anim_idle(actor);
+-            actor = actor->next;
++        if (!vm_pop_scene_stack_state) {
++            // set actors idle
++            actor_t *actor = actors_active_head;
++            while (actor) {
++                actor_set_anim_idle(actor);
++                actor = actor->next;
++            }
+         }
+     }
+-
+-    // Init and Load projectiles
+-    projectiles_init();
+-    if (projectiles_len  != 0) {
+-        projectile_def_t * projectile_def = projectile_defs;
+-        MemcpyBanked(projectile_def, scn.projectiles.ptr, sizeof(projectile_def_t) * projectiles_len, scn.projectiles.bank);
+-        for (i = projectiles_len; i != 0; i--, projectile_def++) {
+-            // resolve and set base_tile for each projectile
+-            UBYTE idx = IndexOfFarPtr(scn.sprites.ptr, scn.sprites.bank, sprites_len, &projectile_def->sprite);
+-            projectile_def->base_tile = (idx < sprites_len) ? scene_sprites_base_tiles[idx] : 0;
++    if (!vm_pop_scene_stack_state) {
++        // Init and Load projectiles
++        projectiles_init();
++        if (projectiles_len  != 0) {
++            projectile_def_t * projectile_def = projectile_defs;
++            MemcpyBanked(projectile_def, scn.projectiles.ptr, sizeof(projectile_def_t) * projectiles_len, scn.projectiles.bank);
++            for (i = projectiles_len; i != 0; i--, projectile_def++) {
++                // resolve and set base_tile for each projectile
++                UBYTE idx = IndexOfFarPtr(scn.sprites.ptr, scn.sprites.bank, sprites_len, &projectile_def->sprite);
++                projectile_def->base_tile = (idx < sprites_len) ? scene_sprites_base_tiles[idx] : 0;
++            }
+         }
+     }
+ 
+     // Load triggers
+     if (triggers_len != 0) {
+         MemcpyBanked(&triggers, scn.triggers.ptr, sizeof(trigger_t) * triggers_len, scn.triggers.bank);
+     }
+ 
+-    scene_transition_reset();
++    if (!vm_pop_scene_stack_state) {
++        scene_transition_reset();
++    }
+     scroll_reset();
+     scroll_offset_x = 0;
+     scroll_offset_y = 0;
+     trigger_reset();

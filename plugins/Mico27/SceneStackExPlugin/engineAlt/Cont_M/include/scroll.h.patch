@@ -1,0 +1,41 @@
+Index: include\scroll.h
+===================================================================
+--- include\scroll.h
++++ include\scroll.h
+@@ -8,19 +8,15 @@
+ 
+ #define SCROLL_BANK 1
+ #define SCREEN_TILES_W 20  // 160 >> 3 = 20
+ #define SCREEN_TILES_H 18  // 144 >> 3 = 18
+-#define SCREEN_PAD_LEFT 1
+-#define SCREEN_PAD_RIGHT 2
++#define SCREEN_PAD_LEFT 0
++#define SCREEN_PAD_RIGHT 1
+ #define SCREEN_PAD_TOP 1
+-#define SCREEN_PAD_BOTTOM 2
++#define SCREEN_PAD_BOTTOM 1
+ #define SCREEN_TILE_REFRES_W (SCREEN_TILES_W + SCREEN_PAD_LEFT + SCREEN_PAD_RIGHT)
+ #define SCREEN_TILE_REFRES_H (SCREEN_TILES_H + SCREEN_PAD_TOP + SCREEN_PAD_BOTTOM)
+-#define PENDING_BATCH_SIZE 12
+-#define SCREEN_OOB_LEFT (255 - SCREEN_TILE_REFRES_W)
+-#define SCREEN_OOB_TOP (255 - SCREEN_TILE_REFRES_H)
+-#define SCREEN_OOB_LEFT_PX TILE_TO_PX(255 - SCREEN_TILE_REFRES_W)
+-#define SCREEN_OOB_TOP_PX TILE_TO_PX(255 - SCREEN_TILE_REFRES_H)
++#define PENDING_BATCH_SIZE 11
+ 
+ extern INT16 scroll_x;
+ extern INT16 scroll_y;
+ extern INT16 draw_scroll_x;
+@@ -60,11 +56,11 @@
+  */
+ void scroll_repaint(void) BANKED;
+ 
+ void scroll_render_rows(INT16 scroll_x, INT16 scroll_y, BYTE row_offset, BYTE n_rows) BANKED;
++void scroll_render_cols(INT16 scroll_x, INT16 scroll_y, BYTE col_offset, BYTE n_cols) BANKED;
+ void load_metatile_row(const UBYTE* from, UBYTE x, UBYTE y, UBYTE height, UBYTE bank) NONBANKED;
+ void load_metatile_col(const UBYTE* from, UBYTE x, UBYTE y, UBYTE height, UBYTE bank) NONBANKED;
+-void scroll_render_cols(INT16 scroll_x, INT16 scroll_y, BYTE col_offset, BYTE n_cols) BANKED;
+ 
+ /**
+  * Get base address of window map
+  */

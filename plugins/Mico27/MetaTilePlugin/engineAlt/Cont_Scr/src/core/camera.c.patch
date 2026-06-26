@@ -1,0 +1,15 @@
+Index: src\core\camera.c
+===================================================================
+--- src\core\camera.c
++++ src\core\camera.c
+@@ -2,9 +2,9 @@
+ 
+ #include "camera.h"
+ 
+ #include "actor.h"
+-#include "scene_transition.h"
++#include "continuous_scene.h"
+ 
+ #define CAMERA_FIXED_OFFSET_X PX_TO_SUBPX(8)
+ #define CAMERA_FIXED_OFFSET_Y PX_TO_SUBPX(8)
+ 

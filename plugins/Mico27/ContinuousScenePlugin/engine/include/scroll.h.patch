@@ -1,0 +1,49 @@
+Index: include\scroll.h
+===================================================================
+--- include\scroll.h
++++ include\scroll.h
+@@ -14,9 +14,13 @@
+ #define SCREEN_PAD_TOP 1
+ #define SCREEN_PAD_BOTTOM 2
+ #define SCREEN_TILE_REFRES_W (SCREEN_TILES_W + SCREEN_PAD_LEFT + SCREEN_PAD_RIGHT)
+ #define SCREEN_TILE_REFRES_H (SCREEN_TILES_H + SCREEN_PAD_TOP + SCREEN_PAD_BOTTOM)
+-#define PENDING_BATCH_SIZE 11
++#define PENDING_BATCH_SIZE 12
++#define SCREEN_OOB_LEFT (255 - SCREEN_TILE_REFRES_W)
++#define SCREEN_OOB_TOP (255 - SCREEN_TILE_REFRES_H)
++#define SCREEN_OOB_LEFT_PX TILE_TO_PX(255 - SCREEN_TILE_REFRES_W)
++#define SCREEN_OOB_TOP_PX TILE_TO_PX(255 - SCREEN_TILE_REFRES_H)
+ 
+ extern INT16 scroll_x;
+ extern INT16 scroll_y;
+ extern INT16 draw_scroll_x;
+@@ -26,10 +30,16 @@
+ extern UINT16 scroll_x_max;
+ extern UINT16 scroll_y_max;
+ extern BYTE scroll_offset_x;
+ extern BYTE scroll_offset_y;
++extern UBYTE bkg_scroll_x;
++extern UBYTE bkg_scroll_y;
++extern BYTE bkg_offset_x;
++extern BYTE bkg_offset_y;
+ extern UINT8 pending_w_i;
+ extern UINT8 pending_h_i;
++extern UBYTE scroll_render_disabled;
++extern UWORD bkg_address_offset;
+ 
+ /**
+  * Resets scroll settings on engine start
+  */
+@@ -49,8 +59,12 @@
+  * Resets scroll and update the whole screen
+  */
+ void scroll_repaint(void) BANKED;
+ 
++void scroll_render_rows(INT16 scroll_x, INT16 scroll_y, BYTE row_offset, BYTE n_rows) BANKED;
++
++void scroll_render_cols(INT16 scroll_x, INT16 scroll_y, BYTE col_offset, BYTE n_cols) BANKED;
++
+ /**
+  * Get base address of window map
+  */
+ UINT8 * GetWinAddr(void) OLDCALL PRESERVES_REGS(b, c, h, l);

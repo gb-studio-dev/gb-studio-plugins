@@ -1,0 +1,37 @@
+Index: src\states\shmup.c
+===================================================================
+--- src\states\shmup.c
++++ src\states\shmup.c
+@@ -12,8 +12,9 @@
+ #include "game_time.h"
+ #include "input.h"
+ #include "trigger.h"
+ #include "vm.h"
++#include "continuous_scene.h"
+ 
+ // Feature Flags --------------------------------------------------------------
+ // Optional feature flags, set in 'state_defines.h'
+ 
+@@ -447,8 +448,12 @@
+     }
+ #endif
+ 
+     if (IS_FRAME_ODD) {
++        //Check scene transition
++        if (check_transition_to_scene_collision()) {
++            return;
++        }
+         // Check for trigger collisions on odd frames
+ #if SHOOTER_TRIGGER_ACTIVATION == ON_PLAYER_COLLISION
+         if (trigger_activate_at_intersection(&PLAYER.bounds, &PLAYER.pos, FALSE)) {
+             // Landed on a trigger
+@@ -462,9 +467,8 @@
+             // Trigger appeared on screen edge
+             return;
+         }
+ #endif
+-
+     } else {
+         // Check for actor collisions on even frames
+         hit_actor = actor_overlapping_player();
+         if (hit_actor != NULL && (hit_actor->collision_group & COLLISION_GROUP_MASK)) {

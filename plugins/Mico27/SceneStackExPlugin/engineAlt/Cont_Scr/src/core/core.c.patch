@@ -1,0 +1,62 @@
+Index: src\core\core.c
+===================================================================
+--- src\core\core.c
++++ src\core\core.c
+@@ -32,8 +32,9 @@
+ #include "palette.h"
+ #include "parallax.h"
+ #include "shadow.h"
+ #include "data/data_bootstrap.h"
++#include "scene_stack_ex.h"
+ 
+ extern void __bank_bootstrap_script;
+ extern const UBYTE bootstrap_script[];
+ 
+@@ -55,8 +56,9 @@
+     ui_init();
+     events_init(FALSE);
+     timers_init(FALSE);
+     music_init_events(FALSE);
++    scene_stack_init();
+ }
+ 
+ void process_VM(void) {
+     while (TRUE) {
+@@ -145,8 +147,21 @@
+                         load_scene(current_scene.ptr, current_scene.bank, FALSE);
+                         fade_in = FALSE;
+                         break;
+                     }
++                    case EXCEPTION_PUSH_SCENE_STACK: {
++                        push_scene_stack_ex();
++                        continue;
++                    }
++                    case EXCEPTION_POP_SCENE_STACK: {
++                        // remove previous LCD ISR's
++                        remove_LCD_ISRs();
++                        // pop stack
++                        vm_pop_scene_stack_state = pop_scene_stack_ex();
++                        load_scene(current_scene.ptr, current_scene.bank, FALSE);
++                        fade_in = FALSE;
++                        break;
++                    }
+                     default: {
+                         // nothing: suppress any unknown exception
+                         continue;
+                     }
+@@ -168,11 +183,12 @@
+                 }
+                 if (!hide_sprites) SHOW_SPRITES;    // show sprites back if we switched LCD ISR while sprites were hidden
+ 
+                 pause_state_update = false;
+-
+-                player_init();
+-                state_init();
++                if (!vm_pop_scene_stack_state){
++                    player_init();
++                    state_init();
++                }
+                 toggle_shadow_OAM();
+                 camera_update();
+                 scroll_repaint();
+                 activate_persistent_actors();
