@@ -1,0 +1,255 @@
+Index: src\core\vm_actor.c
+===================================================================
+--- src\core\vm_actor.c
++++ src\core\vm_actor.c
+@@ -150,12 +150,12 @@
+             SET_FLAG(THIS->flags, MOVE_ALLOW_V);
+         }
+ 
+         // If moving relative add current position
+-        // and prevent overflow
++        // wrapping to allow moves into negative coordinates (continuous scene transitions)
+         if (CHK_FLAG(params->ATTR, ACTOR_ATTR_RELATIVE)) {
+-            params->X = saturating_add_u16(actor->pos.x, (WORD)params->X);
+-            params->Y = saturating_add_u16(actor->pos.y, (WORD)params->Y);
++            params->X = actor->pos.x + params->X; /* wrapping, not saturating */
++            params->Y = actor->pos.y + params->Y; /* wrapping, not saturating */
+         }
+         // and snap destination to either pixels/tiles
+         if (CHK_FLAG(params->ATTR, ACTOR_ATTR_RELATIVE_SNAP_PX)) {
+             params->X = SUBPX_SNAP_PX(params->X);
+@@ -199,14 +199,14 @@
+         } else {
+             SET_FLAG(THIS->flags, MOVE_ALLOW_H);
+         }
+ 
+-        // Initialise movement directions
+-        if (actor->pos.x > params->X) {
++        // Initialise movement directions (signed compare handles wrapped negative targets)
++        if ((INT16)actor->pos.x > (INT16)params->X) {
+             // Move left
+             SET_FLAG(THIS->flags, MOVE_DIR_H);
+         }
+-        if (actor->pos.y > params->Y) {
++        if ((INT16)actor->pos.y > (INT16)params->Y) {
+             // Move up
+             SET_FLAG(THIS->flags, MOVE_DIR_V);
+         }
+ 
+@@ -247,12 +247,12 @@
+             SET_FLAG(THIS->flags, MOVE_ACTIVE_H);
+             actor_set_dir(actor, new_dir, TRUE);
+         }
+ 
+-        // Check if overshot destination
++        // Check if overshot destination (signed compare handles wrapped negative targets)
+         if (
+-            (new_dir == DIR_LEFT && (actor->pos.x <= params->X)) || // Overshot left
+-            (new_dir == DIR_RIGHT && (actor->pos.x >= params->X))   // Overshot right
++            (new_dir == DIR_LEFT && ((INT16)actor->pos.x <= (INT16)params->X)) || // Overshot left
++            (new_dir == DIR_RIGHT && ((INT16)actor->pos.x >= (INT16)params->X))   // Overshot right
+         ) {
+             // Reached Horizontal Destination
+             actor->pos.x = params->X;
+             SET_FLAG(THIS->flags, MOVE_ALLOW_V);
+@@ -286,12 +286,12 @@
+             SET_FLAG(THIS->flags, MOVE_ACTIVE_V);
+             actor_set_dir(actor, new_dir, TRUE);
+         }
+ 
+-        // Check if overshot destination
++        // Check if overshot destination (signed compare handles wrapped negative targets)
+         if (
+-            (new_dir == DIR_UP && (actor->pos.y <= params->Y)) || // Overshot above
+-            (new_dir == DIR_DOWN &&  (actor->pos.y >= params->Y)) // Overshot below
++            (new_dir == DIR_UP && ((INT16)actor->pos.y <= (INT16)params->Y)) || // Overshot above
++            (new_dir == DIR_DOWN &&  ((INT16)actor->pos.y >= (INT16)params->Y)) // Overshot below
+          ) {
+             actor->pos.y = params->Y;
+             SET_FLAG(THIS->flags, MOVE_ALLOW_H);
+             CLR_FLAG(THIS->flags, MOVE_V);
+@@ -589,12 +589,12 @@
+     actor->pos.x = SUBPX_SNAP_PX(actor->pos.x);
+     actor->pos.y = SUBPX_SNAP_PX(actor->pos.y);
+ 
+     // If moving relative add current position
+-    // and prevent overflow
++    // wrapping to allow moves into negative coordinates (continuous scene transitions)
+     if (CHK_FLAG(attr, ACTOR_ATTR_RELATIVE)) {
+-        params->X = saturating_add_u16(actor->pos.x, (WORD)params->X);
+-        params->Y = saturating_add_u16(actor->pos.y, (WORD)params->Y);
++        params->X = actor->pos.x + params->X; /* wrapping, not saturating */
++        params->Y = actor->pos.y + params->Y; /* wrapping, not saturating */
+     }
+     // and snap destination to either pixels/tiles
+     if (CHK_FLAG(attr, ACTOR_ATTR_RELATIVE_SNAP_PX)) {
+         params->X = SUBPX_SNAP_PX(params->X);
+@@ -647,9 +647,9 @@
+     if (params->X == actor->pos.x) {
+         // Already at destination
+         actor_set_anim_idle(actor);
+         return;
+-    } else if (params->X < actor->pos.x) {
++    } else if ((INT16)params->X < (INT16)actor->pos.x) {
+         // Moving left
+         actor->pos.x -= actor->move_speed;
+ 
+         // Check for actor collision
+@@ -660,10 +660,10 @@
+             actor_set_anim_idle(actor);
+             return;
+         }
+ 
+-        // Check if overshot destination
+-        if (actor->pos.x <= params->X) {
++        // Check if overshot destination (signed compare handles wrapped negative targets)
++        if ((INT16)actor->pos.x <= (INT16)params->X) {
+             // Reached Horizontal Destination
+             actor->pos.x = params->X;
+             actor_set_anim_idle(actor);
+             return;
+@@ -680,10 +680,10 @@
+             actor_set_anim_idle(actor);
+             return;
+         }
+ 
+-        // Check if overshot destination
+-        if (actor->pos.x >= params->X) {
++        // Check if overshot destination (signed compare handles wrapped negative targets)
++        if ((INT16)actor->pos.x >= (INT16)params->X) {
+             // Reached Horizontal Destination
+             actor->pos.x = params->X;
+             actor_set_anim_idle(actor);
+             return;
+@@ -714,9 +714,9 @@
+     if (params->Y == actor->pos.y) {
+         // Already at destination
+         actor_set_anim_idle(actor);
+         return;
+-    } else if (params->Y < actor->pos.y) {
++    } else if ((INT16)params->Y < (INT16)actor->pos.y) {
+         // Moving upwards
+         actor->pos.y -= actor->move_speed;
+ 
+         // Check for actor collision
+@@ -727,10 +727,10 @@
+             actor_set_anim_idle(actor);
+             return;
+         }
+ 
+-        // Check if overshot destination
+-        if (actor->pos.y <= params->Y) {
++        // Check if overshot destination (signed compare handles wrapped negative targets)
++        if ((INT16)actor->pos.y <= (INT16)params->Y) {
+             actor->pos.y = params->Y;
+             actor_set_anim_idle(actor);
+             return;
+         }
+@@ -746,10 +746,10 @@
+             actor_set_anim_idle(actor);
+             return;
+         }
+ 
+-        // Check if overshot destination
+-        if (actor->pos.y >= params->Y) {
++        // Check if overshot destination (signed compare handles wrapped negative targets)
++        if ((INT16)actor->pos.y >= (INT16)params->Y) {
+             actor->pos.y = params->Y;
+             actor_set_anim_idle(actor);
+             return;
+         }
+@@ -778,9 +778,9 @@
+     UBYTE reached_x = params->X == actor->pos.x;
+     UBYTE reached_y = params->Y == actor->pos.y;
+ 
+     if (!reached_x) {
+-        if (params->X < actor->pos.x) {
++        if ((INT16)params->X < (INT16)actor->pos.x) {
+             // Moving left
+             actor->pos.x -= actor->move_speed;
+ 
+             // Check for actor collision
+@@ -790,10 +790,10 @@
+                 params->Y = actor->pos.y;
+                 reached_x = TRUE;
+             }
+ 
+-            // Check if overshot destination
+-            if (actor->pos.x <= params->X) {
++            // Check if overshot destination (signed compare handles wrapped negative targets)
++            if ((INT16)actor->pos.x <= (INT16)params->X) {
+                 // Reached Horizontal Destination
+                 actor->pos.x = params->X;
+                 reached_x = TRUE;
+             }
+@@ -808,19 +808,19 @@
+                 params->Y = actor->pos.y;
+                 reached_x = TRUE;
+             }
+ 
+-            // Check if overshot destination
+-            if (actor->pos.x >= params->X) {
++            // Check if overshot destination (signed compare handles wrapped negative targets)
++            if ((INT16)actor->pos.x >= (INT16)params->X) {
+                 // Reached Horizontal Destination
+                 actor->pos.x = params->X;
+                 reached_x = TRUE;
+             }
+         }
+     }
+ 
+     if (!reached_y) {
+-        if (params->Y < actor->pos.y) {
++        if ((INT16)params->Y < (INT16)actor->pos.y) {
+             // Moving upwards
+             actor->pos.y -= actor->move_speed;
+ 
+             // Check for actor collision
+@@ -830,10 +830,10 @@
+                 params->X = actor->pos.x;
+                 reached_y = TRUE;
+             }
+ 
+-            // Check if overshot destination
+-            if (actor->pos.y <= params->Y) {
++            // Check if overshot destination (signed compare handles wrapped negative targets)
++            if ((INT16)actor->pos.y <= (INT16)params->Y) {
+                 actor->pos.y = params->Y;
+                 reached_y = TRUE;
+             }
+         } else {
+@@ -847,10 +847,10 @@
+                 params->X = actor->pos.x;
+                 reached_y = TRUE;
+             }
+ 
+-            // Check if overshot destination
+-            if (actor->pos.y >= params->Y) {
++            // Check if overshot destination (signed compare handles wrapped negative targets)
++            if ((INT16)actor->pos.y >= (INT16)params->Y) {
+                 actor->pos.y = params->Y;
+                 reached_y = TRUE;
+             }
+         }
+@@ -877,9 +877,9 @@
+         return;
+     }
+ 
+     if (params->X != actor->pos.x) {
+-        actor_set_dir(actor, params->X < actor->pos.x ? DIR_LEFT : DIR_RIGHT, TRUE);
++        actor_set_dir(actor, (INT16)params->X < (INT16)actor->pos.x ? DIR_LEFT : DIR_RIGHT, TRUE);
+     }
+ }
+ 
+ void vm_actor_move_to_set_dir_y(SCRIPT_CTX * THIS, INT16 idx) OLDCALL BANKED {
+@@ -893,9 +893,9 @@
+         return;
+     }
+ 
+     if (params->Y != actor->pos.y) {
+-        actor_set_dir(actor, params->Y < actor->pos.y ? DIR_UP : DIR_DOWN, TRUE);
++        actor_set_dir(actor, (INT16)params->Y < (INT16)actor->pos.y ? DIR_UP : DIR_DOWN, TRUE);
+     }
+ }
+ 
+ void vm_actor_set_anim_moving(SCRIPT_CTX * THIS, INT16 idx) OLDCALL BANKED {

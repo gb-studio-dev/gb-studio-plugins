@@ -1,0 +1,48 @@
+Index: src\core\actor.c
+===================================================================
+--- src\core\actor.c
++++ src\core\actor.c
+@@ -16,9 +16,9 @@
+ #include "collision.h"
+ #include "ui.h"
+ #include "vm.h"
+ #include "macro.h"
+-#include "continuous_scene.h"
++#include "scene_transition.h"
+ 
+ #ifdef STRICT
+     #include <gb/bgb_emu.h>
+     #include <gb/crash_handler.h>
+@@ -71,8 +71,9 @@
+     player_moving           = FALSE;
+     player_iframes          = 0;
+     player_collision_actor  = NULL;
+     emote_actor             = NULL;
++
+     memset(actors, 0, sizeof(actors));
+ }
+ 
+ void player_init(void) BANKED {
+@@ -216,12 +217,12 @@
+             continue;
+         }
+         SWITCH_ROM(actor->sprite.bank);
+         spritesheet_t *sprite = actor->sprite.ptr;
+-
++        UBYTE base_tile = actor->base_tile + (actor->using_sprite_buffer ? actor->reserve_tiles: 0);
+         allocated_hardware_sprites += move_metasprite(
+             *(sprite->metasprites + actor->frame),
+-            actor->base_tile,
++            base_tile,
+             allocated_hardware_sprites,
+             screen_x,
+             screen_y
+         );
+@@ -549,5 +550,6 @@
+     } else if (player_iframes != 0) {
+         player_iframes--;
+     }
+     player_collision_actor = NULL;
++    check_transition_to_scene_collision();
+ }
+\ No newline at end of file

@@ -1,0 +1,89 @@
+{
+    "version": "4.3.0-e1",
+    "fields": [        
+        {
+            "key": "DISABLE_PLAYER_SPRITE_LOAD_ON_TRANSITION",
+            "label": "Disable player sprite loading on scene scroll",
+            "description": "Disable player sprite loading on scene scroll",
+            "group": "Continuous Scene",
+            "type": "checkbox",
+            "cType": "define",
+            "defaultValue": 1
+        },
+        {
+            "key": "DISABLE_TILESET_LOAD_ON_TRANSITION",
+            "label": "Disable tileset loading on scene scroll",
+            "description": "Disable tileset loading on scene scroll",
+            "group": "Continuous Scene",
+            "type": "checkbox",
+            "cType": "define",
+            "defaultValue": 0
+        },
+        {
+            "key": "DISABLE_UI_TILESET_LOAD",
+            "label": "Disable loading ui tileset on scene load",
+            "description": "Disable loading ui tileset on scene load",
+            "group": "Continuous Scene",
+            "type": "checkbox",
+            "cType": "define",
+            "defaultValue": 0
+        },
+        {
+            "key": "DISABLE_SCROLL_LIMITS",
+            "label": "Disable scroll limits",
+            "description": "Disable scroll limits",
+            "group": "Continuous Scene",
+            "type": "checkbox",
+            "cType": "define",
+            "defaultValue": 1
+        },
+        {
+        "key": "bkg_offset_x",
+        "label": "Scene scroll offset X",
+        "description": "X offset of the screen viewport due to scene transition",
+        "group": "Continuous Scene",
+        "type": "number",
+        "cType": "UBYTE",
+        "defaultValue": 0,
+        "runtimeOnly": true
+        },
+        {
+        "key": "bkg_offset_y",
+        "label": "Scene scroll offset Y",
+        "description": "Y offset of the screen viewport due to scene transition",
+        "group": "Continuous Scene",
+        "type": "number",
+        "cType": "UBYTE",
+        "defaultValue": 0,
+        "runtimeOnly": true
+        },
+        {
+        "key": "player_collision_group",
+        "sceneType": "TOPDOWN",
+        "label": "Player extra collision group",
+        "description": "Additional tile collision flags OR'd into every player movement check",
+        "group": "GAMETYPE_TOP_DOWN",
+        "type": "number",
+        "cType": "UBYTE",
+        "defaultValue": 0
+        },
+        {
+        "key": "fill_tile_id",
+        "label": "Out of bounds tile Id",
+        "description": "Tile index used to fill out-of-bounds areas during scene scrolling",
+        "group": "Continuous Scene",
+        "type": "number",
+        "cType": "UBYTE",
+        "defaultValue": 0
+        },
+        {
+        "key": "fill_tile_attr",
+        "label": "Out of bounds tile attribute",
+        "description": "Tile attribute used to fill out-of-bounds areas during scene scrolling",
+        "group": "Continuous Scene",
+        "type": "number",
+        "cType": "UBYTE",
+        "defaultValue": 0
+        }
+    ]
+}

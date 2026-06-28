@@ -1,0 +1,82 @@
+Index: include\collision.h
+===================================================================
+--- include\collision.h
++++ include\collision.h
+@@ -14,26 +14,46 @@
+ #define COLLISION_RIGHT 0x8
+ #define COLLISION_ALL 0xF
+ #define TILE_PROP_LADDER 0x10
+ 
+-#define DIRECTION_TOP_FLAG 0x01
+-#define DIRECTION_RIGHT_FLAG 0x02
+-#define DIRECTION_BOTTOM_FLAG 0x04
+-#define DIRECTION_LEFT_FLAG 0x08
+-#define DIRECTION_TOP_LEFT_FLAG 0x10
+-#define DIRECTION_TOP_RIGHT_FLAG 0x20
+-#define DIRECTION_BOTTOM_RIGHT_FLAG 0x40
+-#define DIRECTION_BOTTOM_LEFT_FLAG 0x80
++#define METATILE_SIZE_8     0
++#define METATILE_SIZE_16    1
+ 
++#if METATILE_SIZE == METATILE_SIZE_16
++
++#define METATILE_X_OFFSET(x) (x >> 1)
++#define METATILE_Y_OFFSET(y) ((y >> 1) << image_tile_width_bit)
++#define TILE_X_OFFSET(x) (x & 1)
++#define TILE_Y_OFFSET(y) ((y & 1) << 5)
++#define METATILE_MAP_OFFSET(x, y)  (METATILE_Y_OFFSET(y) + METATILE_X_OFFSET(x))
++#define TILE_MAP_OFFSET(metatile_idx,x,y)  (UWORD)(((metatile_idx & 0xF0) << 2) + ((metatile_idx & 15) << 1) + TILE_Y_OFFSET(y) + TILE_X_OFFSET(x))
++#define MAX_MAP_DATA_SIZE 0x1C00
++#define COLLISION_DATA_SIZE 0x0400
++
++#else
++
++#define METATILE_Y_OFFSET(y) (y << image_tile_width_bit)
++#define METATILE_MAP_OFFSET(x, y)  (METATILE_Y_OFFSET(y) + x)
++#define MAX_MAP_DATA_SIZE 0x1F00
++#define COLLISION_DATA_SIZE 0x0100
++
++#endif
++
++#define SRAM_MAP_DATA_PTR 0xA000
++#define SRAM_COLLISION_DATA_PTR (SRAM_MAP_DATA_PTR + MAX_MAP_DATA_SIZE)
++
+ extern UBYTE collision_bank;
+ extern unsigned char *collision_ptr;
+ extern UBYTE image_tile_width;
+ extern UBYTE image_tile_height;
+ 
+ extern UBYTE tile_hit_x;
+ extern UBYTE tile_hit_y;
+ 
+-extern UBYTE continuous_scene_enabled;
++extern uint8_t __at(SRAM_COLLISION_DATA_PTR) sram_collision_data[COLLISION_DATA_SIZE];
++extern uint8_t __at(SRAM_MAP_DATA_PTR) sram_map_data[MAX_MAP_DATA_SIZE];
++extern UBYTE metatile_collision_bank;
++extern UBYTE image_tile_width_bit;
+ 
+ /**
+  * Check if point is within positioned bounding box.
+  *
+@@ -74,10 +94,19 @@
+  * @param ty Top tile
+  * @return Tile value, 0 if no collisions, COLLISION_ALL if out of bounds
+  */
+ inline UBYTE tile_at(UBYTE tx, UBYTE ty) {
+-    if ((tx < image_tile_width) && (ty < image_tile_height))
+-        return ReadBankedUBYTE(collision_ptr + (ty * (UINT16)image_tile_width) + tx, collision_bank);
++    if ((tx < image_tile_width) && (ty < image_tile_height)) {
++        if (metatile_collision_bank) {
++#if METATILE_SIZE == METATILE_SIZE_16
++            return sram_collision_data[TILE_MAP_OFFSET(sram_map_data[METATILE_MAP_OFFSET(tx, ty)], tx, ty)];
++#else
++            return sram_collision_data[sram_map_data[METATILE_MAP_OFFSET(tx, ty)]];
++#endif
++        } else {
++            return ReadBankedUBYTE(collision_ptr + (ty * (UINT16)image_tile_width) + tx, collision_bank);
++        }
++    }
+     return COLLISION_ALL;
+ }
+ 
+ /**

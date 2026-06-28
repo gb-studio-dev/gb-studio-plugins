@@ -1,0 +1,33 @@
+Index: src\states\pointnclick.c
+===================================================================
+--- src\states\pointnclick.c
++++ src\states\pointnclick.c
+@@ -10,8 +10,9 @@
+ #include "game_time.h"
+ #include "input.h"
+ #include "trigger.h"
+ #include "vm.h"
++#include "meta_tiles.h"
+ #include "continuous_scene.h"
+ 
+ #ifndef POINT_N_CLICK_CAMERA_DEADZONE
+ #define POINT_N_CLICK_CAMERA_DEADZONE 24
+@@ -78,15 +79,17 @@
+         } else if (PLAYER.pos.y + PLAYER.bounds.bottom > image_height_subpx) {
+             PLAYER.pos.y = image_height_subpx - EXCLUSIVE_OFFSET(PLAYER.bounds.bottom);
+         }
+     }
+-
+     //Check scene transition
+     if (check_transition_to_scene_collision()) {
+         return;
+     }
+     // Check for trigger collisions
+     hit_trigger = trigger_at_intersection(&PLAYER.bounds, &PLAYER.pos);
++#ifdef ENABLE_POINTNCLICK_ENTER_METATILE
++    metatile_overlap_at_intersection(&PLAYER.bounds, &PLAYER.pos);
++#endif
+     // Check for actor collisions
+     hit_actor = actor_overlapping_player();
+ 
+     is_hover_trigger = (hit_trigger != NO_TRIGGER_COLLISON)

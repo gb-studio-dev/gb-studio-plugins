@@ -1,0 +1,11 @@
+{
+  "type": "enginePlugin",
+  "name": "Continuous Scene Plugin",
+  "author": "Mico27",
+  "url": "https://github.com/Mico27/gbs-ContinuousScenePlugin",
+  "description": "Allows connecting scenes for continuous scrolling for sprawling overworld maps",
+  "license": "MIT",
+  "version": "4.3.1",
+  "gbsVersion": ">=4.3.0",
+  "order": -13
+}

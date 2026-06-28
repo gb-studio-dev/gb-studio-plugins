@@ -1,0 +1,193 @@
+Index: src\core\interrupts.c
+===================================================================
+--- src\core\interrupts.c
++++ src\core\interrupts.c
+@@ -1,11 +1,15 @@
+ #pragma bank 255
+ 
+ #include <gbdk/platform.h>
++#include <stdbool.h>
+ 
+ #include "interrupts.h"
++#include "fade_street.h"
+ 
++#include "palette.h"
+ #include "scroll.h"
++#include "system.h"
+ #include "parallax.h"
+ #include "ui.h"
+ 
+ #define LYC_SYNC_VALUE 150u
+@@ -62,9 +66,172 @@
+         LYC_REG = LYC_SYNC_VALUE;
+     }
+ }
+ 
++bool refresh_bkg_palettes;
++bool refresh_obj_palettes;
++
++
++#ifdef CGB
++void fs_copy_pals(void) BANKED
++{
++    if (refresh_bkg_palettes) {
++        BCPS_REG = 128;
++        register uint8_t * p =  (uint8_t *)BkgPalette;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        BCPD_REG = *p++;
++        refresh_bkg_palettes = false;
++    }
++    if (refresh_obj_palettes) {
++        OCPS_REG = 128;
++        register uint8_t * p =  (uint8_t *)SprPalette;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        OCPD_REG = *p++;
++        refresh_obj_palettes = false;
++    }
++}
++#endif
++
+ void VBL_isr(void) NONBANKED {
++
++#ifdef CGB
++    if (_is_CGB) {
++        // load CGB palettes:
++        fs_copy_pals();
++    } else
++#endif
++    {
++        // load DMG palettes:
++        register uint8_t *src = DMG_palette;
++        register uint8_t *dest = &BGP_REG;
++        *dest++ = *src++;
++        *dest++ = *src++;
++        *dest = *src;
++    }
+     if ((WY_REG = win_pos_y) < MENU_CLOSED_Y) WX_REG = (win_pos_x + DEVICE_WINDOW_PX_OFFSET_X), SHOW_WIN; else WX_REG = 0, HIDE_WIN;
+     if (hide_sprites) HIDE_SPRITES; else SHOW_SPRITES;
+     scroll_shadow_update();
+ }

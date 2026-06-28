@@ -1,0 +1,32 @@
+Index: src\core\vm_ui.c
+===================================================================
+--- src\core\vm_ui.c
++++ src\core\vm_ui.c
+@@ -44,10 +44,16 @@
+     if (vwf_direction != UI_PRINT_LEFTTORIGHT) reverse(d);
+     return len;
+ }
+ 
++UWORD loaded_text_length;
++UBYTE load_text_mode;
+ static const unsigned char * load_text(const unsigned char * s, INT16 * args) NONBANKED {
+-    unsigned char * d = ui_text_data;
++    unsigned char * d, * prev_d;
++    d = prev_d = ui_text_data;
++    if (load_text_mode){
++        d += loaded_text_length;
++    }
+     while (*s) {
+         if (*s == '%') {
+             switch (*++s) {
+                 // variable value of fixed width, zero padded
+@@ -86,8 +92,9 @@
+         }
+         s++; args--;
+     }
+     *d = 0;
++    loaded_text_length = d - prev_d;
+     return s + 1;
+ }
+ 
+ // renders UI text into buffer

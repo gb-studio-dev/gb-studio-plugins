@@ -1,0 +1,246 @@
+Index: src\core\collision.c
+===================================================================
+--- src\core\collision.c
++++ src\core\collision.c
+@@ -2,9 +2,12 @@
+ 
+ #include "collision.h"
+ #include "bankdata.h"
+ #include "continuous_scene.h"
++#include "meta_tiles.h"
++#include "math.h"
+ #include "scroll.h"
++#include "data/states_defines.h"
+ #include "vm.h"
+ 
+ UBYTE tile_hit_x = 0;
+ UBYTE tile_hit_y = 0;
+@@ -12,18 +15,32 @@
+ // ============================================================
+ // Shared helpers
+ // ============================================================
+ 
++// Read a single tile's collision byte from a neighbor scene's ROM tilemap.
++// Returns 0 (no collision) when tx/ty are out of the neighbor's bounds.
++static UBYTE get_neighbor_metatile_collision(continuous_scene_t* cs, UBYTE tx, UBYTE ty) {
++    if (!cs->tilemap.ptr || !cs->tilemap.bank) return COLLISION_ALL;
++    if (tx >= cs->tile_width || ty >= cs->tile_height) return COLLISION_ALL;
++#if METATILE_SIZE == METATILE_SIZE_16
++    UBYTE metatile_id = ReadBankedUBYTE((const UBYTE*)cs->tilemap.ptr + ((UWORD)(ty >> 1) * (cs->tile_width >> 1) + (tx >> 1)), cs->tilemap.bank);
++    return sram_collision_data[TILE_MAP_OFFSET(metatile_id, tx, ty)];
++#else
++    UBYTE metatile_id = ReadBankedUBYTE((const UBYTE*)cs->tilemap.ptr + ((UWORD)ty * cs->tile_width + tx), cs->tilemap.bank);
++    return sram_collision_data[metatile_id];
++#endif
++}
++
+ // Read a single tile's collision byte from a neighbor scene's banked collision ROM.
+-// Returns COLLISION_ALL when tx/ty are out of the neighbor's bounds.
++// Returns 0 (no collision) when tx/ty are out of the neighbor's bounds.
+ static UBYTE get_neighbor_collision(continuous_scene_t* cs, UBYTE tx, UBYTE ty) {
+     if (!cs->collision.ptr || !cs->collision.bank) return COLLISION_ALL;
+     if (tx >= cs->tile_width || ty >= cs->tile_height) return COLLISION_ALL;
+     return ReadBankedUBYTE((const UBYTE*)cs->collision.ptr + ((UWORD)ty * cs->tile_width + tx), cs->collision.bank);
+ }
+ 
+ // ============================================================
+-// Non-metatile collision (banked ROM tileset)
++// Non-metatile collision (banked ROM tileset, no SRAM)
+ // ============================================================
+ 
+ // Iterate over y range in the current scene's banked collision ROM.
+ UBYTE legacy_tile_col_test_range_y(UBYTE tile_mask, UBYTE tx, UBYTE ty_start, UBYTE ty_end) NONBANKED {
+@@ -72,9 +89,9 @@
+     SWITCH_ROM(_save);
+     return 0;
+ }
+ 
+-// Iterate over y range in a neighbor scene's banked collision ROM.
++// Iterate over y range in a neighbor scene's non-metatile banked collision ROM.
+ // neighbor_tx: already-translated x coordinate in the neighbor scene's tile space.
+ // y_offset: added to tile_hit_y each iteration to translate to the neighbor's y space.
+ static UBYTE neighbor_legacy_col_test_y(UBYTE tile_mask, continuous_scene_t* cs,
+                                          UBYTE neighbor_tx, BYTE y_offset,
+@@ -90,9 +107,9 @@
+     }
+     return 0;
+ }
+ 
+-// Iterate over x range in a neighbor scene's banked collision ROM.
++// Iterate over x range in a neighbor scene's non-metatile banked collision ROM.
+ // neighbor_ty: already-translated y coordinate in the neighbor scene's tile space.
+ // x_offset: added to tile_hit_x each iteration to translate to the neighbor's x space.
+ static UBYTE neighbor_legacy_col_test_x(UBYTE tile_mask, continuous_scene_t* cs,
+                                          UBYTE neighbor_ty, BYTE x_offset,
+@@ -109,8 +126,106 @@
+     return 0;
+ }
+ 
+ // ============================================================
++// Metatile collision — current scene (SRAM lookup)
++// ============================================================
++
++// Iterate over y range using current scene's SRAM metatile collision table.
++// Handles bottom-edge OOB: passthrough if continuous DOWN, wall otherwise.
++static UBYTE metatile_col_test_y(UBYTE tile_mask, UBYTE tx, UBYTE ty_start, UBYTE ty_end) {
++#if METATILE_SIZE == METATILE_SIZE_16
++    UBYTE metatile_x_offset = METATILE_X_OFFSET(tx);
++    UBYTE tile_x_offset = TILE_X_OFFSET(tx);
++#endif
++    UBYTE inc = UBYTE_LESS_THAN(ty_start, ty_end);
++    UBYTE tile;
++    while (TRUE) {
++#if METATILE_SIZE == METATILE_SIZE_16
++        tile = sram_collision_data[get_metatile_tile(metatile_x_offset + METATILE_Y_OFFSET(tile_hit_y), tile_x_offset + TILE_Y_OFFSET(tile_hit_y))];
++#else
++        tile = sram_collision_data[sram_map_data[METATILE_MAP_OFFSET(tx, tile_hit_y)]];
++#endif
++        if (tile & tile_mask) return tile;
++        if (tile_hit_y == ty_end) break;
++        if (inc) tile_hit_y++;
++        else     tile_hit_y--;
++        if (tile_hit_y >= image_tile_height) {
++            if (continuous_scene_enabled & DIRECTION_BOTTOM_FLAG) return 0;
++            return COLLISION_ALL & tile_mask ? COLLISION_ALL : 0;
++        }
++    }
++    return 0;
++}
++
++// Iterate over x range using current scene's SRAM metatile collision table.
++// Handles right-edge OOB: passthrough if continuous RIGHT, wall otherwise.
++static UBYTE metatile_col_test_x(UBYTE tile_mask, UBYTE ty, UBYTE tx_start, UBYTE tx_end) {
++    UWORD metatile_y_offset = METATILE_Y_OFFSET(ty);
++#if METATILE_SIZE == METATILE_SIZE_16
++    UBYTE tile_y_offset = TILE_Y_OFFSET(ty);
++#endif
++    UBYTE inc = UBYTE_LESS_THAN(tx_start, tx_end);
++    UBYTE tile;
++    while (TRUE) {
++#if METATILE_SIZE == METATILE_SIZE_16
++        tile = sram_collision_data[get_metatile_tile(metatile_y_offset + METATILE_X_OFFSET(tile_hit_x), tile_y_offset + TILE_X_OFFSET(tile_hit_x))];
++#else
++        tile = sram_collision_data[sram_map_data[(metatile_y_offset + tile_hit_x)]];
++#endif
++        if (tile & tile_mask) return tile;
++        if (tile_hit_x == tx_end) break;
++        if (inc) tile_hit_x++;
++        else     tile_hit_x--;
++        if (tile_hit_x >= image_tile_width) {
++            if (continuous_scene_enabled & DIRECTION_RIGHT_FLAG) return 0;
++            return COLLISION_ALL & tile_mask ? COLLISION_ALL : 0;
++        }
++    }
++    return 0;
++}
++
++// ============================================================
++// Metatile collision — neighbor scene (ROM lookup via continuous scene)
++// ============================================================
++
++// Iterate over y range in a neighbor scene's metatile collision (ROM tilemap -> SRAM table).
++// neighbor_tx: already-translated x coordinate in the neighbor scene's tile space.
++// y_offset: added to tile_hit_y each iteration to translate to the neighbor's y space.
++static UBYTE neighbor_metatile_col_test_y(UBYTE tile_mask, continuous_scene_t* cs,
++                                           UBYTE neighbor_tx, BYTE y_offset,
++                                           UBYTE ty_start, UBYTE ty_end) {
++    UBYTE inc = UBYTE_LESS_THAN(ty_start, ty_end);
++    UBYTE tile;
++    while (TRUE) {
++        tile = get_neighbor_metatile_collision(cs, neighbor_tx, (UBYTE)(tile_hit_y + y_offset));
++        if (tile & tile_mask) return tile;
++        if (tile_hit_y == ty_end) break;
++        if (inc) tile_hit_y++;
++        else     tile_hit_y--;
++    }
++    return 0;
++}
++
++// Iterate over x range in a neighbor scene's metatile collision (ROM tilemap -> SRAM table).
++// neighbor_ty: already-translated y coordinate in the neighbor scene's tile space.
++// x_offset: added to tile_hit_x each iteration to translate to the neighbor's x space.
++static UBYTE neighbor_metatile_col_test_x(UBYTE tile_mask, continuous_scene_t* cs,
++                                           UBYTE neighbor_ty, BYTE x_offset,
++                                           UBYTE tx_start, UBYTE tx_end) {
++    UBYTE inc = UBYTE_LESS_THAN(tx_start, tx_end);
++    UBYTE tile;
++    while (TRUE) {
++        tile = get_neighbor_metatile_collision(cs, (UBYTE)(tile_hit_x + x_offset), neighbor_ty);
++        if (tile & tile_mask) return tile;
++        if (tile_hit_x == tx_end) break;
++        if (inc) tile_hit_x++;
++        else     tile_hit_x--;
++    }
++    return 0;
++}
++
++// ============================================================
+ // Public entry points
+ // ============================================================
+ 
+ // Test collision along a fixed x (tx), iterating over y (ty_start -> ty_end).
+@@ -121,8 +236,9 @@
+ 
+     // OOB: tile is outside current scene — check neighbor or treat as wall
+     if (tile_hit_x >= image_tile_width || tile_hit_y >= image_tile_height) {
+         if (continuous_scene_enabled) {
++            // Metatile scene + continuous: look up collision in the neighbor's ROM tilemap
+             continuous_scene_t* cs = NULL;
+             UBYTE neighbor_tx = tile_hit_x;
+             BYTE y_offset = 0;
+             if (tile_hit_x > SCREEN_OOB_LEFT && (continuous_scene_enabled & DIRECTION_LEFT_FLAG)) {
+@@ -134,15 +250,20 @@
+                 neighbor_tx = tile_hit_x - image_tile_width;
+                 y_offset = cs->offset;
+             }
+             if (cs) {
+-                return neighbor_legacy_col_test_y(tile_mask, cs, neighbor_tx, y_offset, ty_start, ty_end);
++                if (metatile_collision_bank){
++                    return neighbor_metatile_col_test_y(tile_mask, cs, neighbor_tx, y_offset, ty_start, ty_end);
++                } else {
++                    return neighbor_legacy_col_test_y(tile_mask, cs, neighbor_tx, y_offset, ty_start, ty_end);
++                }
+             }
+         }
+         return COLLISION_ALL & tile_mask ? COLLISION_ALL : 0;
+     }
+ 
+-    // In-bounds
++    // In-bounds: dispatch to the appropriate collision method
++    if (metatile_collision_bank) return metatile_col_test_y(tile_mask, tx, ty_start, ty_end);
+     return legacy_tile_col_test_range_y(tile_mask, tx, ty_start, ty_end);
+ }
+ 
+ // Test collision along a fixed y (ty), iterating over x (tx_start -> tx_end).
+@@ -152,9 +273,9 @@
+     tile_hit_y = ty;
+ 
+     // OOB: tile is outside current scene — check neighbor or treat as wall
+     if (tile_hit_x >= image_tile_width || tile_hit_y >= image_tile_height) {
+-        if (continuous_scene_enabled) {
++        if (continuous_scene_enabled){
+             continuous_scene_t* cs = NULL;
+             UBYTE neighbor_ty = tile_hit_y;
+             BYTE x_offset = 0;
+             if (tile_hit_y > SCREEN_OOB_TOP && (continuous_scene_enabled & DIRECTION_TOP_FLAG)) {
+@@ -166,13 +287,17 @@
+                 neighbor_ty = tile_hit_y - image_tile_height;
+                 x_offset = cs->offset;
+             }
+             if (cs) {
+-                return neighbor_legacy_col_test_x(tile_mask, cs, neighbor_ty, x_offset, tx_start, tx_end);
++                if (metatile_collision_bank){
++                    return neighbor_metatile_col_test_x(tile_mask, cs, neighbor_ty, x_offset, tx_start, tx_end);
++                } else {
++                    return neighbor_legacy_col_test_x(tile_mask, cs, neighbor_ty, x_offset, tx_start, tx_end);
++                }
+             }
+         }
+         return COLLISION_ALL & tile_mask ? COLLISION_ALL : 0;
+     }
+-
+-    // In-bounds
++    // In-bounds: dispatch to the appropriate collision method
++    if (metatile_collision_bank) return metatile_col_test_x(tile_mask, ty, tx_start, tx_end);
+     return legacy_tile_col_test_range_x(tile_mask, ty, tx_start, tx_end);
+ }
