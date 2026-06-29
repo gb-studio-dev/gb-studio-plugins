@@ -6,5 +6,39 @@
   "description": "Alternate method of displaying text (uses font loaded in tileset VRAM instead of writing text to tileset VRAM)",
   "license": "MIT",
   "version": "4.3.0",
-  "gbsVersion": ">=4.3.0"
+  "gbsVersion": ">=4.3.0",
+  "engineAltRules": [
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin"
+        ]
+      },
+      "use": "Cont"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin"
+        ]
+      },
+      "use": "Cont"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin"
+        ]
+      },
+      "use": "Scr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin"
+        ]
+      },
+      "use": "Scr"
+    }
+  ]
 }
