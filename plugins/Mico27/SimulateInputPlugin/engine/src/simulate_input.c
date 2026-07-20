@@ -49,6 +49,8 @@ void simulate_input_update(void) BANKED {
         if ((joy ^ last_joy) & INPUT_DPAD){
             recent_joy = ((joy & ~last_joy) & INPUT_DPAD);
         }
+        joy_pressed = joy;
+        joy_pressed &= ~last_joy;
         last_sim_joy = sim_frame_joy;
     }
 }

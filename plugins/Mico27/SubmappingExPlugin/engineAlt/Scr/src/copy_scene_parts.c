@@ -9,6 +9,12 @@
 #include "data_manager.h"
 #include "data/states_defines.h"   // engine-field enable/disable #defines
 
+// engineAlt variant for ScreenScrollPlugin / ContinuousScenePlugin.
+// Those plugins shift the background tilemap in VRAM by (bkg_offset_x,
+// bkg_offset_y) (declared extern in their scroll.h). Every background VRAM
+// tile position below therefore adds bkg_offset_x/y before the & 31 wrap.
+// Overlay/window positions and ROM tilemap reads are unchanged.
+
 UBYTE tmp_tile_buffer[32];
 
 void set_xy_win_submap(const UBYTE * source, UBYTE bank, UBYTE width, UBYTE x, UBYTE y, UBYTE w, UBYTE h) OLDCALL;
@@ -109,12 +115,12 @@ void copy_background_submap_to_background(SCRIPT_CTX * THIS) OLDCALL BANKED {
         if (_is_CGB) {
             VBK_REG = 1;
             MemcpyBanked(tmp_tile_buffer, tilemap_attr_ptr + offset, buffer_size, bkg.cgb_tilemap_attr.bank);
-            set_bkg_tiles(dest_x & 31, (dest_y + i) & 31, width, 1, tmp_tile_buffer);
+            set_bkg_tiles((dest_x + bkg_offset_x) & 31, (dest_y + i + bkg_offset_y) & 31, width, 1, tmp_tile_buffer);
             VBK_REG = 0;
         }
 #endif
         MemcpyBanked(tmp_tile_buffer, tilemap_ptr + offset, buffer_size, bkg.tilemap.bank);
-        set_bkg_tiles(dest_x & 31, (dest_y + i) & 31, width, 1, tmp_tile_buffer);
+        set_bkg_tiles((dest_x + bkg_offset_x) & 31, (dest_y + i + bkg_offset_y) & 31, width, 1, tmp_tile_buffer);
     }
 
 }
@@ -151,12 +157,12 @@ void copy_background_submap_to_background_base(SCRIPT_CTX * THIS) OLDCALL BANKED
         if (_is_CGB) {
             VBK_REG = 1;
             MemcpyBanked(tmp_tile_buffer, tilemap_attr_ptr + offset, buffer_size, bkg.cgb_tilemap_attr.bank);
-            set_bkg_tiles(dest_x & 31, (dest_y + i) & 31, width, 1, tmp_tile_buffer);
+            set_bkg_tiles((dest_x + bkg_offset_x) & 31, (dest_y + i + bkg_offset_y) & 31, width, 1, tmp_tile_buffer);
             VBK_REG = 0;
         }
 #endif
         MemcpyBanked(tmp_tile_buffer, tilemap_ptr + offset, buffer_size, bkg.tilemap.bank);
-        set_bkg_based_tiles(dest_x & 31, (dest_y + i) & 31, width, 1, tmp_tile_buffer, tile_idx_offset);
+        set_bkg_based_tiles((dest_x + bkg_offset_x) & 31, (dest_y + i + bkg_offset_y) & 31, width, 1, tmp_tile_buffer, tile_idx_offset);
     }
 }
 #endif
@@ -181,12 +187,12 @@ void vm_refresh_background_rect(SCRIPT_CTX * THIS) OLDCALL BANKED {
         if (_is_CGB) {
             VBK_REG = 1;
             MemcpyBanked(tmp_tile_buffer, image_attr_ptr + offset, buffer_size, image_attr_bank);
-            set_bkg_tiles(x & 31, (y + i) & 31, width, 1, tmp_tile_buffer);
+            set_bkg_tiles((x + bkg_offset_x) & 31, (y + i + bkg_offset_y) & 31, width, 1, tmp_tile_buffer);
             VBK_REG = 0;
         }
 #endif
         MemcpyBanked(tmp_tile_buffer, image_ptr + offset, buffer_size, image_bank);
-        set_bkg_tiles(x & 31, (y + i) & 31, width, 1, tmp_tile_buffer);
+        set_bkg_tiles((x + bkg_offset_x) & 31, (y + i + bkg_offset_y) & 31, width, 1, tmp_tile_buffer);
     }
 }
 #endif
@@ -240,7 +246,7 @@ void copy_background_submap_to_tileset(SCRIPT_CTX * THIS) OLDCALL BANKED {
                     if (copy_attributes){
                         VBK_REG = 1;
                         if (copy_attributes == 1){
-                            set_bkg_tile_xy((dest_x + j) & 31, (dest_y + i) & 31, (dest_attr & 0x08)? (source_attr | 0x08): (source_attr & ~0x08));
+                            set_bkg_tile_xy((dest_x + j + bkg_offset_x) & 31, (dest_y + i + bkg_offset_y) & 31, (dest_attr & 0x08)? (source_attr | 0x08): (source_attr & ~0x08));
                         } else if (copy_attributes == 2){
                             set_win_tile_xy((overlay_x + j) & 31, (overlay_y + i) & 31, (dest_attr & 0x08)? (source_attr | 0x08): (source_attr & ~0x08));
                         }
@@ -278,7 +284,7 @@ void vm_get_background_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
 }
 
 void vm_replace_background_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
-    set_bkg_tile_xy(((*(uint8_t *) VM_REF_TO_PTR(FN_ARG0)) & 31), ((*(uint8_t *) VM_REF_TO_PTR(FN_ARG1)) & 31), (*(uint8_t *) VM_REF_TO_PTR(FN_ARG2)));
+    set_bkg_tile_xy((((*(uint8_t *) VM_REF_TO_PTR(FN_ARG0)) + bkg_offset_x) & 31), (((*(uint8_t *) VM_REF_TO_PTR(FN_ARG1)) + bkg_offset_y) & 31), (*(uint8_t *) VM_REF_TO_PTR(FN_ARG2)));
 }
 
 void vm_replace_overlay_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
@@ -304,7 +310,7 @@ void vm_replace_background_attribute_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
         UBYTE y = ((*(uint8_t *) VM_REF_TO_PTR(FN_ARG1)));
         UBYTE new_attr = (*(uint8_t *) VM_REF_TO_PTR(FN_ARG2));
         VBK_REG = 1;
-        set_bkg_tile_xy((x & 31), (y & 31), new_attr);
+        set_bkg_tile_xy((x + bkg_offset_x) & 31, (y + bkg_offset_y) & 31, new_attr);
         VBK_REG = 0;
     }
 }
@@ -335,7 +341,7 @@ void vm_fill_background_rect(SCRIPT_CTX * THIS) OLDCALL BANKED {
     UBYTE w = *(uint8_t *) VM_REF_TO_PTR(FN_ARG2);
     UBYTE h = *(uint8_t *) VM_REF_TO_PTR(FN_ARG3);
     UBYTE tile = *(uint8_t *) VM_REF_TO_PTR(FN_ARG4);
-    fill_bkg_rect(x, y, w, h, tile);
+    fill_bkg_rect((x + bkg_offset_x) & 31, (y + bkg_offset_y) & 31, w, h, tile);
 }
 
 #ifdef CGB
@@ -348,7 +354,7 @@ void vm_fill_background_attribute_rect(SCRIPT_CTX * THIS) OLDCALL BANKED {
         UBYTE h = *(uint8_t *) VM_REF_TO_PTR(FN_ARG3);
         UBYTE attr = *(uint8_t *) VM_REF_TO_PTR(FN_ARG4);
         VBK_REG = 1;
-        fill_bkg_rect(x, y, w, h, attr);
+        fill_bkg_rect((x + bkg_offset_x) & 31, (y + bkg_offset_y) & 31, w, h, attr);
         VBK_REG = 0;
     }
 }
@@ -648,7 +654,7 @@ void vm_scroll_background_rect(SCRIPT_CTX * THIS) OLDCALL BANKED {
     UBYTE h    = *(uint8_t *) VM_REF_TO_PTR(FN_ARG3);
     UBYTE dir  = *(uint8_t *) VM_REF_TO_PTR(FN_ARG4);
     UBYTE fill = *(uint8_t *) VM_REF_TO_PTR(FN_ARG5);
-    UBYTE * base_addr = GetBkgAddr() + ((y & 31) << 5) + (x & 31);
+    UBYTE * base_addr = GetBkgAddr() + (((y + bkg_offset_y) & 31) << 5) + ((x + bkg_offset_x) & 31);
 #ifdef CGB
     if (_is_CGB) {
         VBK_REG = 1;

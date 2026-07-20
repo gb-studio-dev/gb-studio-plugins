@@ -191,6 +191,16 @@ export const fields = [
 ];
 
 export const compile = (input, helpers) => {
+  const __submapFeatureEnabled = (key) => {
+    const fv = helpers.engineFieldValues && helpers.engineFieldValues.find((s) => s.id === key);
+    if (fv && fv.value !== undefined && fv.value !== null) return !!fv.value;
+    const def = helpers.engineFields && helpers.engineFields[key];
+    return def ? !!def.defaultValue : true;
+  };
+  if (!__submapFeatureEnabled("SUBMAP_ENABLE_COPY_SCENE_TO_TILESET")) {
+    throw new Error("This event requires the \"Copy scene submap to background tileset\" engine setting to be enabled (Settings → Engine → Submapping Ex).");
+  }
+
   const { options, _callNative, _rpn, _stackPushScriptValue, _stackPushConst, _stackPop, _addComment } = helpers;
 
   _addComment("Copy scene submap to background tileset");

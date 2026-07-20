@@ -205,6 +205,26 @@ void vm_submap_metatiles(SCRIPT_CTX * THIS) OLDCALL BANKED {
     }
 }
 
+void vm_redraw_metatiles(SCRIPT_CTX * THIS) OLDCALL BANKED {
+    UBYTE x = *(uint8_t *) VM_REF_TO_PTR(FN_ARG0);
+    UBYTE y = *(uint8_t *) VM_REF_TO_PTR(FN_ARG1);
+    UBYTE width = *(uint8_t *) VM_REF_TO_PTR(FN_ARG2);
+    UBYTE height = *(uint8_t *) VM_REF_TO_PTR(FN_ARG3);
+    for (uint8_t i = 0; i < height; i++){
+        UBYTE current_y = y + i;
+        bkg_address_offset = ((UWORD)get_bkg_xy_addr(x & 31, current_y & 31)) - 0x9800;
+        load_metatile_row(metatile_ptr, x, current_y, width, metatile_bank);
+        #ifdef CGB
+            if (_is_CGB) {
+                VBK_REG = 1;
+                bkg_address_offset = ((UWORD)get_bkg_xy_addr(x & 31, current_y & 31)) - 0x9800;
+                load_metatile_row(metatile_attr_ptr, x, current_y, width, metatile_attr_bank);
+                VBK_REG = 0;
+            }
+        #endif
+    }
+}
+
 void vm_assign_metatile_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
     uint8_t slot = *(int8_t*)VM_REF_TO_PTR(FN_ARG2);
     UBYTE *bank = VM_REF_TO_PTR(FN_ARG1);

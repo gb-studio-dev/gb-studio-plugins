@@ -3,8 +3,42 @@
   "name": "Submapping Ex Plugin",
   "author": "Mico27",
   "url": "https://github.com/Mico27/GBS-copyBkgSubWinPlugin",
-  "description": "Allow submapping of tiles from different scenes in a variety of ways.",
+  "description": "Allow the manipulation and copying of background and overlay tiles in a variety of ways.",
   "license": "MIT",
   "version": "4.3.1",
-  "gbsVersion": ">=4.3.0"
+  "gbsVersion": ">=4.3.0",
+  "engineAltRules": [
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin"
+        ]
+      },
+      "use": "Cont"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin"
+        ]
+      },
+      "use": "Cont"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin"
+        ]
+      },
+      "use": "Scr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin"
+        ]
+      },
+      "use": "Scr"
+    }
+  ]
 }
