@@ -1,0 +1,21 @@
+{
+    "version": "4.3.0-e0",
+    "fields": [
+        { "key": "TRANSITION_WIPE", "label": "Wipe", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_CURTAIN", "label": "Curtain", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_IRIS", "label": "Iris", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_DIAGONAL", "label": "Diagonal", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_CHECKER", "label": "Checkerboard", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_SNAKE", "label": "Snake", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_SPIRAL", "label": "Spiral", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_BLINDS", "label": "Blinds", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_FOURSQ", "label": "4-Square", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_DIAMOND", "label": "Diamond", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_CLOCK", "label": "Clock", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_NOISE", "label": "Random Noise", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_FAN", "label": "4-Blade Fan", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_X", "label": "X (cross)", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_MASK", "label": "Mask (scene as mask)", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 }
+    ],
+    "sceneTypes": []
+}
