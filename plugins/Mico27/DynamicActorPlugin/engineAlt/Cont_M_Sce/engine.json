@@ -51,7 +51,7 @@
         {
           "key": "DYNAMIC_ACTOR_MAX_PLATFORMS",
           "label": "Max moving platforms",
-          "description": "Number of 'Moving platform' actors that can claim/release riders per scene (each uses 12 bytes of RAM). Platforms beyond this limit still move but never pick up riders. Requires the parent actors component.",
+          "description": "Number of 'Moving platform' actors that can claim/release riders per scene (each uses 11 bytes of RAM). Platforms beyond this limit still move but never pick up riders. Requires the parent actors component.",
           "group": "Dynamic actor",
           "type": "slider",
           "cType": "define",
