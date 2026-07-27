@@ -26,20 +26,29 @@ export const fields = [
 ];
 
 export const compile = (input, helpers) => {
-  const { _callNative, _stackPush, _stackPop, _addComment, _declareLocal, setActorId, getVariableAlias, _stackPushConst } = helpers;
+  const { _callNative, _stackPush, _stackPop, _addComment, _declareLocal, setActorId, getVariableAlias, _stackPushConst, _isIndirectVariable, _setInd } = helpers;
 
   const tmp0 = _declareLocal("tmp0", 1, true);
 
   setActorId(tmp0, input.actorId);
 
   const variableAlias = getVariableAlias(input.variable);
+  let dest = variableAlias;
+  if (_isIndirectVariable(input.variable)) {
+    const state_result = _declareLocal("state_result", 1, true);
+    dest = state_result;
+  }
 
   _addComment("Set actor state");
 
-  _stackPushConst(variableAlias);
+  _stackPushConst(dest);
   _stackPush(tmp0);
 
   _callNative("vm_get_actor_state");
   _stackPop(2);
+
+  if (_isIndirectVariable(input.variable)) {
+    _setInd(variableAlias, dest);
+  }
 
 };

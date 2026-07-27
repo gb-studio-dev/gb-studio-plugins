@@ -1,0 +1,40 @@
+{
+    "version": "4.3.0-e1",
+    "fields": [
+        {
+            "key": "ENABLE_FLICKER_FEATURE",
+            "label": "Enable Feature: Flicker",
+            "description": "Enable flicker mode option. Unchecking this will remove any trace of the flicker code.",
+            "group": "Change Actor Render Order",
+            "type": "checkbox",
+            "cType": "define",
+            "defaultValue": 1,
+            "isHeading": true
+        },
+        {
+            "key": "EXCLUDE_PLAYER_FROM_FLICKER",
+            "label": "Exclude player actor from flicker",
+            "description": "Exclude player actor from flicker",
+            "group": "Change Actor Render Order",
+            "type": "checkbox",
+            "cType": "define",
+            "defaultValue": 0,
+            "conditions": [
+             {
+               "key": "ENABLE_FLICKER_FEATURE",
+               "truthy": true
+             }
+           ]
+        },
+        {
+            "key": "ENABLE_SORTY_FEATURE",
+            "label": "Enable Feature: Vertical Sort",
+            "description": "Enable vertical sort mode option. Unchecking this will remove any trace of the vertical sort code.",
+            "group": "Change Actor Render Order",
+            "type": "checkbox",
+            "cType": "define",
+            "defaultValue": 1,
+            "isHeading": true
+        }
+    ]
+}

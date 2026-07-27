@@ -29,17 +29,15 @@ export const fields = [
 ];
 
 export const compile = (input, helpers) => {
-  const { _callNative, _stackPush, _stackPop, _addComment, _declareLocal, variableSetToScriptValue, setActorId } = helpers;
+  const { _callNative, _stackPush, _stackPop, _addComment, _declareLocal, setActorId, _stackPushScriptValue } = helpers;
 
   const tmp0 = _declareLocal("tmp0", 1, true);
-  const tmp1 = _declareLocal("tmp1", 1, true);
 
   setActorId(tmp0, input.actorId);
-  variableSetToScriptValue(tmp1, input.xVelocity);
 
   _addComment("Set actor x velocity");
 
-  _stackPush(tmp1);
+  _stackPushScriptValue(input.xVelocity);
   _stackPush(tmp0);
 
   _callNative("vm_set_actor_velocity_x");

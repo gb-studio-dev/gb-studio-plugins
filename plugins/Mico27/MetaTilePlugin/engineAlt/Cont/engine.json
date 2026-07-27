@@ -24,6 +24,19 @@
         "max": 255
         },
         {
+            "key": "METATILE_ENTER_DETECTION",
+            "label": "Enter metatile event detection mode",
+            "description": "Bounding box triggers the enter event for every tile the actor's collision box overlaps. Origin point triggers only for the single tile under the actor's centre.",
+            "group": "Metatiles",
+            "type": "select",
+            "cType": "define",
+            "defaultValue": "METATILE_ENTER_BOUNDING_BOX",
+            "options": [
+                ["METATILE_ENTER_BOUNDING_BOX", "Bounding box"],
+                ["METATILE_ENTER_ORIGIN_POINT", "Origin point"]
+            ]
+        },
+        {
         "key": "MIN_DOWN_COLLISION_METATILE",
         "label": "Minimum metatile index to start checking for the down collision metatile event",
         "group": "Metatiles",

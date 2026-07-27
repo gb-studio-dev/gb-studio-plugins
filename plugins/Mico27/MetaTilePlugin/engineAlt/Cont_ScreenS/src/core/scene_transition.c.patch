@@ -1,0 +1,25 @@
+Index: src\core\scene_transition.c
+===================================================================
+--- src\core\scene_transition.c
++++ src\core\scene_transition.c
+@@ -19,8 +19,9 @@
+ #include "projectiles.h"
+ #include "shadow.h"
+ #include "music_manager.h"
+ #include "vm.h"
++#include "meta_tiles.h"
+ #include "macro.h"
+ #include "interrupts.h"
+ #include "data/game_globals.h"
+ 
+@@ -125,8 +126,10 @@
+         is_transitioning_scene = direction;
+         transition_load_scene(scene_bank, scene, direction);
+         uint8_t camera_arrived = FALSE;
+         uint8_t player_arrived = FALSE;
++        metatile_bank = 0;
++        metatile_attr_bank = 0;
+         do {
+             script_runner_update();
+         } while (VM_ISLOCKED());
+         switch(direction){

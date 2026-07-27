@@ -1,18 +1,32 @@
-{
+﻿{
     "version": "4.3.0-e1",
     "fields": [
         {
-            "key": "DYNAMIC_ACTOR_COLLISION_TYPE",
-            "label": "Tile collision type",
-            "group": "Dynamic actor",
-            "type": "select",
-            "options": [
-                ["DYNAMIC_ACTOR_COLLISION_SINGLE_POINT", "Origin point (Fast)"],
-                ["DYNAMIC_ACTOR_COLLISION_TRIANGLE", "Triangle (Slower)"],
-                ["DYNAMIC_ACTOR_COLLISION_BOUNDING_BOX", "Bounding box (Slowest)"]
-            ],
-            "cType": "define",
-            "defaultValue": "DYNAMIC_ACTOR_COLLISION_SINGLE_POINT"
+          "key": "DYNAMIC_ACTOR_ENABLE_COLLISION_SINGLE_POINT",
+          "label": "Collision model: Origin point",
+          "description": "Compile the single-point collision model.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_COLLISION_TRIANGLE",
+          "label": "Collision model: Triangle",
+          "description": "Compile the triangle collision model.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_COLLISION_BOUNDING_BOX",
+          "label": "Collision model: Bounding box",
+          "description": "Compile the bounding-box collision model.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
         },
         {
           "key": "DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION",
@@ -26,13 +40,24 @@
         {
           "key": "DYNAMIC_ACTOR_MAX_BEHAVIORS",
           "label": "Max behavior slots",
-          "description": "Number of behavior definition slots available (each slot uses 5 bytes of RAM)",
+          "description": "Number of behavior definition slots available (each slot uses 8 bytes of RAM)",
           "group": "Dynamic actor",
           "type": "slider",
           "cType": "define",
           "min": 1,
           "max": 32,
           "defaultValue": 8
+        },
+        {
+          "key": "DYNAMIC_ACTOR_MAX_PLATFORMS",
+          "label": "Max moving platforms",
+          "description": "Number of 'Moving platform' actors that can claim/release riders per scene (each uses 12 bytes of RAM). Platforms beyond this limit still move but never pick up riders. Requires the parent actors component.",
+          "group": "Dynamic actor",
+          "type": "slider",
+          "cType": "define",
+          "min": 1,
+          "max": 8,
+          "defaultValue": 2
         },
         {
           "key": "DYNAMIC_ACTOR_ENABLE_GRAVITY",
@@ -42,6 +67,15 @@
           "type": "checkbox",
           "cType": "define",
           "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_MOVE_Z",
+          "label": "Topdown Z axis",
+          "description": "Enable actor Z position/velocity fields and apply gravity to Z instead of Y (topdown jump/height simulation).",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0
         },
         {
           "key": "DYNAMIC_ACTOR_ENABLE_MOVE_X",
@@ -89,9 +123,71 @@
           "defaultValue": 1
         },
         {
-          "key": "DYNAMIC_ACTOR_ENABLE_LINKED",
-          "label": "Component: Attach to linked actor",
-          "description": "Compile linked actor following. Uncheck to save ROM if no behavior attaches actors to other actors.",
+          "key": "DYNAMIC_ACTOR_ENABLE_PARENT",
+          "label": "Component: Parent actors / moving platforms",
+          "description": "Compile parent actor inheritance: any actor with a parent set follows the parent's per-frame movement and still runs its own behavior physics. Also compiles the 'Moving platform' behavior component, which automatically parents/unparents the actors it touches. Uncheck to save ROM if nothing uses parenting or platforms.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_PARENT_MODE",
+          "label": "Parenting mode",
+          "description": "How a parented actor follows its parent. Static: the actor is pinned at a fixed pixel offset (its own X/Y velocity) from the parent and runs no other behavior code - fastest. Inherit first parent velocity: the actor is carried by its direct parent's velocity (tile-collision checked) and still runs its own behavior - only tracks parents that have a dynamic velocity. Apply all parents positions delta: the actor is displaced by the summed position change of its whole parent chain (tile-collision checked) and still runs its own behavior - follows any parent including engine-moved ones like the player, slowest.",
+          "group": "Dynamic actor",
+          "type": "select",
+          "options": [
+            ["0", "Static parenting (Fast)"],
+            ["1", "Inherit first parent velocity (Slower)"],
+            ["2", "Apply all parents positions delta (Slowest)"]
+          ],
+          "cType": "define",
+          "defaultValue": "2",
+          "conditions": [
+            {
+              "key": "DYNAMIC_ACTOR_ENABLE_PARENT",
+              "truthy": true
+            }
+          ]
+        },
+        {
+          "key": "DYNAMIC_ACTOR_PLATFORM_PLAYER_ONLY",
+          "label": "Platforms attach the player only",
+          "description": "When checked, a 'Moving platform' actor only auto-attaches the player when it touches it - other actors are ignored (they can still be parented explicitly with Set Actor Parent Actor). When unchecked, a platform attaches every actor it touches (subject to its collision group). Checking this also saves the per-frame claim test on every non-player actor.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 0,
+          "conditions": [
+            {
+              "key": "DYNAMIC_ACTOR_ENABLE_PARENT",
+              "truthy": true
+            }
+          ]
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_ACTOR_COLLISION",
+          "label": "Component: Collide with other actors",
+          "description": "Compile actor-vs-actor collision (blocks/turns on contact with other collidable actors; the player is already handled by the engine). Uncheck to save ROM if no behavior uses it.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_HIT_ACTORS",
+          "label": "Component: Trigger other actors' On Hit",
+          "description": "Compile the 'trigger other actors On Hit on collision' behavior option: an actor with it set runs the On Hit script of every collidable actor it overlaps (the engine normally does this only for the player). Uncheck to save ROM if no behavior uses it.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_ACTOR_TRIGGERS",
+          "label": "Component: Actors activate triggers",
+          "description": "Compile the 'activate triggers on enter/leave' behavior option: an actor with it set fires trigger On Enter / On Leave scripts as it moves in and out of triggers (the engine normally does this only for the player). Uses one byte of RAM per actor to track each actor's current trigger. Uncheck to save ROM/RAM if no behavior uses it.",
           "group": "Dynamic actor",
           "type": "checkbox",
           "cType": "define",
@@ -105,6 +201,103 @@
           "type": "checkbox",
           "cType": "define",
           "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_VM_WAIT_FOR_COLLISION",
+          "label": "VM: Wait for collision",
+          "description": "Compile vm_wait_for_collision waitable helper.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_VM_MOTION_CHASE_ACTOR",
+          "label": "VM motion: Chase actor",
+          "description": "Compile vm_actor_chase_actor.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_VM_MOTION_MOVE_TO_POS_BY_VELOCITY",
+          "label": "VM motion: Move to position by velocity",
+          "description": "Compile vm_actor_move_to_pos_by_velocity.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_VM_MOTION_CRAWL_STEP",
+          "label": "VM motion: Crawl step",
+          "description": "Compile vm_actor_crawl_step.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "dynamic_actor_event_actor_idx",
+          "label": "Event actor index",
+          "description": "Actor index for the current dynamic actor event.",
+          "group": "Dynamic actor",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        },
+        {
+          "key": "dynamic_actor_event_behavior_idx",
+          "label": "Event behavior index",
+          "description": "Behavior index for the current dynamic actor event.",
+          "group": "Dynamic actor",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        },
+        {
+          "key": "dynamic_actor_event_state",
+          "label": "Event state",
+          "description": "State for the current dynamic actor event.",
+          "group": "Dynamic actor",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        },
+        {
+          "key": "dynamic_actor_event_tile_idx",
+          "label": "Event tile collision",
+          "description": "Tile collision value for the current dynamic actor event.",
+          "group": "Dynamic actor",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        },
+        {
+          "key": "dynamic_actor_event_tile_x",
+          "label": "Event tile x",
+          "description": "Tile x coordinate for the current dynamic actor event.",
+          "group": "Dynamic actor",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
+        },
+        {
+          "key": "dynamic_actor_event_tile_y",
+          "label": "Event tile y",
+          "description": "Tile y coordinate for the current dynamic actor event.",
+          "group": "Dynamic actor",
+          "type": "number",
+          "cType": "UBYTE",
+          "defaultValue": 0,
+          "runtimeOnly": true
         }
     ]
 }
+

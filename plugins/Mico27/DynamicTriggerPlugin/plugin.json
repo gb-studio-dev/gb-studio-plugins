@@ -1,0 +1,10 @@
+{
+  "type": "enginePlugin",
+  "name": "Dynamic Trigger Plugin",
+  "author": "Mico27",
+  "url": "https://github.com/Mico27/gbs-DynamicTriggerPlugin",
+  "description": "Get and set scene trigger attributes at runtime: position, dimensions and bounds.",
+  "license": "MIT",
+  "version": "4.3.0",
+  "gbsVersion": ">=4.3.0"
+}

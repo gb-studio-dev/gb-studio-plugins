@@ -5,7 +5,7 @@
   "url": "https://github.com/Mico27/gbs-EditActorActiveIndexPlugin",
   "description": "Allows editing the order of the actors in the active actors list used for rendering/OAM order. This plugins allow sorting actor depending on their vertical position and enable flickering for when more than 10 sprite tile are on a given scanline or then the 40 sprite tile on-screen limit is exceeded.",
   "license": "MIT",
-  "version": "4.3.1",
+  "version": "4.3.2",
   "gbsVersion": ">=4.3.0",
   "order": -1,
   "engineAltRules": [
@@ -15,10 +15,100 @@
           "Mico27/ContinuousScenePlugin",
           "Mico27/ScreenScrollPlugin",
           "Mico27/MetaTilePlugin",
+          "Mico27/DynamicActorPlugin",
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_Scr_M_Sp"
+      "use": "Cont_ScreenS_M_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "ScreenScrollPlugin",
+          "MetaTilePlugin",
+          "DynamicActorPlugin",
+          "SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_M_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/MetaTilePlugin",
+          "Mico27/DynamicActorPlugin",
+          "Mico27/SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Cont_M_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "MetaTilePlugin",
+          "DynamicActorPlugin",
+          "SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Cont_M_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/DynamicActorPlugin",
+          "Mico27/SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "ScreenScrollPlugin",
+          "DynamicActorPlugin",
+          "SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/MetaTilePlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_M_D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "ScreenScrollPlugin",
+          "MetaTilePlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_M_D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/MetaTilePlugin",
+          "Mico27/SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_M_Spr"
     },
     {
       "when": {
@@ -29,7 +119,69 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_Scr_M_Sp"
+      "use": "Cont_ScreenS_M_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/MetaTilePlugin",
+          "Mico27/DynamicActorPlugin",
+          "Mico27/SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "ScreenS_M_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "MetaTilePlugin",
+          "DynamicActorPlugin",
+          "SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "ScreenS_M_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/DynamicActorPlugin",
+          "Mico27/SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Cont_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "DynamicActorPlugin",
+          "SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Cont_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/MetaTilePlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_M_D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "MetaTilePlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_M_D"
     },
     {
       "when": {
@@ -39,7 +191,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_M_Sp"
+      "use": "Cont_M_Spr"
     },
     {
       "when": {
@@ -49,7 +201,27 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_M_Sp"
+      "use": "Cont_M_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "ScreenScrollPlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_D"
     },
     {
       "when": {
@@ -59,7 +231,7 @@
           "Mico27/MetaTilePlugin"
         ]
       },
-      "use": "Cont_Scr_M"
+      "use": "Cont_ScreenS_M"
     },
     {
       "when": {
@@ -69,7 +241,7 @@
           "MetaTilePlugin"
         ]
       },
-      "use": "Cont_Scr_M"
+      "use": "Cont_ScreenS_M"
     },
     {
       "when": {
@@ -79,7 +251,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_Scr_Sp"
+      "use": "Cont_ScreenS_Spr"
     },
     {
       "when": {
@@ -89,7 +261,87 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_Scr_Sp"
+      "use": "Cont_ScreenS_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/SpritesheetChangeBufferPlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_Spr_D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "SpritesheetChangeBufferPlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_Spr_D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/MetaTilePlugin",
+          "Mico27/DynamicActorPlugin",
+          "Mico27/SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "M_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "MetaTilePlugin",
+          "DynamicActorPlugin",
+          "SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "M_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/DynamicActorPlugin",
+          "Mico27/SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "ScreenS_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "DynamicActorPlugin",
+          "SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "ScreenS_D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/MetaTilePlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "ScreenS_M_D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "MetaTilePlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "ScreenS_M_D"
     },
     {
       "when": {
@@ -99,7 +351,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Scr_M_Sp"
+      "use": "ScreenS_M_Spr"
     },
     {
       "when": {
@@ -109,7 +361,45 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Scr_M_Sp"
+      "use": "ScreenS_M_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/SpritesheetChangeBufferPlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "ScreenS_Spr_D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "SpritesheetChangeBufferPlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "ScreenS_Spr_D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_D"
     },
     {
       "when": {
@@ -136,7 +426,7 @@
           "Mico27/ScreenScrollPlugin"
         ]
       },
-      "use": "Cont_Scr"
+      "use": "Cont_ScreenS"
     },
     {
       "when": {
@@ -145,7 +435,7 @@
           "ScreenScrollPlugin"
         ]
       },
-      "use": "Cont_Scr"
+      "use": "Cont_ScreenS"
     },
     {
       "when": {
@@ -154,7 +444,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_Sp"
+      "use": "Cont_Spr"
     },
     {
       "when": {
@@ -163,7 +453,43 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_Sp"
+      "use": "Cont_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/DynamicActorPlugin",
+          "Mico27/SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "DynamicActorPlugin",
+          "SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "D_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/MetaTilePlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "M_D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "MetaTilePlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "M_D"
     },
     {
       "when": {
@@ -172,7 +498,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "M_Sp"
+      "use": "M_Spr"
     },
     {
       "when": {
@@ -181,7 +507,25 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "M_Sp"
+      "use": "M_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "ScreenS_D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "ScreenS_D"
     },
     {
       "when": {
@@ -190,7 +534,7 @@
           "Mico27/MetaTilePlugin"
         ]
       },
-      "use": "Scr_M"
+      "use": "ScreenS_M"
     },
     {
       "when": {
@@ -199,7 +543,7 @@
           "MetaTilePlugin"
         ]
       },
-      "use": "Scr_M"
+      "use": "ScreenS_M"
     },
     {
       "when": {
@@ -208,7 +552,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Scr_Sp"
+      "use": "ScreenS_Spr"
     },
     {
       "when": {
@@ -217,7 +561,25 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Scr_Sp"
+      "use": "ScreenS_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/SpritesheetChangeBufferPlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "Spr_D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "SpritesheetChangeBufferPlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "Spr_D"
     },
     {
       "when": {
@@ -238,6 +600,22 @@
     {
       "when": {
         "additionalPlugins": [
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "D"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
           "Mico27/MetaTilePlugin"
         ]
       },
@@ -257,7 +635,7 @@
           "Mico27/ScreenScrollPlugin"
         ]
       },
-      "use": "Scr"
+      "use": "ScreenS"
     },
     {
       "when": {
@@ -265,7 +643,7 @@
           "ScreenScrollPlugin"
         ]
       },
-      "use": "Scr"
+      "use": "ScreenS"
     },
     {
       "when": {
@@ -273,7 +651,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Sp"
+      "use": "Spr"
     },
     {
       "when": {
@@ -281,7 +659,7 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Sp"
+      "use": "Spr"
     }
   ]
 }

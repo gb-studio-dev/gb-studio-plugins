@@ -10,6 +10,14 @@
 #define METATILE_SIZE_8     0
 #define METATILE_SIZE_16    1
 
+#define METATILE_ENTER_BOUNDING_BOX  0
+#define METATILE_ENTER_ORIGIN_POINT  1
+
+// Default to the legacy bounding-box behaviour when the engine field is absent
+#ifndef METATILE_ENTER_DETECTION
+#define METATILE_ENTER_DETECTION METATILE_ENTER_BOUNDING_BOX
+#endif
+
 #if METATILE_SIZE == METATILE_SIZE_16
 
 #define METATILE_X_OFFSET(x) (x >> 1)

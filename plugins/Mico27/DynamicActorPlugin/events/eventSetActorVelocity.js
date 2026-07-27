@@ -51,22 +51,18 @@ export const compile = (input, helpers) => {
     _stackPop,
     _addComment,
     _declareLocal,
-    variableSetToScriptValue,
     setActorId,
+    _stackPushScriptValue,
   } = helpers;
 
   const tmp0 = _declareLocal("tmp0", 1, true);
-  const tmp1 = _declareLocal("tmp1", 1, true);
-  const tmp2 = _declareLocal("tmp2", 1, true);
 
   setActorId(tmp0, input.actorId);
-  variableSetToScriptValue(tmp1, input.xVelocity);
-  variableSetToScriptValue(tmp2, input.yVelocity);
 
   _addComment("Set Actor Velocity");
 
-  _stackPush(tmp2);
-  _stackPush(tmp1);
+  _stackPushScriptValue(input.yVelocity);
+  _stackPushScriptValue(input.xVelocity);
   _stackPush(tmp0);
 
   _callNative("vm_set_actor_velocity");

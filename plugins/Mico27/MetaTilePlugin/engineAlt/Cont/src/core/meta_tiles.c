@@ -383,6 +383,22 @@ UBYTE metatile_overlap_at_intersection(rect16_t *bb, upoint16_t *offset) BANKED 
     if (!metatile_bank || !metatile_events[METATILE_ENTER_EVENT].script_addr){
         return FALSE;
     }
+#if METATILE_ENTER_DETECTION == METATILE_ENTER_ORIGIN_POINT
+    // Origin point mode: test only the single tile under the actor's origin
+    // (the centre of its bounding box). Fires once each time that tile changes.
+    current_left_tile = SUBPX_TO_TILE(offset->x + ((bb->left + bb->right) >> 1));
+    current_top_tile  = SUBPX_TO_TILE(offset->y + ((bb->top + bb->bottom) >> 1));
+#if METATILE_SIZE == METATILE_SIZE_16
+    current_left_tile -= current_left_tile & 1;
+    current_top_tile  -= current_top_tile & 1;
+#endif
+    if (current_left_tile != previous_left_tile || current_top_tile != previous_top_tile){
+        previous_left_tile = current_left_tile;
+        previous_top_tile  = current_top_tile;
+        return on_metatile_enter(current_left_tile, current_top_tile);
+    }
+    return FALSE;
+#else
     if (!prev_metatile_overlap_iteration){
         current_left_tile = SUBPX_TO_TILE(offset->x + bb->left);
         current_top_tile = SUBPX_TO_TILE(offset->y + bb->top);
@@ -466,6 +482,7 @@ UBYTE metatile_overlap_at_intersection(rect16_t *bb, upoint16_t *offset) BANKED 
     previous_bottom_tile = current_bottom_tile;
     prev_metatile_overlap_iteration = 0;
     return FALSE;
+#endif
 }
 
 static script_event_t* metatile_event;
