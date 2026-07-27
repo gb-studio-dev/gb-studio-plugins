@@ -51,22 +51,20 @@ export const compile = (input, helpers) => {
     _stackPop,
     _addComment,
     _declareLocal,
-    variableSetToScriptValue,
     setActorId,
+    _stackPushScriptValue,
   } = helpers;
 
   const tmp0 = _declareLocal("tmp0", 1, true);
-  const tmp1 = _declareLocal("tmp1", 1, true);
 
   setActorId(tmp0, input.actorId);
-  variableSetToScriptValue(tmp1, input.behaviorId);
 
   const state = parseInt(input.state !== undefined ? input.state : "1", 10);
 
   _addComment("Set Actor Behavior");
 
   _stackPushConst(state);
-  _stackPush(tmp1);
+  _stackPushScriptValue(input.behaviorId);
   _stackPush(tmp0);
 
   _callNative("vm_set_actor_behavior");

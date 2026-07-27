@@ -2,7 +2,17 @@ Index: src\core\actor.c
 ===================================================================
 --- src\core\actor.c
 +++ src\core\actor.c
-@@ -71,8 +71,9 @@
+@@ -16,9 +16,8 @@
+ #include "collision.h"
+ #include "ui.h"
+ #include "vm.h"
+ #include "macro.h"
+-#include "data/states_defines.h"
+ #include "continuous_scene.h"
+ 
+ #ifdef STRICT
+     #include <gb/bgb_emu.h>
+@@ -72,8 +71,9 @@
      player_moving           = FALSE;
      player_iframes          = 0;
      player_collision_actor  = NULL;
@@ -12,7 +22,26 @@ Index: src\core\actor.c
  }
  
  void player_init(void) BANKED {
-@@ -216,12 +217,12 @@
+@@ -206,31 +206,23 @@
+         }
+ 
+         if (CHK_FLAG(actor->flags, ACTOR_FLAG_PINNED)) {
+             screen_x = SUBPX_TO_PX(actor->pos.x);
+-#ifdef DYNAMIC_ACTOR_ENABLE_MOVE_Z
+-            screen_y = SUBPX_TO_PX(actor->pos.y - actor->pos_z);
+-#else
+             screen_y = SUBPX_TO_PX(actor->pos.y);
+-#endif
+         } else {
+             screen_x = SUBPX_TO_PX(actor->pos.x) - draw_scroll_x;
+-#ifdef DYNAMIC_ACTOR_ENABLE_MOVE_Z
+-            screen_y = SUBPX_TO_PX(actor->pos.y - actor->pos_z) - draw_scroll_y;
+-#else
+             screen_y = SUBPX_TO_PX(actor->pos.y) - draw_scroll_y;
+-#endif
+         }
+ 
+         if (((window_hide_actors) && (((screen_x + 8) > WX_REG) && ((screen_y - 8) > WY_REG)))) {
              continue;
          }
          SWITCH_ROM(actor->sprite.bank);
@@ -27,7 +56,7 @@ Index: src\core\actor.c
              screen_x,
              screen_y
          );
-@@ -549,5 +550,5 @@
+@@ -558,5 +550,5 @@
      } else if (player_iframes != 0) {
          player_iframes--;
      }

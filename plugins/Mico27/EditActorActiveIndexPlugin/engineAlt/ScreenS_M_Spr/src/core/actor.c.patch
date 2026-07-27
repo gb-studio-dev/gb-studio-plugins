@@ -1,0 +1,167 @@
+Index: src\core\actor.c
+===================================================================
+--- src\core\actor.c
++++ src\core\actor.c
+@@ -16,9 +16,10 @@
+ #include "collision.h"
+ #include "ui.h"
+ #include "vm.h"
+ #include "macro.h"
+-#include "scene_transition.h"
++#include "actor_active_index.h"
++#include "data/states_defines.h"
+ 
+ #ifdef STRICT
+     #include <gb/bgb_emu.h>
+     #include <gb/crash_handler.h>
+@@ -32,8 +33,12 @@
+ #define SCREEN_TILE16_H            9u
+ #define ACTOR_BOUNDS_TILE16        6u
+ #define ACTOR_BOUNDS_TILE16_HALF   3u
+ 
++#define ACTOR_SORT_MODE_NONE        0
++#define ACTOR_SORT_MODE_FLICKER     1
++#define ACTOR_SORT_MODE_YSORT       2
++
+ BANKREF(ACTOR)
+ 
+ const BYTE emote_offsets[] = {2, 1, 0, -1, -2, -3, -4, -5, -6, -5, -4, -3, -2, -1, 0};
+ 
+@@ -62,8 +67,10 @@
+ UBYTE emote_timer;
+ 
+ UBYTE allocated_sprite_tiles;
+ UBYTE allocated_hardware_sprites;
++FASTUBYTE tmp_iterator_offset;
++UBYTE actor_sort_mode;
+ 
+ static void deactivate_actor_impl(actor_t *actor);
+ 
+ void actors_init(void) BANKED {
+@@ -85,9 +92,9 @@
+ void actors_update(void) BANKED {
+     actor_t *actor;
+     static uint8_t screen_tile16_x, screen_tile16_y, screen_tile16_x_end, screen_tile16_y_end;
+     static uint8_t actor_tile16_x, actor_tile16_y;
+-    static uint8_t tmp_iterator;
++    static FASTUBYTE tmp_iterator;
+     static FASTUBYTE actor_flags;
+ 
+     // Convert scroll pos to 16px tile coordinates
+     // allowing full range of scene to be represented in 7 bits
+@@ -97,9 +104,9 @@
+     screen_tile16_x_end = screen_tile16_x + ACTOR_BOUNDS_TILE16 + SCREEN_TILE16_W;
+     screen_tile16_y = PX_TO_TILE16(draw_scroll_y) + TILE16_OFFSET;
+     screen_tile16_y_end = screen_tile16_y + ACTOR_BOUNDS_TILE16 + SCREEN_TILE16_H;
+ 
+-    tmp_iterator = game_time;
++    tmp_iterator = game_time + tmp_iterator_offset;
+ 
+     actor = actors_active_tail;
+     while (actor) {
+         actor_flags = actor->flags;
+@@ -117,9 +124,9 @@
+                 }
+             }
+         }
+ 
+-        if (actor == &PLAYER || CHK_FLAG(actor_flags, ACTOR_FLAG_PINNED)) {
++       if (CHK_FLAG(actor_flags, ACTOR_FLAG_PINNED)) {
+             actor = actor->prev;
+             continue;
+         }
+ 
+@@ -142,9 +149,9 @@
+             ) {
+                 // Deactivate if offscreen
+                 actor_t * prev = actor->prev;
+                 if (!VM_ISLOCKED()) {
+-                    if (CHK_FLAG(actor_flags, ACTOR_FLAG_PERSISTENT)) {
++                    if (actor == &PLAYER || CHK_FLAG(actor_flags, ACTOR_FLAG_PERSISTENT)) {
+                         SET_FLAG(actor->flags, ACTOR_FLAG_DISABLED);
+                     } else {
+                         if (CHK_FLAG(actor_flags, ACTOR_FLAG_DISABLED)) {
+                             CLR_FLAG(actor->flags, ACTOR_FLAG_DISABLED);
+@@ -227,8 +234,52 @@
+             screen_y
+         );
+     }
+ 
++    switch (actor_sort_mode){
++        case ACTOR_SORT_MODE_NONE:
++        break;
++#ifdef ENABLE_FLICKER_FEATURE
++        case ACTOR_SORT_MODE_FLICKER:
++            //pop n push for flicker
++#ifdef EXCLUDE_PLAYER_FROM_FLICKER
++            actor = &PLAYER;
++            if (actor != actors_active_head){
++                actor = actor->prev;
++                if (actor != actors_active_head){
++                    actor->next = actors_active_head;
++                    actors_active_head->prev = actor;
++                    actors_active_head = actor;
++                    actor->prev->next = 0;
++                    (&PLAYER)->prev = actor->prev;
++                    actor->prev = 0;
++                    tmp_iterator_offset++;
++                }
++            }
++#else
++
++            actor = actors_active_tail;
++            if (actor != actors_active_head){
++                actor->next = actors_active_head;
++                actors_active_head->prev = actor;
++                actors_active_head = actor;
++                actor->prev->next = 0;
++                actors_active_tail = actor->prev;
++                actor->prev = 0;
++                tmp_iterator_offset++;
++            }
++#endif
++        break;
++#endif
++#ifdef ENABLE_SORTY_FEATURE
++        case ACTOR_SORT_MODE_YSORT:
++            if (IS_FRAME_8){
++                sort_actors_by_ypos();
++            }
++        break;
++#endif
++    }
++
+     SWITCH_ROM(_save);
+ }
+ 
+ static void deactivate_actor_impl(actor_t *actor) {
+@@ -279,9 +330,9 @@
+ #endif
+     if (CHK_FLAG(actor->flags, ACTOR_FLAG_ACTIVE | ACTOR_FLAG_DISABLED)) return;
+ 
+     // Check if on screen before activating to avoid flash of offscreen actors
+-    if (actor != &PLAYER && !CHK_FLAG(actor->flags, ACTOR_FLAG_PINNED)) {
++    if (!CHK_FLAG(actor->flags, ACTOR_FLAG_PINNED)) {
+         UBYTE actor_tile16_x = SUBPX_TO_TILE16(actor->pos.x) + ACTOR_BOUNDS_TILE16_HALF + TILE16_OFFSET;
+         UBYTE actor_tile16_y = SUBPX_TO_TILE16(actor->pos.y) + ACTOR_BOUNDS_TILE16_HALF + TILE16_OFFSET;
+         UBYTE screen_tile16_x = PX_TO_TILE16(draw_scroll_x) + TILE16_OFFSET;
+         UBYTE screen_tile16_x_end = screen_tile16_x + ACTOR_BOUNDS_TILE16 + SCREEN_TILE16_W;
+@@ -296,9 +347,9 @@
+             (actor_tile16_y < screen_tile16_y) ||
+             // Actor top edge > screen bottom edge
+             (actor_tile16_y > screen_tile16_y_end)
+         ) {
+-             if (CHK_FLAG(actor->flags, ACTOR_FLAG_PERSISTENT)) {
++            if (actor == &PLAYER || CHK_FLAG(actor->flags, ACTOR_FLAG_PERSISTENT)) {
+                 SET_FLAG(actor->flags, ACTOR_FLAG_DISABLED);
+             } else {
+                 return;
+             }
+@@ -550,6 +601,5 @@
+     } else if (player_iframes != 0) {
+         player_iframes--;
+     }
+     player_collision_actor = NULL;
+-    check_transition_to_scene_collision();
+ }
+\ No newline at end of file

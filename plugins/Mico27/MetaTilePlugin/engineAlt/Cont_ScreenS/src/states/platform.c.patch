@@ -1,0 +1,83 @@
+Index: src\states\platform.c
+===================================================================
+--- src\states\platform.c
++++ src\states\platform.c
+@@ -15,8 +15,9 @@
+ #include "scroll.h"
+ #include "trigger.h"
+ #include "vm.h"
+ #include "macro.h"
++#include "meta_tiles.h"
+ #include "continuous_scene.h"
+ 
+ // Feature Flags --------------------------------------------------------------
+ // Optional feature flags, set in 'state_defines.h'
+@@ -125,8 +126,12 @@
+ #define COLLISION_SLOPE_225_LEFT_TOP  (COLLISION_SLOPE_LEFT | COLLISION_SLOPE_225_TOP)
+ #define COLLISION_SLOPE_ANY           (COLLISION_SLOPE_45 | COLLISION_SLOPE_225_BOT | COLLISION_SLOPE_225_TOP)
+ #define COLLISION_SLOPE               0x70u
+ 
++#define ENABLE_PLAT_HORIZONTAL_COLLISION_METATILE \
++    defined(ENABLE_PLAT_LEFT_COLLISION_METATILE) || \
++    defined(ENABLE_PLAT_RIGHT_COLLISION_METATILE)
++
+ #define PLATFORM_ANIM_OVERRIDES_SET \
+     defined(PLATFORM_FALL_ANIM) || \
+     (defined(FEAT_PLATFORM_FLOAT) && defined(PLATFORM_FLOAT_ANIM)) || \
+     (defined(FEAT_PLATFORM_JUMP) && defined(PLATFORM_JUMP_ANIM)) || \
+@@ -1182,8 +1187,19 @@
+             {
+                 plat_wall_coyote_timer = plat_coyote_frames + 1;
+             }
+ #endif
++#if ENABLE_PLAT_HORIZONTAL_COLLISION_METATILE
++            if (moving_right){
++#ifdef ENABLE_PLAT_RIGHT_COLLISION_METATILE
++                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
++#endif
++            } else {
++#ifdef ENABLE_PLAT_LEFT_COLLISION_METATILE
++                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
++#endif
++            }
++#endif
+         }
+ 
+     finally_update_x:
+         PLAYER.pos.x = new_x;
+@@ -1324,8 +1340,11 @@
+ #ifdef FEAT_PLATFORM_DROP_THROUGH
+                 plat_drop_timer = 0;
+ #endif
+                 plat_grounded = TRUE;
++#ifdef ENABLE_PLAT_DOWN_COLLISION_METATILE
++                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
++#endif
+             }
+         finally_update_y:
+             if (plat_grounded && (plat_state != DASH_STATE)) {
+                 plat_next_state = GROUND_STATE;
+@@ -1356,8 +1375,11 @@
+ #ifdef FEAT_PLATFORM_COYOTE_TIME
+                 plat_coyote_timer = 0;
+ #endif
+                 plat_next_state = FALL_STATE;
++#ifdef ENABLE_PLAT_UP_COLLISION_METATILE
++                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
++#endif
+             }
+             PLAYER.pos.y = new_y;
+         }
+     }
+@@ -1471,8 +1493,11 @@
+ 
+     if (mask & COL_CHECK_TRIGGERS)
+     {
+         trigger_activate_at_intersection(&PLAYER.bounds, &PLAYER.pos, INPUT_PLATFORM_FORCE_TRIGGER);
++#ifdef ENABLE_PLAT_ENTER_METATILE
++        metatile_overlap_at_intersection(&PLAYER.bounds, &PLAYER.pos);
++#endif
+     }
+ }
+ 
+ void plat_callback_attach(SCRIPT_CTX *THIS) OLDCALL BANKED

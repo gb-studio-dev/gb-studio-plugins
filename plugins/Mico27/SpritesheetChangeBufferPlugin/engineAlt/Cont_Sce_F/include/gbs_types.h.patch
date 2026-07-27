@@ -2,7 +2,17 @@ Index: include\gbs_types.h
 ===================================================================
 --- include\gbs_types.h
 +++ include\gbs_types.h
-@@ -58,8 +58,9 @@
+@@ -10,8 +10,9 @@
+ #include "data/scene_types.h"
+ #include "bankdata.h"
+ #include "parallax.h"
+ #include "collision.h"
++#include "data/states_defines.h"
+ 
+ #define COLLISION_GROUP_NONE 0x0
+ #define COLLISION_GROUP_PLAYER 0x1
+ #define COLLISION_GROUP_1 0x2
+@@ -58,8 +59,9 @@
      uint16_t hscript_update, hscript_hit;
  
      // Collisions

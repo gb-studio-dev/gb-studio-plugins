@@ -1,0 +1,133 @@
+Index: src\states\shmup.c
+===================================================================
+--- src\states\shmup.c
++++ src\states\shmup.c
+@@ -12,8 +12,9 @@
+ #include "game_time.h"
+ #include "input.h"
+ #include "trigger.h"
+ #include "vm.h"
++#include "meta_tiles.h"
+ #include "continuous_scene.h"
+ 
+ // Feature Flags --------------------------------------------------------------
+ // Optional feature flags, set in 'state_defines.h'
+@@ -267,14 +268,20 @@
+                 UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
+                 tile = tile_col_test_range_x(COLLISION_TOP, tile_y, tile_start, tile_end);
+                 if (tile) {
+                     PLAYER.pos.y = TILE_TO_SUBPX(tile_y) - EXCLUSIVE_OFFSET(PLAYER.bounds.bottom);
++#ifdef ENABLE_DOWN_COLLISION_METATILE
++                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
++#endif
+                 }
+             } else { // Moving up
+                 UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
+                 tile = tile_col_test_range_x(COLLISION_BOTTOM, tile_y, tile_start, tile_end);
+                 if (tile) {
+                     PLAYER.pos.y = TILE_TO_SUBPX(tile_y + 1) - PLAYER.bounds.top;
++#ifdef ENABLE_UP_COLLISION_METATILE
++                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
++#endif
+                 }
+             }
+         }
+ 
+@@ -286,14 +293,20 @@
+                 UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
+                 tile = tile_col_test_range_y(COLLISION_LEFT, tile_x, tile_start, tile_end);
+                 if (tile) {
+                     PLAYER.pos.x = TILE_TO_SUBPX(tile_x) - EXCLUSIVE_OFFSET(PLAYER.bounds.right);
++#ifdef ENABLE_RIGHT_COLLISION_METATILE
++                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
++#endif
+                 }
+             } else { // Moving left
+                 UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
+                 tile = tile_col_test_range_y(COLLISION_RIGHT, tile_x, tile_start, tile_end);
+                 if (tile) {
+                     PLAYER.pos.x = TILE_TO_SUBPX(tile_x + 1) - PLAYER.bounds.left;
++#ifdef ENABLE_LEFT_COLLISION_METATILE
++                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
++#endif
+                 }
+             }
+         }
+ 
+@@ -372,16 +385,26 @@
+                     if (tile) {
+                         PLAYER.pos.x = TILE_TO_SUBPX(tile_x) - EXCLUSIVE_OFFSET(PLAYER.bounds.right);
+                     }
+                 })
++#ifdef ENABLE_SHMUP_RIGHT_COLLISION_METATILE
++                if (tile) {
++                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
++                }
++#endif
+             } else { // DIR_LEFT
+                 UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
+                 tile = tile_col_test_range_y(COLLISION_RIGHT, tile_x, tile_start, tile_end);
+                 IF_FREE_MOVEMENT({
+                     if (tile) {
+                         PLAYER.pos.x = TILE_TO_SUBPX(tile_x + 1) - PLAYER.bounds.left;
+                     }
+                 })
++#ifdef ENABLE_SHMUP_LEFT_COLLISION_METATILE
++                if (tile) {
++                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
++                }
++#endif
+             }
+         } else {
+             tile_start = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
+             tile_end   = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
+@@ -392,16 +415,26 @@
+                     if (tile) {
+                         PLAYER.pos.y = TILE_TO_SUBPX(tile_y) - EXCLUSIVE_OFFSET(PLAYER.bounds.bottom);
+                     }
+                 })
++#ifdef ENABLE_SHMUP_DOWN_COLLISION_METATILE
++                if (tile) {
++                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
++                }
++#endif
+             } else { // DIR_UP
+                 UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
+                 tile = tile_col_test_range_x(COLLISION_BOTTOM, tile_y, tile_start, tile_end);
+                 IF_FREE_MOVEMENT({
+                     if (tile) {
+                         PLAYER.pos.y = TILE_TO_SUBPX(tile_y + 1) - PLAYER.bounds.top;
+                     }
+                 })
++#ifdef ENABLE_SHMUP_UP_COLLISION_METATILE
++                if (tile) {
++                    on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
++                }
++#endif
+             }
+         }
+     }
+ 
+@@ -448,9 +481,9 @@
+     }
+ #endif
+ 
+     if (IS_FRAME_ODD) {
+-        //Check scene transition
++         //Check scene transition
+         if (check_transition_to_scene_collision()) {
+             return;
+         }
+         // Check for trigger collisions on odd frames
+@@ -467,8 +500,11 @@
+             // Trigger appeared on screen edge
+             return;
+         }
+ #endif
++#ifdef ENABLE_SHMUP_ENTER_METATILE
++        metatile_overlap_at_intersection(&PLAYER.bounds, &PLAYER.pos);
++#endif
+     } else {
+         // Check for actor collisions on even frames
+         hit_actor = actor_overlapping_player();
+         if (hit_actor != NULL && (hit_actor->collision_group & COLLISION_GROUP_MASK)) {
