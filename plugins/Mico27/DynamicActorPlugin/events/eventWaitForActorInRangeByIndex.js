@@ -1,5 +1,3 @@
-const l10n = require("../helpers/l10n").default;
-
 const WAIT_RNG_X = 0x01;
 const WAIT_RNG_Y = 0x02;
 const WAIT_RNG_OUTSIDE = 0x04;
@@ -7,28 +5,34 @@ const WAIT_RNG_OUTSIDE = 0x04;
 // Pixel -> actor position subpixel scale
 const SUBPX = 32;
 
-export const id = "EVENT_WAIT_FOR_ACTOR_IN_RANGE";
-export const name = "Wait For Actor In Range";
+export const id = "EVENT_WAIT_FOR_ACTOR_IN_RANGE_BY_INDEX";
+export const name = "Wait For Actor In Range By Index";
 export const groups = ["EVENT_GROUP_ACTOR"];
 
 export const autoLabel = (fetchArg, input) => {
-  return `Wait For Actor In Range : ${fetchArg("actorId")}`;
+  return `Wait For Actor In Range : ${fetchArg("actorIndex")}`;
 };
 
 export const fields = [
   {
-    key: "actorId",
-    label: l10n("ACTOR"),
-    description: "Actor at the center of the range check",
-    type: "actor",
-    defaultValue: "$self$",
+    key: "actorIndex",
+    label: "Actor Index",
+    description: "Index of the actor at the center of the range check.",
+    type: "value",
+    defaultValue: {
+      type: "number",
+      value: 0,
+    },
   },
   {
-    key: "targetActorId",
-    label: "Wait for",
-    description: "Actor whose distance is checked (usually the player)",
-    type: "actor",
-    defaultValue: "player",
+    key: "targetActorIndex",
+    label: "Wait for index",
+    description: "Index of the actor whose distance is checked (0 = player).",
+    type: "value",
+    defaultValue: {
+      type: "number",
+      value: 0,
+    },
   },
   {
     key: "until",
@@ -110,9 +114,9 @@ export const compile = (input, helpers) => {
   );
 
   const {
+    variableSetToScriptValue,
     _addComment,
     _declareLocal,
-    setActorId,
     _stackPush,
     _stackPushConst,
     _invoke,
@@ -139,11 +143,8 @@ export const compile = (input, helpers) => {
   const actorRef = _declareLocal("rng_actor", 1, true);
   const targetRef = _declareLocal("rng_target", 1, true);
 
-  setActorId(actorRef, input.actorId);
-  setActorId(
-    targetRef,
-    input.targetActorId != null ? input.targetActorId : "player",
-  );
+  variableSetToScriptValue(actorRef, input.actorIndex);
+  variableSetToScriptValue(targetRef, input.targetActorIndex);
 
   _addComment(
     `Wait For Actor In Range (${waitForInside ? "inside" : "outside"})`,

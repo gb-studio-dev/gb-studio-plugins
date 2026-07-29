@@ -51,7 +51,7 @@
         {
           "key": "DYNAMIC_ACTOR_MAX_PLATFORMS",
           "label": "Max moving platforms",
-          "description": "Number of 'Moving platform' actors that can claim/release riders per scene (each uses 12 bytes of RAM). Platforms beyond this limit still move but never pick up riders. Requires the parent actors component.",
+          "description": "Number of 'Moving platform' actors that can claim/release riders per scene (each uses 11 bytes of RAM). Platforms beyond this limit still move but never pick up riders. Requires the parent actors component.",
           "group": "Dynamic actor",
           "type": "slider",
           "cType": "define",
@@ -206,6 +206,24 @@
           "key": "DYNAMIC_ACTOR_ENABLE_VM_WAIT_FOR_COLLISION",
           "label": "VM: Wait for collision",
           "description": "Compile vm_wait_for_collision waitable helper.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_VM_WAIT_FOR_IN_RANGE",
+          "label": "VM: Wait for actor in range",
+          "description": "Compile vm_wait_for_actor_in_range waitable helper.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_VM_WAIT_FOR_STATE",
+          "label": "VM: Wait for actor state",
+          "description": "Compile vm_wait_for_actor_state waitable helper.",
           "group": "Dynamic actor",
           "type": "checkbox",
           "cType": "define",

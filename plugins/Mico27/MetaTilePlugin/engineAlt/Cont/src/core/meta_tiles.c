@@ -331,7 +331,7 @@ static void impl_replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit
             bkg_address_offset = (bkg_address_offset & 0xFFE0) + ((bkg_address_offset + 1) & 31);
             set_vram_byte((UBYTE*)(0x9800 + bkg_address_offset), ReadBankedUBYTE(metatile_attr_ptr + tile_map_offset, metatile_attr_bank));
         #else
-            set_bkg_tile_xy(x, y, ReadBankedUBYTE(metatile_attr_ptr + tile_id, metatile_attr_bank));
+            set_bkg_tile_xy((x + bkg_offset_x) & 31, (y + bkg_offset_y) & 31, ReadBankedUBYTE(metatile_attr_ptr + tile_id, metatile_attr_bank));
         #endif
             VBK_REG = 0;
         }
@@ -350,7 +350,7 @@ static void impl_replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit
         bkg_address_offset = (bkg_address_offset & 0xFFE0) + ((bkg_address_offset + 1) & 31);
         set_vram_byte((UBYTE*)(0x9800 + bkg_address_offset), ReadBankedUBYTE(metatile_ptr + tile_map_offset, metatile_bank));
     #else
-        set_bkg_tile_xy(x, y, ReadBankedUBYTE(metatile_ptr + tile_id, metatile_bank));
+        set_bkg_tile_xy((x + bkg_offset_x) & 31, (y + bkg_offset_y) & 31, ReadBankedUBYTE(metatile_ptr + tile_id, metatile_bank));
     #endif
     }
 }
