@@ -11,6 +11,15 @@
           "defaultValue": 1
         },
         {
+          "key": "DYNAMIC_ACTOR_ENABLE_COLLISION_TRIANGLE",
+          "label": "Collision model: Triangle",
+          "description": "Compile the triangle collision model.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
           "key": "DYNAMIC_ACTOR_ENABLE_COLLISION_BOUNDING_BOX",
           "label": "Collision model: Bounding box",
           "description": "Compile the bounding-box collision model.",
