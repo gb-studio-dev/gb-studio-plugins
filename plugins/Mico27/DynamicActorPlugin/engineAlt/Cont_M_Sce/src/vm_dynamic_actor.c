@@ -563,3 +563,79 @@ UBYTE vm_actor_move_to_pos_by_velocity(void * THIS, UBYTE start, UWORD * stack_f
     return FALSE;
 }
 #endif
+
+#ifdef DYNAMIC_ACTOR_ENABLE_VM_WAIT_FOR_IN_RANGE
+#define WAIT_RNG_X       0x01u  // include the x axis in the distance test
+#define WAIT_RNG_Y       0x02u  // include the y axis in the distance test
+#define WAIT_RNG_OUTSIDE 0x04u  // finish when the target is out of range instead
+
+// Wait until a target actor is inside (or outside) a rectangular range around
+// another actor. Both ranges are half-extents in the same subpixel units as
+// actor->pos, so the event multiplies its pixel fields by the subpixel scale.
+// An axis that is not selected is simply not tested; with no axis selected the
+// actor always counts as inside.
+// Stack frame: [0] actor index, [1] target actor index, [2] WAIT_RNG_* flags,
+//              [3] x range, [4] y range.
+UBYTE vm_wait_for_actor_in_range(void * THIS, UBYTE start, UWORD * stack_frame) OLDCALL BANKED {
+    actor_t * actor = actors + (UBYTE)stack_frame[0];
+    if (start) {
+        CLR_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+    } else {
+        // Interrupt actor movement
+        if (CHK_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT)) {
+            return TRUE;
+        }
+    }
+    actor_t * target = actors + (UBYTE)stack_frame[1];
+    UBYTE flags = (UBYTE)stack_frame[2];
+    UBYTE inside = TRUE;
+
+    if (flags & WAIT_RNG_X) {
+        UWORD a = actor->pos.x, b = target->pos.x;
+        if (((a > b) ? (a - b) : (b - a)) > stack_frame[3]) {
+            inside = FALSE;
+        }
+    }
+    if (inside && (flags & WAIT_RNG_Y)) {
+        UWORD a = actor->pos.y, b = target->pos.y;
+        if (((a > b) ? (a - b) : (b - a)) > stack_frame[4]) {
+            inside = FALSE;
+        }
+    }
+
+    if (flags & WAIT_RNG_OUTSIDE) {
+        if (!inside) return TRUE;
+    } else if (inside) {
+        return TRUE;
+    }
+
+    ((SCRIPT_CTX *)THIS)->waitable = TRUE;
+    return FALSE;
+}
+#endif
+
+#ifdef DYNAMIC_ACTOR_ENABLE_VM_WAIT_FOR_STATE
+// Wait until an actor's behavior state matches (or stops matching) a state.
+// Stack frame: [0] actor index, [1] BHV_STATE_* value, [2] nonzero to invert.
+UBYTE vm_wait_for_actor_state(void * THIS, UBYTE start, UWORD * stack_frame) OLDCALL BANKED {
+    actor_t * actor = actors + (UBYTE)stack_frame[0];
+    if (start) {
+        CLR_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
+    } else {
+        // Interrupt actor movement
+        if (CHK_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT)) {
+            return TRUE;
+        }
+    }
+    UBYTE match = (actor->actor_state == (UBYTE)stack_frame[1]);
+    if (stack_frame[2]) {
+        match = !match;
+    }
+    if (match) {
+        return TRUE;
+    }
+
+    ((SCRIPT_CTX *)THIS)->waitable = TRUE;
+    return FALSE;
+}
+#endif

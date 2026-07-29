@@ -11,15 +11,6 @@
           "defaultValue": 1
         },
         {
-          "key": "DYNAMIC_ACTOR_ENABLE_COLLISION_TRIANGLE",
-          "label": "Collision model: Triangle",
-          "description": "Compile the triangle collision model.",
-          "group": "Dynamic actor",
-          "type": "checkbox",
-          "cType": "define",
-          "defaultValue": 1
-        },
-        {
           "key": "DYNAMIC_ACTOR_ENABLE_COLLISION_BOUNDING_BOX",
           "label": "Collision model: Bounding box",
           "description": "Compile the bounding-box collision model.",
@@ -206,6 +197,24 @@
           "key": "DYNAMIC_ACTOR_ENABLE_VM_WAIT_FOR_COLLISION",
           "label": "VM: Wait for collision",
           "description": "Compile vm_wait_for_collision waitable helper.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_VM_WAIT_FOR_IN_RANGE",
+          "label": "VM: Wait for actor in range",
+          "description": "Compile vm_wait_for_actor_in_range waitable helper.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_VM_WAIT_FOR_STATE",
+          "label": "VM: Wait for actor state",
+          "description": "Compile vm_wait_for_actor_state waitable helper.",
           "group": "Dynamic actor",
           "type": "checkbox",
           "cType": "define",

@@ -17,7 +17,6 @@
 #endif
 
 #define DYNAMIC_ACTOR_COLLISION_SINGLE_POINT 0
-#define DYNAMIC_ACTOR_COLLISION_TRIANGLE 1
 #define DYNAMIC_ACTOR_COLLISION_BOUNDING_BOX 2
 
 #define COLLISION_SLOPE_LEFT          0x10u
@@ -359,7 +358,7 @@ static UWORD check_pit_point(UWORD start_x, UWORD start_y, UBYTE right) {
 
 #endif
 
-#if defined(DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION) && defined(DYNAMIC_ACTOR_ENABLE_MOVE_Y) && (defined(DYNAMIC_ACTOR_ENABLE_COLLISION_TRIANGLE) || defined(DYNAMIC_ACTOR_ENABLE_COLLISION_BOUNDING_BOX))
+#if defined(DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION) && defined(DYNAMIC_ACTOR_ENABLE_MOVE_Y) && defined(DYNAMIC_ACTOR_ENABLE_COLLISION_BOUNDING_BOX)
 static UBYTE on_slope;
 static UWORD check_collision_slope(UWORD start_x, UWORD start_y, rect16_t *bounds){
     col_ty = SUBPX_TO_TILE(start_y + bounds->bottom);
@@ -403,116 +402,6 @@ static UWORD check_collision_slope(UWORD start_x, UWORD start_y, rect16_t *bound
     }
     return start_y;
 }
-
-#endif
-
-
-#ifdef DYNAMIC_ACTOR_ENABLE_COLLISION_TRIANGLE
-
-#ifdef DYNAMIC_ACTOR_ENABLE_MOVE_Y
-static UWORD check_vertical_collision_triangle(UWORD start_x, UWORD start_y, rect16_t *bounds, UBYTE down) {
-    if (down) {
-#ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
-        UWORD middle_pos = start_x + bounds->left + ((bounds->right - bounds->left) >> 1);
-        UWORD slope_y = check_collision_slope(middle_pos, start_y, bounds);
-        if (slope_y != start_y) {
-            dynamic_actor_execute_tile_collision_bottom(dynamic_actor_current_actor, col_tx, col_ty);
-        }
-        return slope_y;
-#else
-        col_ty = SUBPX_TO_TILE(start_y + bounds->bottom);
-        col_tx = SUBPX_TO_TILE(start_x + bounds->left);
-        if (tile_at(col_tx, col_ty) & COLLISION_TOP) {
-            dynamic_actor_execute_tile_collision_bottom(dynamic_actor_current_actor, col_tx, col_ty);
-            return TILE_TO_SUBPX(col_ty) - (bounds->bottom + 1);
-        }
-        col_tx = SUBPX_TO_TILE(start_x + bounds->right);
-        if (tile_at(col_tx, col_ty) & COLLISION_TOP) {
-            dynamic_actor_execute_tile_collision_bottom(dynamic_actor_current_actor, col_tx, col_ty);
-            return TILE_TO_SUBPX(col_ty) - (bounds->bottom + 1);
-        }
-        return start_y;
-#endif
-    }
-    col_ty = SUBPX_TO_TILE(start_y + bounds->top);
-    col_tx = SUBPX_TO_TILE(start_x + bounds->left + ((bounds->right - bounds->left) >> 1));
-    if (tile_at(col_tx, col_ty) & COLLISION_BOTTOM) {
-        dynamic_actor_execute_tile_collision_top(dynamic_actor_current_actor, col_tx, col_ty);
-        return TILE_TO_SUBPX(col_ty + 1) - bounds->top;
-    }
-    return start_y;
-}
-#endif
-
-#ifdef DYNAMIC_ACTOR_ENABLE_MOVE_X
-static UWORD check_horizontal_collision_triangle(UWORD start_x, UWORD start_y, rect16_t *bounds, UBYTE right) {
-    if (right) {
-        col_tx = SUBPX_TO_TILE(start_x + bounds->right);
-        col_ty = SUBPX_TO_TILE(start_y + bounds->bottom);
-        if (tile_at(col_tx, col_ty) & COLLISION_LEFT) {
-#ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
-            if (IS_ON_SLOPE(tile_at(col_tx - 1, col_ty))){
-                return start_x;
-            }
-#endif
-            dynamic_actor_execute_tile_collision_right(dynamic_actor_current_actor, col_tx, col_ty);
-            return TILE_TO_SUBPX(col_tx) - (bounds->right + 1);
-        }
-        return start_x;
-    }
-    col_tx = SUBPX_TO_TILE(start_x + bounds->left);
-    col_ty = SUBPX_TO_TILE(start_y + bounds->bottom);
-    if (tile_at(col_tx, col_ty) & COLLISION_RIGHT) {
-#ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
-            if (IS_ON_SLOPE(tile_at(col_tx + 1, col_ty))){
-                return start_x;
-            }
-#endif
-        dynamic_actor_execute_tile_collision_left(dynamic_actor_current_actor, col_tx, col_ty);
-        return TILE_TO_SUBPX(col_tx + 1) - bounds->left;
-    }
-    return start_x;
-}
-#endif
-
-#if defined(DYNAMIC_ACTOR_ENABLE_MOVE_X) && defined(DYNAMIC_ACTOR_ENABLE_LEDGE_STOP)
-static UWORD check_pit_triangle(UWORD start_x, UWORD start_y, rect16_t *bounds, UBYTE right) {
-    if (right) {
-        col_tx = SUBPX_TO_TILE(start_x + bounds->right);
-        col_ty = SUBPX_TO_TILE(start_y + bounds->bottom);
-        if (tile_at(col_tx, col_ty) & COLLISION_LEFT) {
-#ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
-            if (IS_ON_SLOPE(tile_at(col_tx - 1, col_ty))){
-                return start_x;
-            }
-#endif
-            dynamic_actor_execute_tile_collision_right(dynamic_actor_current_actor, col_tx, col_ty);
-            return TILE_TO_SUBPX(col_tx) - (bounds->right + 1);
-        }
-        if (!(tile_at(col_tx, col_ty + 1) & (COLLISION_TOP | COLLISION_SLOPE_ANY))) {
-            dynamic_actor_execute_tile_collision_bottom(dynamic_actor_current_actor, col_tx, col_ty + 1);
-            return TILE_TO_SUBPX(col_tx) - (bounds->right + 1);
-        }
-        return start_x;
-    }
-    col_tx = SUBPX_TO_TILE(start_x + bounds->left);
-    col_ty = SUBPX_TO_TILE(start_y + bounds->bottom);
-    if (tile_at(col_tx, col_ty) & COLLISION_RIGHT) {
-#ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
-            if (IS_ON_SLOPE(tile_at(col_tx + 1, col_ty))){
-                return start_x;
-            }
-#endif
-        dynamic_actor_execute_tile_collision_left(dynamic_actor_current_actor, col_tx, col_ty);
-        return TILE_TO_SUBPX(col_tx + 1) - bounds->left;
-    }
-    if (!(tile_at(col_tx, col_ty + 1) & (COLLISION_TOP | COLLISION_SLOPE_ANY))) {
-        dynamic_actor_execute_tile_collision_bottom(dynamic_actor_current_actor, col_tx, col_ty + 1);
-        return TILE_TO_SUBPX(col_tx + 1)  - bounds->left;
-    }
-    return start_x;
-}
-#endif
 
 #endif
 
@@ -624,10 +513,6 @@ static UWORD check_pit_bbox(UWORD start_x, UWORD start_y, rect16_t *bounds, UBYT
 static UWORD check_horizontal_collision_by_type(UWORD start_x, UWORD start_y, actor_t *actor, UBYTE right, UBYTE collision_type) {
     (void)actor;
     switch (collision_type) {
-#ifdef DYNAMIC_ACTOR_ENABLE_COLLISION_TRIANGLE
-        case DYNAMIC_ACTOR_COLLISION_TRIANGLE:
-            return check_horizontal_collision_triangle(start_x, start_y, &actor->bounds, right);
-#endif
 #ifdef DYNAMIC_ACTOR_ENABLE_COLLISION_BOUNDING_BOX
         case DYNAMIC_ACTOR_COLLISION_BOUNDING_BOX:
             return check_horizontal_collision_bbox(start_x, start_y, &actor->bounds, right);
@@ -646,10 +531,6 @@ static UWORD check_horizontal_collision_by_type(UWORD start_x, UWORD start_y, ac
 static UWORD check_vertical_collision_by_type(UWORD start_x, UWORD start_y, actor_t *actor, UBYTE down, UBYTE collision_type) {
     (void)actor;
     switch (collision_type) {
-#ifdef DYNAMIC_ACTOR_ENABLE_COLLISION_TRIANGLE
-        case DYNAMIC_ACTOR_COLLISION_TRIANGLE:
-            return check_vertical_collision_triangle(start_x, start_y, &actor->bounds, down);
-#endif
 #ifdef DYNAMIC_ACTOR_ENABLE_COLLISION_BOUNDING_BOX
         case DYNAMIC_ACTOR_COLLISION_BOUNDING_BOX:
             return check_vertical_collision_bbox(start_x, start_y, &actor->bounds, down);
@@ -667,10 +548,6 @@ static UWORD check_vertical_collision_by_type(UWORD start_x, UWORD start_y, acto
 static UWORD check_pit_by_type(UWORD start_x, UWORD start_y, actor_t *actor, UBYTE right, UBYTE collision_type) {
     (void)actor;
     switch (collision_type) {
-#ifdef DYNAMIC_ACTOR_ENABLE_COLLISION_TRIANGLE
-        case DYNAMIC_ACTOR_COLLISION_TRIANGLE:
-            return check_pit_triangle(start_x, start_y, &actor->bounds, right);
-#endif
 #ifdef DYNAMIC_ACTOR_ENABLE_COLLISION_BOUNDING_BOX
         case DYNAMIC_ACTOR_COLLISION_BOUNDING_BOX:
             return check_pit_bbox(start_x, start_y, &actor->bounds, right);
@@ -688,8 +565,8 @@ static UWORD check_pit_by_type(UWORD start_x, UWORD start_y, actor_t *actor, UBY
 // Claim/release intersection test between a cached platform box and a candidate
 // rider: a plain bounding-box overlap (they touch). This is deliberately
 // independent of either actor's tile-collision model - a moving platform parents
-// whatever its box overlaps, so single-point / triangle platforms still pick up
-// riders standing on them (their origin/point need not be inside the box).
+// whatever its box overlaps, so single-point platforms still pick up riders
+// standing on them (their origin/point need not be inside the box).
 static UBYTE platform_cache_test(platform_cache_t *p, actor_t *other) {
     return ((other->pos.x + other->bounds.left) <= p->right) &&
            ((other->pos.x + other->bounds.right) >= p->left) &&

@@ -1,21 +1,21 @@
-const l10n = require("../helpers/l10n").default;
-
-export const id = "EVENT_WAIT_FOR_ACTOR_STATE";
-export const name = "Wait For Actor State";
+export const id = "EVENT_WAIT_FOR_ACTOR_STATE_BY_INDEX";
+export const name = "Wait For Actor State By Index";
 export const groups = ["EVENT_GROUP_ACTOR"];
 
 export const autoLabel = (fetchArg, input) => {
-  return `Wait For Actor State : ${fetchArg("actorId")}`;
+  return `Wait For Actor State : ${fetchArg("actorIndex")}`;
 };
 
 export const fields = [
   {
-    key: "actorId",
-    label: l10n("ACTOR"),
-    description:
-      "Actor whose behavior state to wait for. Grounded/airborne are managed by behaviors with Gravity + Move Y enabled.",
-    type: "actor",
-    defaultValue: "$self$",
+    key: "actorIndex",
+    label: "Actor Index",
+    description: "Index of the actor whose behavior state to wait for. Grounded/airborne are managed by behaviors with Gravity + Move Y enabled.",
+    type: "value",
+    defaultValue: {
+      type: "number",
+      value: 0,
+    },
   },
   {
     key: "state",
@@ -61,11 +61,11 @@ export const compile = (input, helpers) => {
   );
 
   const {
+    variableSetToScriptValue,
     _stackPush,
     _stackPushConst,
     _addComment,
     _declareLocal,
-    setActorId,
     _invoke,
   } = helpers;
 
@@ -76,7 +76,7 @@ export const compile = (input, helpers) => {
 
   const actorRef = _declareLocal("actorRef", 1, true);
 
-  setActorId(actorRef, input.actorId);
+  variableSetToScriptValue(actorRef, input.actorIndex);
 
   _addComment(`Wait For Actor State ${invert ? "!=" : "=="} ${state}`);
   _stackPush(actorRef);

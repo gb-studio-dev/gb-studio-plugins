@@ -33,7 +33,6 @@ const BHV_EVENT_HIT_ACTORS = 0x40;
 const BHV_EVENT_ACTIVATE_TRIGGERS = 0x80;
 
 const DYNAMIC_ACTOR_COLLISION_SINGLE_POINT = 0;
-const DYNAMIC_ACTOR_COLLISION_TRIANGLE = 1;
 const DYNAMIC_ACTOR_COLLISION_BOUNDING_BOX = 2;
 
 const PRESETS = {
@@ -261,7 +260,6 @@ export const fields = [
     type: "select",
     options: [
       [String(DYNAMIC_ACTOR_COLLISION_SINGLE_POINT), "Origin point (fastest)"],
-      [String(DYNAMIC_ACTOR_COLLISION_TRIANGLE), "Triangle"],
       [String(DYNAMIC_ACTOR_COLLISION_BOUNDING_BOX), "Bounding box"],
     ],
     defaultValue: String(DYNAMIC_ACTOR_COLLISION_SINGLE_POINT),
