@@ -1,10 +1,10 @@
 {
   "type": "enginePlugin",
   "name": "Dynamic Projectile Plugin",
-  "author": "fredrikofstad (ported by Mico27)",
+  "author": "Mico27",
+  "url": "https://github.com/Mico27/gbs-DynamicProjectilePlugin",
   "description": "Custom projectile behaviours (arc, boomerang, sine, orbit, hookshot, anchor and script-driven) with per-projectile gravity, bounce, tile collision, infinite lifetime, pause/hide controls and on-removal scripts. Port of the CustomProjectile plugin updated for GB Studio 4.3.*.",
   "license": "MIT",
-  "url": "https://github.com/fredrikofstad/GBStudioPlugins",
   "version": "4.3.0",
   "gbsVersion": ">=4.3.0",
   "filename": "DynamicProjectilePlugin",
