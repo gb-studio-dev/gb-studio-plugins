@@ -1,7 +1,7 @@
-Index: src\core\scene_transition.c
+Index: src/core/scene_transition.c
 ===================================================================
---- src\core\scene_transition.c
-+++ src\core\scene_transition.c
+--- src/core/scene_transition.c
++++ src/core/scene_transition.c
 @@ -19,8 +19,9 @@
  #include "projectiles.h"
  #include "shadow.h"

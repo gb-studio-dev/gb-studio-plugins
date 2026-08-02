@@ -1,7 +1,7 @@
-Index: src\core\data_manager.c
+Index: src/core/data_manager.c
 ===================================================================
---- src\core\data_manager.c
-+++ src\core\data_manager.c
+--- src/core/data_manager.c
++++ src/core/data_manager.c
 @@ -245,10 +245,17 @@
              allocated_sprite_tiles = player_sprite_len;
          } else {

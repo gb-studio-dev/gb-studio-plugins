@@ -1,7 +1,7 @@
-Index: include\projectiles.h
+Index: include/projectiles.h
 ===================================================================
---- include\projectiles.h
-+++ include\projectiles.h
+--- include/projectiles.h
++++ include/projectiles.h
 @@ -9,10 +9,12 @@
  
  #define MAX_PROJECTILES 5

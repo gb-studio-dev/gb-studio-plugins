@@ -1,0 +1,1870 @@
+Index: src/core/projectiles.c
+===================================================================
+--- src/core/projectiles.c
++++ src/core/projectiles.c
+@@ -3,168 +3,1554 @@
+ #include "projectiles.h"
+ 
+ #include <gbdk/metasprites.h>
+ 
+-#include <string.h>
++// DYNPROJ_ENABLE_* come from here: each behaviour is an engine setting under
++// Settings -> Engine -> Custom Projectiles, and turning one off keeps its code
++// out of the ROM entirely.
++#include "data/states_defines.h"
+ 
+ #include "sincos.h"
+ #include "scroll.h"
+ #include "actor.h"
+ #include "linked_list.h"
+ #include "game_time.h"
+ #include "vm.h"
+ #include "macro.h"
+-#include "data/states_defines.h"
+ 
++
++// Five flags in a five bit field: every bit 0-4 is in use, so adding another
++// means finding a bit elsewhere rather than widening this.
++#define EXECUTE_SCRIPT    (1 << 0)
++#define INFINITE_LIFETIME (1 << 1)
++#define IGNORE_PLAYER     (1 << 2)
++#define TILE_HIT_SCRIPT   (1 << 3)
++#define ACTOR_HIT_SCRIPT  (1 << 4)
++
++// Actor collision tests are spread across frames rather than run for every
++// projectile every pass, exactly as stock projectiles.c does: a rotating
++// counter seeded from game_time lets one projectile in 2 or one in 4 through
++// per pass, so the cost of a full pool is amortised instead of landing on a
++// single frame.
++//
++// PROJECTILES_COLLISION_SPREAD is a STOCK engine field ("Collision checks"
++// under Settings -> Engine -> Projectiles), so it arrives from
++// data/states_defines.h as the symbolic name below and this plugin must not
++// declare a field of its own for it. The #ifndef only covers a project that
++// somehow has no value set.
+ #define SPREAD_4 3
+ #define SPREAD_2 1
+ #define EVERY_FRAME 0
+ 
+ #ifndef PROJECTILES_COLLISION_SPREAD
+ #define PROJECTILES_COLLISION_SPREAD SPREAD_4
+ #endif
+ 
++// How far past the edge of the screen, in tiles, a projectile may travel before
++// it is retired. Stock hard-codes 2, enough that a sprite which is only partly
++// off screen is not removed while still visible; here it comes from the
++// "Off-screen margin" setting so a large or fast projectile can be given more
++// room. 0 retires a projectile the moment its origin leaves the screen.
++#ifndef DYNPROJ_CLIP_EXT
++#define DYNPROJ_CLIP_EXT 2
++#endif
++#define CLIP_EXT ((UBYTE)(DYNPROJ_CLIP_EXT))
++
++// Hookshot states. 0-3 and 5 are the values offered by the "Set Hookshot
++// State" event; 4 is internal and means "the hook finished on its own", which
++// removes it without snapping the source actor to the tile grid. 6 and 7 are
++// reached through the On Tile Hit / On Actor Hit reactions.
++#define HOOKSHOT_FIRING      0
++#define HOOKSHOT_RETURNING   1
++#define HOOKSHOT_PULL_PLAYER 2
++#define HOOKSHOT_PULL_ACTOR  3
++#define HOOKSHOT_DONE        4
++#define HOOKSHOT_REMOVE      5
++#define HOOKSHOT_HELD        6   // parked where it landed
++#define HOOKSHOT_STUCK       7   // riding along with the actor it hit
++
++// The hookshot is winding up and every piece of it should retire.
++#define HOOKSHOT_FINISHED() \
++    ((projectile_hookshot_state == HOOKSHOT_DONE) || (projectile_hookshot_state == HOOKSHOT_REMOVE))
++
++// The head is travelling towards its source and needs an arrival check.
++#define HOOKSHOT_CLOSING() \
++    ((projectile_hookshot_state == HOOKSHOT_RETURNING) || \
++     (projectile_hookshot_state == HOOKSHOT_PULL_PLAYER) || \
++     (projectile_hookshot_state == HOOKSHOT_PULL_ACTOR))
++
++// On Tile Hit reactions.
++#define TILE_HIT_RETURN      0
++#define TILE_HIT_PULL_PLAYER 1
++#define TILE_HIT_REMOVE      2
++#define TILE_HIT_STAY        3
++
++// On Actor Hit reactions.
++#define ACTOR_HIT_REMOVE      0
++#define ACTOR_HIT_RETURN      1
++#define ACTOR_HIT_PULL_PLAYER 2
++#define ACTOR_HIT_PULL_ACTOR  3
++#define ACTOR_HIT_STAY        4
++#define ACTOR_HIT_STICK       5
++
++// Engine-field globals. Order must match the fields in engine.json.
++UBYTE projectile_pause;
++UBYTE projectile_hide;
++UBYTE projectile_no_lifetime;
++// Index of the actor Orbit circles / Anchor hangs off / the hookshot reels in.
++// The engine works with the resolved pointer below; this is the script facing
++// half, because an engine field is written at the width of its cType and so
++// could never hold a pointer.
++UBYTE projectile_actor_index;
++BYTE  projectile_distance;
++BYTE  projectile_distance2;
++UBYTE projectile_phase;
++UBYTE projectile_hookshot_state;
++UBYTE projectile_hookshot_tile_hit;
++UBYTE projectile_hookshot_actor_hit;
++// Written by the engine just before an "on hit" / "on removal" script runs, so
++// those scripts can read back what happened with Engine Field Store.
++UBYTE projectile_hit_actor;
++UWORD projectile_hit_x;
++UWORD projectile_hit_y;
++UBYTE projectile_hit_type;
++
++// Non-field globals (variable memory offsets written by the event).
++UWORD projectile_delta_x;
++UWORD projectile_delta_y;
++
++#ifdef DYNPROJ_ENABLE_HOOKSHOT
++// Absolute world position of the hook head. Unsigned so it stays correct on
++// scenes wider/taller than 1024px.
++upoint16_t head_pos;
++#endif
++
++typedef enum {
++    DEFAULT = 0,
++    ARC,
++    BOOMERANG,
++    SINE,
++    ORBIT,
++    HOOKSHOT,
++    ANCHOR,
++    CUSTOM,
++    CHAIN,
++    TRAIL,
++} projectile_state;
++
++// A Trail can be strung from an actor instead of carrying its own head, so it
++// becomes an actor with a tail rather than a tail with a head on the front of
++// it - the way to trail something that already moves under its own logic, like
++// a walking NPC or the player. The actor index lives in projectile->x,
++// biased by one so the 0 a launch defaults to still means "the projectile is
++// its own head" - which is what every trail launched before this existed
++// relies on. Defined outside the behaviour switches below because the movement
++// test in projectiles_update() reads it whether or not Trail is compiled in.
++#define TRAIL_HEAD_SELF   0
++#define TRAIL_HAS_HEAD(p) ((UBYTE)((p)->x) != TRAIL_HEAD_SELF)
++#define TRAIL_HEAD(p)     (actors + (UBYTE)((p)->x) - 1)
++
++// Chain and Trail both draw a run of sprites whose positions are not derivable
++// from the projectile's own position, so they need somewhere to keep them. The
++// storage is a small pool of fixed size "strands" claimed at launch and handed
++// back on removal. A projectile that cannot get one is never launched at all,
++// rather than launched without one - the alternative would be reading whichever
++// strand a zero index happens to point at.
++#if defined(DYNPROJ_ENABLE_CHAIN) || defined(DYNPROJ_ENABLE_TRAIL)
++#define DYNPROJ_USES_STRANDS 1
++
++// Number of chains / trails that can be on screen at once, from the "Max
++// chains + trails" setting.
++#ifndef DYNPROJ_MAX_STRANDS
++#define DYNPROJ_MAX_STRANDS 2
++#endif
++// Points in one strand, from "Points per chain / trail". A chain uses one per
++// link; a trail uses segments x spacing, since it keeps a position for every
++// sample between the segments it draws. Each point is 4 bytes of WRAM, and the
++// pool costs DYNPROJ_MAX_STRANDS x DYNPROJ_STRAND_POINTS x 4 bytes in total.
++#ifndef DYNPROJ_STRAND_POINTS
++#define DYNPROJ_STRAND_POINTS 16
++#endif
++
++// A strand is identified by index + 1 so that 0 can mean "none": it is kept in
++// projectile->phase, which the behaviours that take a strand never use for a
++// wave position.
++#define STRAND_INDEX(p)  ((UBYTE)((p)->phase - 1))
++#define STRAND_POINTS(p) (strand_points[STRAND_INDEX(p)])
++#define TAKES_STRAND(t)  ((t) == CHAIN || (t) == TRAIL)
++
++static upoint16_t strand_points[DYNPROJ_MAX_STRANDS][DYNPROJ_STRAND_POINTS];
++static UBYTE strand_taken[DYNPROJ_MAX_STRANDS];
++// Where the newest sample sits in each trail's ring. Unused by chains, which
++// address their points by link index.
++static UBYTE strand_head[DYNPROJ_MAX_STRANDS];
++#endif
++
++// The 16/32 byte layouts are load bearing: projectiles[i] and
++// projectile_defs[i] index with a shift only while these hold.
++typedef char assert_projectile_t_is_16[(sizeof(projectile_t) == 16) ? 1 : -1];
++typedef char assert_projectile_def_t_is_32[(sizeof(projectile_def_t) == 32) ? 1 : -1];
++
+ projectile_t projectiles[MAX_PROJECTILES];
+ projectile_def_t projectile_defs[MAX_PROJECTILE_DEFS];
+ projectile_t *projectiles_active_head;
+ projectile_t *projectiles_inactive_head;
+ 
+-void projectiles_init(void) BANKED {
+-    projectiles_active_head = projectiles_inactive_head = NULL;
+-    for (projectile_t * proj = projectiles; proj < (projectiles + MAX_PROJECTILES); ++proj) {
+-        LL_PUSH_HEAD(projectiles_inactive_head, proj);
++static UBYTE _save_bank;
++static projectile_t *projectile;
++static projectile_t *prev_projectile;
++static projectile_def_t *proj_def;
++static actor_t *projectile_actor;
++
++// Screen clip window in tiles, recomputed once per update pass.
++static UBYTE min_x;
++static UBYTE max_x;
++static UBYTE min_y;
++static UBYTE max_y;
++
++bool next_projectile;
++
++int16_t sine;
++int16_t cosine;
++
++UBYTE script_bank;
++UBYTE *script_address;
++
++// Optional "on hit" scripts, shared by every projectile behaviour the same way
++// the removal script is. A zero bank means "none".
++UBYTE tile_hit_script_bank;
++UBYTE *tile_hit_script_address;
++UBYTE actor_hit_script_bank;
++UBYTE *actor_hit_script_address;
++
++#ifdef DYNPROJ_USES_STRANDS
++// How many points of the strand a definition actually occupies. A chain wants
++// one per link; a trail wants one per sample, so segments times the gap between
++// them. Both are clamped here rather than at every use, because either can come
++// from a variable through "Define Projectile Slot".
++#ifdef DYNPROJ_ENABLE_TRAIL
++// Passes between one tail segment and the next. Two is the floor rather than
++// one: entry 0 of the history is the position written this pass, which is where
++// the projectile itself is drawn, so a spacing of 1 would stack the first
++// segment on top of the head.
++static UBYTE trail_spacing(projectile_def_t *def) NONBANKED {
++    return (def->amplitude > 1) ? (UBYTE)def->amplitude : 2;
++}
++#endif
++
++// NONBANKED because projectiles_render() calls it with somebody else's sprite
++// bank paged in - the same reason the render helpers further down are.
++static UBYTE strand_length(projectile_def_t *def) NONBANKED {
++    UBYTE length = def->frequency;
++#ifdef DYNPROJ_ENABLE_TRAIL
++    if (def->type == TRAIL) {
++        UBYTE spacing = trail_spacing(def);
++        // Guard the multiply itself: segments and spacing are independent, so
++        // their product can pass 255 and wrap back into a legal looking length.
++        length = (length > (UBYTE)(DYNPROJ_STRAND_POINTS / spacing))
++            ? DYNPROJ_STRAND_POINTS
++            : (UBYTE)(length * spacing);
+     }
++#endif
++    if (length > DYNPROJ_STRAND_POINTS) length = DYNPROJ_STRAND_POINTS;
++    if (length < 2) length = 2;
++    return length;
+ }
+ 
+-static FASTUBYTE _save_bank;
+-static projectile_t *projectile;
+-static projectile_t *prev_projectile;
+-static projectile_t *next_projectile;
++// Claim a strand, or 0 when the pool is full.
++static UBYTE strand_claim(void) {
++    for (UBYTE i = 0; i != DYNPROJ_MAX_STRANDS; ++i) {
++        if (!strand_taken[i]) {
++            strand_taken[i] = TRUE;
++            strand_head[i] = 0;
++            return i + 1;
++        }
++    }
++    return 0;
++}
+ 
+-static void remove_projectile(void) NONBANKED {
+-    next_projectile = projectile->next;
++// Hand the current projectile's strand back. Called from remove_projectile()
++// for every projectile, so it has to check the behaviour first: `phase` is a
++// wave position for Sine and Orbit and an actor index for Anchor, and freeing
++// a strand off one of those would release somebody else's.
++static void strand_release(void) {
++    if (TAKES_STRAND(proj_def->type) && projectile->phase) {
++        strand_taken[STRAND_INDEX(projectile)] = FALSE;
++        projectile->phase = 0;
++    }
++}
++#endif
++
++#if defined(DYNPROJ_ENABLE_SINE) || defined(DYNPROJ_ENABLE_ORBIT)
++static void update_phase(void) {
++    projectile->phase += proj_def->frequency;
++    // phase is uint8_t and wraps at 256 automatically.
++    sine = ((SIN(projectile->phase) * proj_def->amplitude) >> 5);
++}
++#endif
++
++#ifdef DYNPROJ_ENABLE_SINE
++static void handle_sine(void) {
++    update_phase();
++
++    // Update position based on the sine wave (perpendicular to travel).
++    switch (projectile->dir) {
++        case DIR_RIGHT:
++        case DIR_LEFT:
++            projectile->pos.y -= sine;
++            break;
++        case DIR_UP:
++        case DIR_DOWN:
++            projectile->pos.x -= sine;
++            break;
++    }
++}
++#endif
++
++#ifdef DYNPROJ_ENABLE_CUSTOM
++static void handle_custom(void) {
++    projectile->pos.x += *(script_memory + projectile_delta_x);
++    projectile->pos.y -= *(script_memory + projectile_delta_y);
++}
++#endif
++
++#ifdef DYNPROJ_ENABLE_ORBIT
++static void handle_orbit(void) {
++    update_phase();
++    // Calculate the new position using sine and cosine for orbit.
++    cosine = ((COS(projectile->phase) * proj_def->amplitude) >> 5);
++
++    // Update projectile position based on center point.
++    projectile->pos.x = projectile_actor->pos.x + cosine + (projectile->x << 1);
++    projectile->pos.y = projectile_actor->pos.y + sine + (projectile->y << 1);
++}
++#endif
++
++// Publish where the current projectile is and what kind it is, for whichever
++// "on hit" / "on removal" script is about to run.
++static void record_projectile_hit(void) {
++    projectile_hit_x = SUBPX_TO_PX(projectile->pos.x);
++    projectile_hit_y = SUBPX_TO_PX(projectile->pos.y);
++    projectile_hit_type = proj_def->type;
++}
++
++// Any projectile just reached a solid tile. Skipped unless a script has been
++// set and this projectile was launched with the tile hit trigger enabled.
++static void run_tile_hit_script(void) {
++    if (!tile_hit_script_bank || !(proj_def->flags & TILE_HIT_SCRIPT)) return;
++    record_projectile_hit();
++    script_execute(tile_hit_script_bank, tile_hit_script_address, 0, 0);
++}
++
++// Any projectile just touched an actor in its collision mask.
++static void run_actor_hit_script(actor_t *hit_actor) {
++    if (!actor_hit_script_bank || !(proj_def->flags & ACTOR_HIT_SCRIPT)) return;
++    record_projectile_hit();
++    projectile_hit_actor = (UBYTE)(hit_actor - actors);
++    script_execute(actor_hit_script_bank, actor_hit_script_address, 0, 0);
++}
++
++// Point the target at an actor the engine already has in hand. The index has to
++// be written as well as the pointer: projectiles_update() re-derives the pointer
++// from the index every pass, so a pointer set on its own would last one frame.
++static void set_projectile_actor(actor_t *actor) {
++    projectile_actor = actor;
++    projectile_actor_index = (UBYTE)(actor - actors);
++}
++
++static void remove_projectile(void) {
++    record_projectile_hit();
++#ifdef DYNPROJ_USES_STRANDS
++    // Before the removal script runs: that script can launch another chain or
++    // trail, and it should be able to reuse the strand this one is giving up.
++    strand_release();
++#endif
++    // script_bank is zero until a removal script has been set, so a projectile
++    // flagged to run one before any "Set Projectile Removal Script" event is
++    // simply skipped rather than jumping into nowhere.
++    if ((proj_def->flags & EXECUTE_SCRIPT) && script_bank) {
++        script_execute(script_bank, script_address, 0, 0);
++    }
++    projectile_t *next = projectile->next;
+     LL_REMOVE_ITEM(projectiles_active_head, projectile, prev_projectile);
+     LL_PUSH_HEAD(projectiles_inactive_head, projectile);
+-    projectile = next_projectile;
++    projectile = next;
++    next_projectile = true;
+ }
+ 
+-static UBYTE min_x;
+-static UBYTE max_x;
+-static UBYTE min_y;
+-static UBYTE max_y;
+-#define CLIP_EXT 2U
++#ifdef DYNPROJ_ENABLE_BOOMERANG
++static void handle_boomerang(void) {
++    switch (projectile->dir) {
++        case DIR_RIGHT:
++            projectile->delta_pos.x -= projectile_distance << 1;
++            break;
++        case DIR_LEFT:
++            projectile->delta_pos.x += projectile_distance << 1;
++            break;
++        case DIR_UP:
++            projectile->delta_pos.y -= projectile_distance << 1;
++            break;
++        case DIR_DOWN:
++            projectile->delta_pos.y += projectile_distance << 1;
++            break;
++    }
++}
++#endif
+ 
+-void projectiles_update(void) NONBANKED {
+-#if PROJECTILES_COLLISION_SPREAD != EVERY_FRAME
+-    static uint8_t tmp_iterator;
++#ifdef DYNPROJ_ENABLE_HOOKSHOT
++// The actor the hookshot was fired from. Stored per projectile (in the
++// otherwise unused `y` field) so the head and every chain link agree on it even
++// if the pull target changes later.
++#define HOOKSHOT_SOURCE() (&actors[(UBYTE)projectile->y])
++
++// Where on the target a stuck hook landed, as a pixel offset from that actor's
++// origin, so the head keeps hanging off the point it struck instead of snapping
++// to the actor's position. The obvious `x` / `y` fields are already spoken for
++// on a hookshot - `x` is the chain link index, and 0 there is what identifies
++// the head - so this rides in the sine/orbit parameters, which a hookshot never
++// reads. A pixel is plenty of precision for a sprite, and the offset can only
++// be as large as the two overlapping bounding boxes.
++static int8_t hookshot_stick_x;
++static int8_t hookshot_stick_y;
++#define HOOKSHOT_STICK_X(p) (hookshot_stick_x)
++#define HOOKSHOT_STICK_Y(p) (hookshot_stick_y)
++
++// TRUE once the hook head and its source actor have met again. The head always
++// travels along a single axis (projectile->dir is derived from the launch
++// angle), so it is enough to watch the sign of the distance on that axis: it
++// starts positive in the direction the hook was fired and crosses zero when the
++// two meet. Used for returning and for both pull modes, none of which have a
++// stop condition of their own.
++static UBYTE hookshot_reached_source(void) {
++    actor_t *source = HOOKSHOT_SOURCE();
++    WORD dx = (WORD)(projectile->pos.x - source->pos.x);
++    WORD dy = (WORD)(projectile->pos.y - source->pos.y);
++    // dir is a 2 bit field, so the four directions are exhaustive - written as
++    // a chain rather than a switch so there is no unreachable fallthrough.
++    if (projectile->dir == DIR_RIGHT) return (dx <= 0);
++    if (projectile->dir == DIR_LEFT)  return (dx >= 0);
++    if (projectile->dir == DIR_UP)    return (dy >= 0);
++    return (dy <= 0);   // DIR_DOWN
++}
++
++#ifdef DYNPROJ_HOOKSHOT_PULL_COLLISION
++// Would `mover`, standing at `pos`, be inside something solid? Only the edge it
++// is heading for is tested, so the directional collision bits mean what they
++// mean everywhere else - a one-way tile blocks the side it faces and no other.
++// `standing_in` is whatever the mover already overlaps before the step: a pull
++// that begins on top of somebody must not count that as a wall and stop dead on
++// its first frame.
++static UBYTE hookshot_solid_at(actor_t *mover, upoint16_t *pos,
++                               WORD step_x, WORD step_y, actor_t *standing_in) {
++    UBYTE tile_x0 = SUBPX_TO_TILE(pos->x + mover->bounds.left);
++    UBYTE tile_x1 = SUBPX_TO_TILE(pos->x + mover->bounds.right);
++    UBYTE tile_y0 = SUBPX_TO_TILE(pos->y + mover->bounds.top);
++    UBYTE tile_y1 = SUBPX_TO_TILE(pos->y + mover->bounds.bottom);
++
++    // Same edge/mask pairing the top-down state uses to decide whether the
++    // player may step (topdown_update), applied to where the mover would land
++    // rather than to the tile ahead, since a pull is not on the tile grid.
++    if (step_x > 0) {
++        if (tile_col_test_range_y(COLLISION_LEFT, tile_x1, tile_y0, tile_y1)) return TRUE;
++    } else if (step_x < 0) {
++        if (tile_col_test_range_y(COLLISION_RIGHT, tile_x0, tile_y0, tile_y1)) return TRUE;
++    }
++    if (step_y > 0) {
++        if (tile_col_test_range_x(COLLISION_TOP, tile_y1, tile_x0, tile_x1)) return TRUE;
++    } else if (step_y < 0) {
++        if (tile_col_test_range_x(COLLISION_BOTTOM, tile_y0, tile_x0, tile_x1)) return TRUE;
++    }
++
++    // An actor counts as solid when it has collision enabled, which is exactly
++    // the set actor_overlapping_bb already walks - so "solid" here means the
++    // same thing it means to the rest of the engine.
++    actor_t *hit = actor_overlapping_bb(&mover->bounds, pos, mover);
++    return (hit && hit != standing_in);
++}
++
++// Is this box overlapping anything solid, whichever way it got there? The
++// stepping test above only looks at the edge being moved towards, which is what
++// keeps one-way tiles one-way; this one checks all four, for deciding whether a
++// position the actor is about to be PLACED at is usable at all.
++static UBYTE hookshot_box_blocked(actor_t *mover, upoint16_t *pos) {
++    UBYTE tile_x0 = SUBPX_TO_TILE(pos->x + mover->bounds.left);
++    UBYTE tile_x1 = SUBPX_TO_TILE(pos->x + mover->bounds.right);
++    UBYTE tile_y0 = SUBPX_TO_TILE(pos->y + mover->bounds.top);
++    UBYTE tile_y1 = SUBPX_TO_TILE(pos->y + mover->bounds.bottom);
++
++    if (tile_col_test_range_y(COLLISION_LEFT,   tile_x1, tile_y0, tile_y1)) return TRUE;
++    if (tile_col_test_range_y(COLLISION_RIGHT,  tile_x0, tile_y0, tile_y1)) return TRUE;
++    if (tile_col_test_range_x(COLLISION_TOP,    tile_y1, tile_x0, tile_x1)) return TRUE;
++    if (tile_col_test_range_x(COLLISION_BOTTOM, tile_y0, tile_x0, tile_x1)) return TRUE;
++    return FALSE;
++}
++
++// Step `mover` by (step_x, step_y) in world coordinates, stopping short of
++// anything solid. Returns TRUE when something blocked it.
++//
++// Axis by axis, so a pull dragged along a wall still slides down it instead of
++// stopping outright - the same result an engine gets by moving first and then
++// reverting only the axis that turned out to be blocked. GB Studio has no such
++// shared correction pass for an actor whose position was written directly, so
++// the test has to happen here, before the position is committed.
++static UBYTE hookshot_pull_step(actor_t *mover, WORD step_x, WORD step_y) {
++    actor_t *standing_in = actor_overlapping_bb(&mover->bounds, &mover->pos, mover);
++    UBYTE blocked = FALSE;
++    upoint16_t next;
++
++    if (step_x) {
++        next.x = mover->pos.x + step_x;
++        next.y = mover->pos.y;
++        if (hookshot_solid_at(mover, &next, step_x, 0, standing_in)) blocked = TRUE;
++        else mover->pos.x = next.x;
++    }
++    if (step_y) {
++        next.x = mover->pos.x;
++        next.y = mover->pos.y + step_y;
++        if (hookshot_solid_at(mover, &next, 0, step_y, standing_in)) blocked = TRUE;
++        else mover->pos.y = next.y;
++    }
++    return blocked;
++}
+ #endif
+ 
++// A pull moves the source actor in sub-pixel steps, so it almost never stops on
++// a grid point - and a top-down scene only reads input while the player is ON
++// one, so an actor left between two can end up unable to move at all. Every
++// pull therefore puts it back on the grid before it lets go.
++//
++// The grid size has to come from a setting rather than from topdown_grid: that
++// lives in topdown.c, which GB Studio does not compile into a project with no
++// top-down scene, so reading it from here would fail to link in a platformer.
++// 0 turns realigning off, for scene types where snapping the player is wrong.
++#ifndef DYNPROJ_HOOKSHOT_PULL_GRID
++#define DYNPROJ_HOOKSHOT_PULL_GRID 8
++#endif
++
++#if DYNPROJ_HOOKSHOT_PULL_GRID == 16
++#define PULL_GRID_MASK   0xFE00u
++#define PULL_GRID_SUBPX  512u
++// A 16px grid sits the player's origin one tile below the block origin, the
++// same offset topdown_init applies when it snaps on scene entry.
++#define PULL_GRID_Y_BIAS 256u
++#else
++#define PULL_GRID_MASK   0xFF00u
++#define PULL_GRID_SUBPX  256u
++#define PULL_GRID_Y_BIAS 0u
++#endif
++
++#if DYNPROJ_HOOKSHOT_PULL_GRID != 0
++// Round one axis onto the NEAREST grid point.
++//
++// Nearest rather than backwards along the pull: a pull stops flush, with its
++// leading edge on the last sub-pixel before the obstacle, and for a box that is
++// a whole number of tiles across that flush position is already a grid point.
++// Rounding away from the obstacle would give up as much as a whole cell and
++// leave the actor standing a tile short of the wall.
++static UWORD hookshot_align_axis(UWORD pos, UWORD bias) {
++    // Below the bias there is no grid point to round to; the first one is the
++    // bias itself. Only reachable at the very top of the map on a 16px grid.
++    if (pos <= bias) return bias;
++    pos -= bias;
++    pos = (pos + (PULL_GRID_SUBPX / 2u)) & PULL_GRID_MASK;
++    return pos + bias;
++}
++#endif
++
++// Put the source actor back on the grid after a pull. `step` is the movement
++// that was being applied when the pull ended, used only to decide which way to
++// retreat if the aligned spot turns out to be unusable; pass 0 for a pull that
++// ended without moving.
++static void hookshot_realign_source(WORD step_x, WORD step_y) {
++#if DYNPROJ_HOOKSHOT_PULL_GRID != 0
++    actor_t *source = HOOKSHOT_SOURCE();
++    upoint16_t next;
++    next.x = hookshot_align_axis(source->pos.x, 0u);
++    next.y = hookshot_align_axis(source->pos.y, PULL_GRID_Y_BIAS);
++
++#ifdef DYNPROJ_HOOKSHOT_PULL_COLLISION
++    // Rounding to nearest can round TOWARDS the obstacle, which is what makes
++    // the stop look flush - but a sprite whose collision box is not a whole
++    // number of tiles could land inside it that way. Check, and if so give the
++    // cell back along whichever axis was moving.
++    if (hookshot_box_blocked(source, &next)) {
++        if (step_x > 0)      next.x -= PULL_GRID_SUBPX;
++        else if (step_x < 0) next.x += PULL_GRID_SUBPX;
++        if (step_y > 0)      next.y -= PULL_GRID_SUBPX;
++        else if (step_y < 0) next.y += PULL_GRID_SUBPX;
++        // Still no good - better off grid than inside a wall, so leave the
++        // actor exactly where the pull stopped it.
++        if (hookshot_box_blocked(source, &next)) return;
++    }
++#else
++    (void)step_x;
++    (void)step_y;
++#endif
++
++    source->pos.x = next.x;
++    source->pos.y = next.y;
++#else
++    (void)step_x;
++    (void)step_y;
++#endif
++}
++
++// Chain links have no motion of their own: each frame they are placed at a
++// fixed fraction along the line from the source actor to the head. Link 1 sits
++// 3/4 of the way to the head, link 2 at 1/2, link 3 at 1/4. Both axes are
++// interpolated so the chain keeps spanning the gap when the source actor or the
++// head moves off the firing axis.
++static void place_hookshot_chain(void) {
++    actor_t *source = HOOKSHOT_SOURCE();
++    UBYTE weight = 4 - (UBYTE)projectile->x;    // x is the link index, 1..3
++    // Signed gap between the two ends. Shifting before multiplying keeps the
++    // product inside 16 bits for any gap at the cost of a fraction of a pixel
++    // (32 sub-pixels make one pixel).
++    WORD dx = (WORD)(head_pos.x - source->pos.x) >> 2;
++    WORD dy = (WORD)(head_pos.y - source->pos.y) >> 2;
++    projectile->pos.x = source->pos.x + (UWORD)(dx * weight);
++    projectile->pos.y = source->pos.y + (UWORD)(dy * weight);
++}
++
++static void handle_hookshot(void) {
++    if (projectile->x != 0) {
++        if (HOOKSHOT_FINISHED()) {
++            remove_projectile();
++        } else {
++            place_hookshot_chain();
++        }
++    } else {
++        head_pos.x = projectile->pos.x;
++        head_pos.y = projectile->pos.y;
++        switch (projectile_hookshot_state) {
++            case HOOKSHOT_FIRING:
++                projectile->pos.x += projectile->delta_pos.x;
++                projectile->pos.y -= projectile->delta_pos.y;
++                break;
++            case HOOKSHOT_RETURNING:
++                projectile->pos.x -= projectile->delta_pos.x;
++                projectile->pos.y += projectile->delta_pos.y;
++                // The hook is back with its source - retire it, otherwise it
++                // would keep flying past and never be removed.
++                if (hookshot_reached_source()) {
++                    projectile_hookshot_state = HOOKSHOT_DONE;
++                    remove_projectile();
++                }
++                break;
++            case HOOKSHOT_PULL_PLAYER: {
++                actor_t *source = HOOKSHOT_SOURCE();
++                // delta_pos.y is positive-for-up in this plugin, so the world
++                // space step down the y axis is its negation.
++                WORD step_x =  (WORD)projectile->delta_pos.x;
++                WORD step_y = -(WORD)projectile->delta_pos.y;
++#ifdef DYNPROJ_HOOKSHOT_PULL_COLLISION
++                if (hookshot_pull_step(source, step_x, step_y)) {
++                    // Reached a wall or a solid actor on the way. Stop here,
++                    // but still put the actor back on the grid - a top-down
++                    // player left between two grid points cannot move at all.
++                    // Rounding back along the pull is what keeps that from
++                    // undoing the stop and pushing it into the obstacle.
++                    projectile_hookshot_state = HOOKSHOT_DONE;
++                    hookshot_realign_source(step_x, step_y);
++                    remove_projectile();
++                    break;
++                }
++#else
++                source->pos.x += projectile->delta_pos.x;
++                source->pos.y -= projectile->delta_pos.y;
++#endif
++                // Arrived at the hook: align the source actor and end the pull.
++                if (hookshot_reached_source()) {
++                    projectile_hookshot_state = HOOKSHOT_REMOVE;
++                    hookshot_realign_source(step_x, step_y);
++                    remove_projectile();
++                }
++                break;
++            }
++            case HOOKSHOT_PULL_ACTOR:
++#ifdef DYNPROJ_HOOKSHOT_PULL_COLLISION
++                // The reeled-in actor leads and the head follows it, rather
++                // than the other way round: if the actor stops short the head
++                // has to stop with it, or it would carry on and drag the chain
++                // straight through whatever the actor is stuck against. The
++                // source actor is solid like any other, so this is also what
++                // keeps a catch from being reeled inside the player.
++                if (hookshot_pull_step(projectile_actor, -(WORD)projectile->delta_pos.x,
++                                                          (WORD)projectile->delta_pos.y)) {
++                    projectile_hookshot_state = HOOKSHOT_DONE;
++                }
++                projectile->pos.x = projectile_actor->pos.x;
++                projectile->pos.y = projectile_actor->pos.y;
++                if (projectile_hookshot_state == HOOKSHOT_DONE) {
++                    remove_projectile();
++                    break;
++                }
++#else
++                projectile->pos.x -= projectile->delta_pos.x;
++                projectile->pos.y += projectile->delta_pos.y;
++                projectile_actor->pos.x = projectile->pos.x;
++                projectile_actor->pos.y = projectile->pos.y;
++#endif
++                if (hookshot_reached_source()) {
++                    projectile_hookshot_state = HOOKSHOT_DONE;
++                    remove_projectile();
++                }
++                break;
++            case HOOKSHOT_STUCK: {
++                // Ride along with whatever the hook grabbed, hanging off the
++                // point of contact rather than the actor's origin.
++                projectile->pos.x =
++                    projectile_actor->pos.x + PX_TO_SUBPX((WORD)HOOKSHOT_STICK_X(projectile));
++                projectile->pos.y =
++                    projectile_actor->pos.y + PX_TO_SUBPX((WORD)HOOKSHOT_STICK_Y(projectile));
++                head_pos.x = projectile->pos.x;
++                head_pos.y = projectile->pos.y;
++                break;
++            }
++            case HOOKSHOT_HELD:
++                // Parked where it landed - the chain still tracks the source.
++                break;
++            case HOOKSHOT_REMOVE:
++                // Driven here by a script rather than by a pull, so there is no
++                // direction to round back along - nearest grid point it is.
++                hookshot_realign_source(0, 0);
++                remove_projectile();
++                break;
++            case HOOKSHOT_DONE:
++                remove_projectile();
++                break;
++        }
++    }
++}
++
++// The hook ran out of room (screen edge): always just come back.
++static void change_hookshot_state(void) {
++    if (projectile_hookshot_state < HOOKSHOT_RETURNING) {
++        projectile_hookshot_state = HOOKSHOT_RETURNING;
++    }
++}
++
++// The hook head touched a solid tile.
++static void hookshot_hit_tile(void) {
++    if (projectile_hookshot_state != HOOKSHOT_FIRING) {
++        return;
++    }
++    switch (projectile_hookshot_tile_hit) {
++        case TILE_HIT_PULL_PLAYER:
++            projectile_hookshot_state = HOOKSHOT_PULL_PLAYER;
++            break;
++        case TILE_HIT_REMOVE:
++            projectile_hookshot_state = HOOKSHOT_DONE;
++            break;
++        case TILE_HIT_STAY:
++            projectile_hookshot_state = HOOKSHOT_HELD;
++            break;
++        default:
++            projectile_hookshot_state = HOOKSHOT_RETURNING;
++            break;
++    }
++    if (projectile_hookshot_state == HOOKSHOT_DONE) {
++        remove_projectile();
++    }
++}
++
++// The hook head touched an actor in its collision mask. Returns TRUE when the
++// hookshot handled the hit itself, FALSE when the caller should fall back to
++// the normal "remove the projectile" behaviour.
++static UBYTE hookshot_hit_actor(actor_t *hit_actor) {
++    if (projectile->x != 0 || projectile_hookshot_state != HOOKSHOT_FIRING) {
++        // A chain link brushed the actor, or the hook already landed. The chain
++        // is only decoration, so leave it alone rather than punching a hole in
++        // the middle of it.
++        return TRUE;
++    }
++
++    UBYTE handled = TRUE;
++    switch (projectile_hookshot_actor_hit) {
++        case ACTOR_HIT_RETURN:
++            projectile_hookshot_state = HOOKSHOT_RETURNING;
++            break;
++        case ACTOR_HIT_PULL_PLAYER:
++            projectile_hookshot_state = HOOKSHOT_PULL_PLAYER;
++            break;
++        case ACTOR_HIT_PULL_ACTOR:
++            // Reel this actor in: handle_hookshot() drags projectile_actor
++            // along with the head while it returns.
++            set_projectile_actor(hit_actor);
++            projectile_hookshot_state = HOOKSHOT_PULL_ACTOR;
++            break;
++        case ACTOR_HIT_STAY:
++            projectile_hookshot_state = HOOKSHOT_HELD;
++            break;
++        case ACTOR_HIT_STICK:
++            // Latch on: the head follows the actor from now on, keeping the
++            // offset it made contact at.
++            set_projectile_actor(hit_actor);
++            HOOKSHOT_STICK_X(projectile) =
++                (BYTE)SUBPX_TO_PX((WORD)(projectile->pos.x - hit_actor->pos.x));
++            HOOKSHOT_STICK_Y(projectile) =
++                (BYTE)SUBPX_TO_PX((WORD)(projectile->pos.y - hit_actor->pos.y));
++            projectile_hookshot_state = HOOKSHOT_STUCK;
++            break;
++        default:
++            // ACTOR_HIT_REMOVE - let the caller destroy the head as usual.
++            handled = FALSE;
++            break;
++    }
++
++    return handled;
++}
++#endif
++
++#ifdef DYNPROJ_ENABLE_ANCHOR
++static void handle_anchor(void) {
++    // Anchor keeps the actor it is pinned to in phase, so several anchored
++    // projectiles can hang off different actors at once - unlike Orbit and the
++    // hookshot, which share the one projectile_actor the last launch resolved.
++    actor_t *anchor_actor = actors + projectile->phase;
++
++    // Rigidly attached: a fixed offset from the actor, the same whichever way
++    // it turns.
++    projectile->pos.x = anchor_actor->pos.x + (projectile->x << 3);
++    projectile->pos.y = anchor_actor->pos.y + (projectile->y << 3);
++}
++#endif
++
++#ifdef DYNPROJ_ENABLE_CHAIN
++// How the links are placed, stored in the definition's `collision` field: a
++// chain never reacts to tiles, so those two bits are free to carry the mode.
++#define CHAIN_STRAIGHT 0
++#define CHAIN_LOOSE    1
++
++// The two ends. Actor indexes rather than pointers, and per projectile rather
++// than shared like Orbit's, so several chains can be strung between different
++// pairs of actors at the same time.
++#define CHAIN_START(p) (actors + (UBYTE)(p)->x)
++#define CHAIN_END(p)   (actors + (UBYTE)(p)->y)
++
++// Slack and catch-up speed for the loose mode, in sub-pixels. Refreshed from
++// the definition at the top of every pass rather than stored per projectile.
++static WORD chain_slack;
++static WORD chain_speed;
++
++// Move one link a step towards its neighbour along a single axis, but only once
++// the gap between them has opened past the slack. That tolerance is the whole
++// trick behind a chain that hangs and drags instead of snapping taut - without
++// it every link tracks its neighbour exactly and the chain is always a straight
++// line. Around 7 pixels of slack against a 2 pixel catch-up reads well.
++static UWORD chain_relax_axis(UWORD link, UWORD towards) {
++    WORD gap = (WORD)(towards - link);
++    WORD excess;
++    if (gap > chain_slack) {
++        excess = gap - chain_slack;
++    } else if (gap < -chain_slack) {
++        excess = gap + chain_slack;     // negative
++    } else {
++        return link;                    // inside the slack - leave it hanging
++    }
++    // Speed 0 means rigid: close the whole excess at once. Otherwise step by at
++    // most the speed, and never past the excess, so the chain settles rather
++    // than jittering back and forth across its neighbour.
++    if (chain_speed) {
++        if (excess > chain_speed) excess = chain_speed;
++        else if (excess < -chain_speed) excess = -chain_speed;
++    }
++    return link + excess;
++}
++
++static void chain_relax(upoint16_t *link, upoint16_t *towards) {
++    link->x = chain_relax_axis(link->x, towards->x);
++    link->y = chain_relax_axis(link->y, towards->y);
++}
++
++// Takes the projectile rather than reading the file-scope one, because
++// projectile_launch() places a new chain straight away and has only its own
++// local pointer to hand.
++//
++// `seed` lays the chain out from nothing, ignoring the loose mode. The loose
++// pass only ever nudges a link TOWARDS its neighbour, so it needs the links to
++// already hold real positions - on a chain's first pass they hold zeros, or
++// whatever the previous owner of the strand left behind, and the whole thing
++// would crawl in from the top-left corner of the map at the catch-up speed.
++static void place_chain(projectile_t *chain, UBYTE seed) {
++    upoint16_t *link = STRAND_POINTS(chain);
++    UBYTE n = strand_length(proj_def);
++    actor_t *start = CHAIN_START(chain);
++    actor_t *end   = CHAIN_END(chain);
++
++    // A chain has no position of its own, so its midpoint stands in for one.
++    // That is what the hit scripts report and what the off-screen test would
++    // use, and it is the one point that is meaningful for both ends at once.
++    chain->pos.x = start->pos.x + ((WORD)(end->pos.x - start->pos.x) >> 1);
++    chain->pos.y = start->pos.y + ((WORD)(end->pos.y - start->pos.y) >> 1);
++
++    if (!seed && proj_def->collision == CHAIN_LOOSE) {
++        chain_slack = PX_TO_SUBPX((WORD)proj_def->amplitude);
++        chain_speed = PX_TO_SUBPX((WORD)proj_def->bounce);
++        // Two passes: the first drags the links along behind the start actor,
++        // the second pulls them back towards the end actor. Running both is
++        // what keeps the chain spanning the gap whichever end moves - one pass
++        // alone leaves the far half trailing behind its anchor.
++        link[0].x = start->pos.x;
++        link[0].y = start->pos.y;
++        for (UBYTE i = 1; i != n; ++i) {
++            chain_relax(&link[i], &link[i - 1]);
++        }
++        link[n - 1].x = end->pos.x;
++        link[n - 1].y = end->pos.y;
++        for (UBYTE i = n - 1; i != 1; --i) {
++            chain_relax(&link[i - 1], &link[i]);
++        }
++    } else {
++        // Straight, and also the shape a loose chain is seeded with: the links
++        // are spread evenly along the line between the two actors, with the
++        // step derived from the link count so any number of links fits.
++        WORD step_x = (WORD)(end->pos.x - start->pos.x) / (n - 1);
++        WORD step_y = (WORD)(end->pos.y - start->pos.y) / (n - 1);
++        UWORD x = start->pos.x;
++        UWORD y = start->pos.y;
++        for (UBYTE i = 0; i != n; ++i) {
++            link[i].x = x;
++            link[i].y = y;
++            x += step_x;
++            y += step_y;
++        }
++        // Both divisions round towards zero, so the last link would otherwise
++        // stop just short of the far actor. Pin it there.
++        link[n - 1].x = end->pos.x;
++        link[n - 1].y = end->pos.y;
++    }
++}
++
++static void handle_chain(void) {
++    // Redefining a slot changes the behaviour of everything already in flight
++    // from it, so a projectile launched as something else can arrive here
++    // without the strand a chain is normally given at launch.
++    if (projectile->phase) place_chain(projectile, FALSE);
++}
++#endif
++
++#ifdef DYNPROJ_ENABLE_TRAIL
++// A trail records where the projectile was on every pass and draws a sprite
++// every `amplitude` entries back through that history, so the tail lags further
++// behind the further down it you look. Storing positions rather than drawing
++// from a formula is what lets the tail follow an arbitrary path - a bouncing or
++// weaving shot drags its tail through the same curve it travelled.
++static void handle_trail(void) {
++    // See handle_chain(): a redefined slot can send a projectile launched as
++    // something else through here with no strand of its own.
++    if (!projectile->phase) return;
++
++    // Strung from an actor: the projectile does not travel under its own power
++    // at all, it simply sits on that actor and records where it has been. Every
++    // other part of the engine - the off-screen test, the hit scripts' idea of
++    // where this happened - then reads the actor's position for free.
++    if (TRAIL_HAS_HEAD(projectile)) {
++        actor_t *head = TRAIL_HEAD(projectile);
++        projectile->pos.x = head->pos.x;
++        projectile->pos.y = head->pos.y;
++    }
++
++    UBYTE strand = STRAND_INDEX(projectile);
++    UBYTE n = strand_length(proj_def);
++    // The cursor walks backwards, which makes entry (head + k) the position k
++    // passes ago - so the segments read forward from the head and this is the
++    // only place the ring has to wrap.
++    UBYTE head = strand_head[strand];
++    head = (head == 0) ? (n - 1) : (head - 1);
++    strand_head[strand] = head;
++    strand_points[strand][head].x = projectile->pos.x;
++    strand_points[strand][head].y = projectile->pos.y;
++}
++#endif
++
++static void handle_types(void) {
++    switch (proj_def->type) {
++#ifdef DYNPROJ_ENABLE_BOOMERANG
++        case BOOMERANG:
++            handle_boomerang();
++            break;
++#endif
++#ifdef DYNPROJ_ENABLE_SINE
++        case SINE:
++            handle_sine();
++            break;
++#endif
++#ifdef DYNPROJ_ENABLE_ORBIT
++        case ORBIT:
++            handle_orbit();
++            break;
++#endif
++#ifdef DYNPROJ_ENABLE_HOOKSHOT
++        case HOOKSHOT:
++            handle_hookshot();
++            break;
++#endif
++#ifdef DYNPROJ_ENABLE_ANCHOR
++        case ANCHOR:
++            handle_anchor();
++            break;
++#endif
++#ifdef DYNPROJ_ENABLE_CUSTOM
++        case CUSTOM:
++            handle_custom();
++            break;
++#endif
++#ifdef DYNPROJ_ENABLE_CHAIN
++        case CHAIN:
++            handle_chain();
++            break;
++#endif
++#ifdef DYNPROJ_ENABLE_TRAIL
++        case TRAIL:
++            handle_trail();
++            break;
++#endif
++        default:
++            break;
++    }
++}
++
++// A projectile in "Remove Projectile" collision mode reached a solid tile.
++static void projectile_hit_tile(void) {
++    // Runs before the projectile is retired, so the script still sees where it
++    // landed and gets in ahead of any removal script.
++    run_tile_hit_script();
++#ifdef DYNPROJ_ENABLE_HOOKSHOT
++    if (proj_def->type == HOOKSHOT) {
++        hookshot_hit_tile();
++        return;
++    }
++#endif
++    remove_projectile();
++}
++
++#ifdef DYNPROJ_USES_STRANDS
++// Actor collision for the behaviours that are a run of sprites rather than one:
++// the whole strand is dangerous, not just the projectile's own position. The
++// first hit wins - there is only one hit to report, and walking the rest of the
++// strand after finding one would cost tile tests for no gain.
++static actor_t *strand_overlapping(actor_t *ignore) {
++    // projectile_launch() refuses to launch a chain or trail without a strand,
++    // so this only guards against a definition whose behaviour was rewritten
++    // out from under projectiles already in flight - phase 0 would index the
++    // pool at -1.
++    if (!projectile->phase) return NULL;
++
++    UBYTE n = strand_length(proj_def);
++    upoint16_t *point = STRAND_POINTS(projectile);
++    UBYTE first = 0, last = n;
++
++#ifdef DYNPROJ_ENABLE_CHAIN
++    if (proj_def->type == CHAIN) {
++        // Skip both end links: they sit exactly on the actors the chain is
++        // strung between, so testing them would report a hit on its own anchors
++        // every single pass.
++        first = 1;
++        last = n - 1;
++    }
++#endif
++#ifdef DYNPROJ_ENABLE_TRAIL
++    if (proj_def->type == TRAIL) {
++        // The head is tested by the caller as usual; here only the drawn
++        // segments matter, so step through the history the way the render does.
++        UBYTE spacing = trail_spacing(proj_def);
++        UBYTE head = strand_head[STRAND_INDEX(projectile)];
++        // The actor a trail is strung from always takes the ignore slot: the
++        // newest segment is only a pass or two behind it, so a stationary head
++        // sits inside its own tail and would answer every test.
++        UBYTE skip_player = FALSE;
++        if (TRAIL_HAS_HEAD(projectile)) {
++            skip_player = (ignore == &PLAYER);
++            ignore = TRAIL_HEAD(projectile);
++        }
++        for (UBYTE i = spacing - 1; i < n; i += spacing) {
++            UBYTE index = head + i;
++            if (index >= n) index -= n;
++            actor_t *hit = actor_overlapping_bb(&proj_def->bounds, &point[index], ignore);
++            // With the head actor holding the ignore slot, "Ignore player
++            // collision" has to be applied by hand for the rest of the tail.
++            if (hit && !(skip_player && hit == &PLAYER)) return hit;
++        }
++        return NULL;
++    }
++#endif
++
++    for (UBYTE i = first; i < last; ++i) {
++        actor_t *hit = actor_overlapping_bb(&proj_def->bounds, &point[i], ignore);
++        if (hit) return hit;
++    }
++    return NULL;
++}
++#endif
++
++static void handle_bounce(void) {
++    if (proj_def->collision == 0) {
++        return;
++    }
++#ifdef DYNPROJ_ENABLE_CHAIN
++    if (proj_def->type == CHAIN) {
++        // A chain is strung between two actors and passes over the scenery
++        // between them, exactly as both reference chains do. `collision` says
++        // how its links are placed instead, so it must not reach the tile tests
++        // below at all.
++        return;
++    }
++#endif
++#ifdef DYNPROJ_ENABLE_TRAIL
++    if (proj_def->type == TRAIL && TRAIL_HAS_HEAD(projectile)) {
++        // The position being tested is the head actor's, and an actor stands
++        // hard against the scenery all the time - "Remove projectile" would
++        // fire the moment it walked into a wall. A trail hung off an actor
++        // follows that actor and leaves the tiles to it.
++        return;
++    }
++#endif
++#ifdef DYNPROJ_ENABLE_HOOKSHOT
++    if (proj_def->type == HOOKSHOT) {
++        // Only the head reacts to tiles, and only while it is still flying out.
++        // A chain link overlapping a wall must not grab it.
++        if (projectile_hookshot_state != HOOKSHOT_FIRING || projectile->x != 0) {
++            return;
++        }
++    }
++#endif
++
++#if DYNPROJ_TILE_COLLISION == 1
++    // Bounding box mode: test against the tiles the projectile's own bounds
++    // rect covers, the way the stock actor collision does.
++    UBYTE tile_x0 = SUBPX_TO_TILE(projectile->pos.x + proj_def->bounds.left);
++    UBYTE tile_x1 = SUBPX_TO_TILE(projectile->pos.x + proj_def->bounds.right);
++    UBYTE tile_y0 = SUBPX_TO_TILE(projectile->pos.y + proj_def->bounds.top);
++    UBYTE tile_y1 = SUBPX_TO_TILE(projectile->pos.y + proj_def->bounds.bottom);
++
++    if (proj_def->collision == 1) {
++        if (tile_col_test_range_x(COLLISION_ALL, tile_y0, tile_x0, tile_x1)) {
++            projectile_hit_tile();
++            return;
++        }
++    } else {
++        // Bounce off the tiles just outside each edge, across that edge's span.
++        if (tile_col_test_range_x(COLLISION_TOP, tile_y1, tile_x0, tile_x1)) {
++            projectile->delta_pos.y = proj_def->bounce << 1;
++            run_tile_hit_script();
++            return;
++        }
++
++        if (proj_def->collision == 3) {
++            // if only floor collision
++            return;
++        }
++
++        if (tile_col_test_range_x(COLLISION_BOTTOM, tile_y0, tile_x0, tile_x1)) {
++            projectile->delta_pos.y = -(proj_def->bounce << 1);
++            run_tile_hit_script();
++            return;
++        }
++        if (tile_col_test_range_y(COLLISION_RIGHT, tile_x1, tile_y0, tile_y1)) {
++            projectile->delta_pos.x = -(proj_def->bounce << 1);
++            run_tile_hit_script();
++            return;
++        }
++        if (tile_col_test_range_y(COLLISION_LEFT, tile_x0, tile_y0, tile_y1)) {
++            projectile->delta_pos.x = proj_def->bounce << 1;
++            run_tile_hit_script();
++        }
++    }
++#else
++    // Origin point mode: one tile lookup at the projectile position.
++    WORD tile_x = SUBPX_TO_TILE(projectile->pos.x);
++    WORD tile_y = SUBPX_TO_TILE(projectile->pos.y);
++
++    if (proj_def->collision == 1) {
++        if (tile_at(tile_x, tile_y) & COLLISION_ALL) {
++            projectile_hit_tile();
++            return;
++        }
++    } else {
++        if (tile_at(tile_x, tile_y) & COLLISION_TOP) {
++            projectile->delta_pos.y = proj_def->bounce << 1;
++            run_tile_hit_script();
++            return;
++        }
++
++        if (proj_def->collision == 3) {
++            // if only floor collision
++            return;
++        }
++
++        if (tile_at(tile_x, tile_y) & COLLISION_BOTTOM) {
++            projectile->delta_pos.y = -(proj_def->bounce << 1);
++            run_tile_hit_script();
++            return;
++        }
++        if (tile_at(tile_x, tile_y) & COLLISION_RIGHT) {
++            projectile->delta_pos.x = -(proj_def->bounce << 1);
++            run_tile_hit_script();
++            return;
++        }
++        if (tile_at(tile_x, tile_y) & COLLISION_LEFT) {
++            projectile->delta_pos.x = proj_def->bounce << 1;
++            run_tile_hit_script();
++        }
++    }
++#endif
++}
++
++void projectiles_init(void) BANKED {
++    // All three script slots are plain globals, so they would otherwise still
++    // hold whatever the previous scene set. Cleared together on scene load so
++    // every scene starts from "no scripts attached".
++    script_bank = 0;
++    tile_hit_script_bank = 0;
++    actor_hit_script_bank = 0;
++#ifdef DYNPROJ_ENABLE_HOOKSHOT
++    head_pos.x = head_pos.y = 0;
++#endif
++#ifdef DYNPROJ_USES_STRANDS
++    // The pool is freed wholesale rather than per projectile: the pool entries
++    // themselves are being reset just below, so nothing is left holding one.
++    for (UBYTE i = 0; i != DYNPROJ_MAX_STRANDS; ++i) strand_taken[i] = FALSE;
++#endif
++    projectiles_active_head = projectiles_inactive_head = NULL;
++    for (projectile_t * proj = projectiles; proj < (projectiles + MAX_PROJECTILES); ++proj) {
++        LL_PUSH_HEAD(projectiles_inactive_head, proj);
++    }
++}
++
++static bool check_stop(void) {
++    if (!projectile_pause) return false;
++    if (projectile_pause == 1) return true;
++    else if (projectile_pause == 2 && VM_ISLOCKED()) return true;
++    return false;
++}
++
++void projectiles_update(void) BANKED {
++    // Declared whatever the collision schedule is: the behaviour update below
++    // keeps its own every-other-frame cadence off the same counter, so wrapping
++    // this in the spread test would leave "Collision checks: Every frame"
++    // referring to a variable that does not exist.
++    static UBYTE tmp_iterator;
++
+     projectile = projectiles_active_head;
+     prev_projectile = NULL;
++    next_projectile = false;
+ 
++    // One index -> pointer lookup for the whole pass, however many projectiles
++    // are in flight. The index can come from a variable, so an out of range one
++    // must not become a pointer past the end of the array; 0 is the player.
++    if (projectile_actor_index >= MAX_ACTORS) projectile_actor_index = 0;
++    projectile_actor = actors + projectile_actor_index;
++
++    // Clip window in tiles: the visible area grown by CLIP_EXT on each side.
++    // Each edge falls back to the map limit when the arithmetic would wrap,
++    // which is what keeps a projectile far off screen from folding back into
++    // range. The far edges can always overflow; the near ones only when there
++    // is a margin to subtract, and writing that case out keeps the optimizer
++    // from warning about a test it can prove (warning 110).
+     UBYTE draw_scroll_tx = PX_TO_TILE(MAX(0, draw_scroll_x));
+     UBYTE draw_scroll_ty = PX_TO_TILE(MAX(0, draw_scroll_y));
++#if DYNPROJ_CLIP_EXT == 0
++    min_x = draw_scroll_tx;
++    min_y = draw_scroll_ty;
++#else
+     UBYTE clip_x_left = draw_scroll_tx - CLIP_EXT;
+     min_x = (clip_x_left < draw_scroll_tx) ? clip_x_left : 0U;
++    UBYTE clip_y_top = draw_scroll_ty - CLIP_EXT;
++    min_y = (clip_y_top < draw_scroll_ty) ? clip_y_top : 0U;
++#endif
+     UBYTE clip_x_right = draw_scroll_tx + DEVICE_SCREEN_WIDTH + CLIP_EXT;
+     max_x = (clip_x_right > draw_scroll_tx) ? clip_x_right : 255U;
+-    UBYTE clip_y_top = draw_scroll_ty - CLIP_EXT;
+-    min_y = (clip_y_top < draw_scroll_ty) ? clip_y_top : 0U;
+     UBYTE clip_y_bottom = draw_scroll_ty + DEVICE_SCREEN_HEIGHT + CLIP_EXT;
+     max_y = (clip_y_bottom > draw_scroll_ty) ? clip_y_bottom : 255U;
+ 
+ #if PROJECTILES_COLLISION_SPREAD != EVERY_FRAME
++    // Seeded from game_time so the same projectile is not always the one that
++    // gets tested first.
+     tmp_iterator = game_time;
+ #endif
+ 
+     while (projectile) {
+-        if (projectile->def.life_time == 0) {
+-            remove_projectile();
+-            continue;
+-        }
+-        projectile->def.life_time--;
++        proj_def = projectile_defs + projectile->def_index;
++        if (!check_stop()) {
++            if (projectile->life_time == 0) {
++                remove_projectile();
++                continue;
++            }
++            if (!projectile_no_lifetime && !(proj_def->flags & INFINITE_LIFETIME)) {
++                projectile->life_time--;
++            }
+ 
+-        // Check reached animation tick frame
+-        if ((game_time & projectile->def.anim_tick) == 0) {
+-            projectile->frame++;
+-            // Check reached end of animation
+-            if (projectile->frame == projectile->frame_end) {
+-                if (!projectile->def.anim_noloop) {
+-                    projectile->frame = projectile->frame_start;
+-                } else {
+-                    projectile->frame--;
++            // Check reached animation tick frame
++            if ((game_time & proj_def->anim_tick) == 0) {
++                // The frame range comes from the definition rather than being
++                // duplicated on every projectile.
++                const animation_t *anim = &proj_def->animations[projectile->dir];
++                projectile->frame++;
++                // Check reached end of animation
++                if (projectile->frame > anim->end) {
++                    projectile->frame = proj_def->anim_noloop ? anim->end : anim->start;
+                 }
+             }
+-        }
+ 
+-        // Move projectile
+-        uint16_t pos;
+-        pos = projectile->pos.x + projectile->delta_pos.x;
+-        if ((SUBPX_TO_TILE(pos) < min_x) || (SUBPX_TO_TILE(pos) >= max_x))
+-        {
+-            remove_projectile();
+-            continue;
+-        }
+-        projectile->pos.x = pos;
+-
+-        pos = projectile->pos.y + projectile->delta_pos.y;
+-        if ((SUBPX_TO_TILE(pos) < min_y) || (SUBPX_TO_TILE(pos) >= max_y))
+-        {
+-            remove_projectile();
+-            continue;
+-        }
+-        projectile->pos.y = pos;
+-
++            // Actor collision runs on the spread schedule. The counter is
++            // stepped for every projectile so the ones that are skipped this
++            // pass are the ones tested on the next.
+ #if PROJECTILES_COLLISION_SPREAD != EVERY_FRAME
+-        if ((tmp_iterator++ & PROJECTILES_COLLISION_SPREAD) == 0) {
++            if ((tmp_iterator++ & PROJECTILES_COLLISION_SPREAD) == 0) {
+ #endif
+-            actor_t *hit_actor = NULL;
+-            if (projectile->def.collision_mask == COLLISION_GROUP_PLAYER) {
+-                if  (CHK_FLAG(PLAYER.flags, ACTOR_FLAG_COLLISION) && bb_intersects(&projectile->def.bounds, &projectile->pos, &PLAYER.bounds, &PLAYER.pos)) {
+-                    hit_actor = &PLAYER;
++                actor_t *hit_actor;
++                actor_t *ignore_actor = (proj_def->flags & IGNORE_PLAYER) ? &PLAYER : NULL;
++#ifdef DYNPROJ_ENABLE_HOOKSHOT
++                // A hookshot only looks for actors while its head is flying
++                // out: during a pull the head rides along with its target and
++                // would re-trigger that actor's hit script every frame, and the
++                // chain links are decoration that should not hit anything.
++                if (proj_def->type == HOOKSHOT &&
++                    !(projectile->x == 0 && projectile_hookshot_state == HOOKSHOT_FIRING)) {
++                    hit_actor = NULL;
++                } else
++#endif
++#ifdef DYNPROJ_ENABLE_CHAIN
++                if (proj_def->type == CHAIN) {
++                    // The midpoint a chain keeps as its position is not part of
++                    // the chain, so only the links themselves are tested.
++                    hit_actor = strand_overlapping(ignore_actor);
++                } else
++#endif
++                {
++#ifdef DYNPROJ_ENABLE_TRAIL
++                    // The head of an actor-strung trail *is* that actor, so
++                    // testing the projectile's own position would report a hit
++                    // on it every pass. Only the tail is tested.
++                    if (proj_def->type == TRAIL && TRAIL_HAS_HEAD(projectile)) {
++                        hit_actor = NULL;
++                    } else
++#endif
++                    {
++                        hit_actor = actor_overlapping_bb(&proj_def->bounds,
++                            &projectile->pos, ignore_actor);
++                    }
++#ifdef DYNPROJ_ENABLE_TRAIL
++                    // Nothing on the head, so try the tail behind it: the whole
++                    // trail is dangerous, not just the sprite leading it.
++                    if (!hit_actor && proj_def->type == TRAIL) {
++                        hit_actor = strand_overlapping(ignore_actor);
++                    }
++#endif
+                 }
+-            } else {
+-                hit_actor = actor_overlapping_bb(&projectile->def.bounds, &projectile->pos, NULL);
++                if (hit_actor && (hit_actor->collision_group & proj_def->collision_mask)) {
++                    // Hit! - Fire collision script here
++                    if ((hit_actor->script.bank) && (hit_actor->hscript_hit & SCRIPT_TERMINATED)) {
++                        script_execute(hit_actor->script.bank, hit_actor->script.ptr, &(hit_actor->hscript_hit), 1, (UWORD)(proj_def->collision_group));
++                    }
++                    // The projectile's own actor-hit script, before anything
++                    // decides to retire it.
++                    run_actor_hit_script(hit_actor);
++#ifdef DYNPROJ_ENABLE_HOOKSHOT
++                    // A hookshot can grab what it hits instead of dying on it.
++                    if (proj_def->type == HOOKSHOT) {
++                        if (!hookshot_hit_actor(hit_actor) && !proj_def->strong) {
++                            remove_projectile();
++                            continue;
++                        }
++                    } else
++#endif
++                    if (!proj_def->strong) {
++                        remove_projectile();
++                        continue;
++                    }
++                }
++#if PROJECTILES_COLLISION_SPREAD != EVERY_FRAME
+             }
+-            if (hit_actor && (hit_actor->collision_group & projectile->def.collision_mask)) {
+-                // Hit! - Fire collision script here
+-                if ((hit_actor->script.bank) && (hit_actor->hscript_hit & SCRIPT_TERMINATED)) {
+-                    script_execute(hit_actor->script.bank, hit_actor->script.ptr, &(hit_actor->hscript_hit), 1, (UWORD)(projectile->def.collision_group));
++#endif
++
++            // The behaviour update keeps its own every-other-frame cadence,
++            // independent of how often collisions are tested.
++            if ((tmp_iterator++ & 1) == 0) {
++                next_projectile = false;
++                handle_types();
++                if (next_projectile) {
++                    // handle_types() removed this projectile and already
++                    // advanced the cursor - nothing left to run on it.
++                    continue;
+                 }
+-                if (!projectile->def.strong) {
+-                    remove_projectile();
++                handle_bounce();
++                if (next_projectile) {
+                     continue;
+                 }
++                BYTE gravity = DEF_GRAVITY(proj_def);
++                if (gravity) {
++                    projectile->delta_pos.y -= gravity << 1;
++                }
+             }
+-#if PROJECTILES_COLLISION_SPREAD != EVERY_FRAME
++
++            // Move projectile (linear behaviours: default, arc, boomerang,
++            // sine, and a trail that carries its own head - which travels like
++            // a plain shot and only differs in leaving a record of where it has
++            // been. One strung from an actor is placed by that actor instead.)
++            if (proj_def->type <= SINE ||
++                (proj_def->type == TRAIL && !TRAIL_HAS_HEAD(projectile))) {
++                projectile->pos.x += projectile->delta_pos.x;
++                projectile->pos.y -= projectile->delta_pos.y;
++            }
+         }
++
++        // Off-screen removal (bounds check only — actual drawing happens in
++        // projectiles_render, which core.c calls right after this). Tested in
++        // tiles against the clip window computed above, the way stock does it.
++        UBYTE tile_x = SUBPX_TO_TILE(projectile->pos.x),
++              tile_y = SUBPX_TO_TILE(projectile->pos.y);
++
++        if (tile_x < min_x || tile_x >= max_x || tile_y < min_y || tile_y >= max_y) {
++#ifdef DYNPROJ_ENABLE_CHAIN
++            if (proj_def->type == CHAIN) {
++                // A chain is held by two actors, which the engine keeps alive
++                // whether or not they are on screen, so there is nothing to
++                // reclaim by cutting it - and a leash destroyed the moment its
++                // midpoint scrolled away would never come back. It ends with
++                // its lifetime, or when a script removes it.
++            } else
+ #endif
++#ifdef DYNPROJ_ENABLE_TRAIL
++            if (proj_def->type == TRAIL && TRAIL_HAS_HEAD(projectile)) {
++                // Same reasoning: it belongs to an actor that outlives the
++                // screen edge, so it waits for that actor to come back.
++            } else
++#endif
++#ifdef DYNPROJ_ENABLE_HOOKSHOT
++            if (proj_def->type == HOOKSHOT) {
++                // Only the head answers for the whole hookshot; a chain link
++                // scrolling off screen must not cut the shot short.
++                if (projectile->x == 0) {
++                    if (projectile_hookshot_state == HOOKSHOT_FIRING) {
++                        // Reached the edge of the screen - start coming back.
++                        change_hookshot_state();
++                    } else if (HOOKSHOT_CLOSING()) {
++                        // The head left the screen while returning or pulling,
++                        // so it will never meet its source again. Retire it
++                        // instead of leaking the pool entry. A parked or stuck
++                        // head is left alone - it is meant to sit where it is.
++                        projectile_hookshot_state = HOOKSHOT_DONE;
++                        remove_projectile();
++                        continue;
++                    }
++                }
++            } else
++#endif
++            {
++                remove_projectile();
++                continue;
++            }
++        }
+ 
+         prev_projectile = projectile;
+         projectile = projectile->next;
+     }
+ }
+ 
++#ifdef DYNPROJ_USES_STRANDS
++// A strand point is drawn from the same spritesheet as the projectile itself,
++// so this runs with the sprite bank already paged in. Points can sit anywhere
++// on the map, unlike the projectile - which the update pass retires once it
++// leaves the clip window - so each one is range checked before it is drawn: a
++// screen coordinate is 8 bit, and a link a few pixels past the left edge would
++// otherwise wrap round and appear on the right.
++static void render_strand_point(spritesheet_t *sprite, upoint16_t *point, UBYTE frame) NONBANKED {
++    WORD screen_x = (WORD)SUBPX_TO_PX(point->x) - draw_scroll_x;
++    WORD screen_y = (WORD)SUBPX_TO_PX(point->y) - draw_scroll_y;
++    if (screen_x <= -16 || screen_x >= (DEVICE_SCREEN_PX_WIDTH + 16)) return;
++    if (screen_y <= -16 || screen_y >= (DEVICE_SCREEN_PX_HEIGHT + 16)) return;
++
++    allocated_hardware_sprites += move_metasprite(
++        *(sprite->metasprites + frame),
++        proj_def->base_tile,
++        allocated_hardware_sprites,
++        (UINT8)screen_x,
++        (UINT8)screen_y
++    );
++}
++
++// Successive links and tail segments step on through the animation, wrapping at
++// its end. With a one frame animation they all look alike; with a two frame one
++// they alternate, which breaks up what would otherwise be a run of identical
++// sprites without needing anywhere to store a per-segment frame.
++static UBYTE next_strand_frame(UBYTE frame) NONBANKED {
++    const animation_t *anim = &proj_def->animations[projectile->dir];
++    return (frame >= anim->end) ? anim->start : (frame + 1);
++}
++#endif
++
+ void projectiles_render(void) NONBANKED {
+-    projectile_t* projectile = projectiles_active_head;
++    projectile = projectiles_active_head;
++    prev_projectile = NULL;
+ 
+     _save_bank = _current_bank;
+ 
+     while (projectile) {
+-        UINT8 screen_x = SUBPX_TO_PX(projectile->pos.x) - draw_scroll_x;
+-        UINT8 screen_y = SUBPX_TO_PX(projectile->pos.y) - draw_scroll_y;
++        proj_def = projectile_defs + projectile->def_index;
++        UINT8 screen_x = SUBPX_TO_PX(projectile->pos.x) - draw_scroll_x,
++              screen_y = SUBPX_TO_PX(projectile->pos.y) - draw_scroll_y;
+ 
+-        SWITCH_ROM(projectile->def.sprite.bank);
+-        spritesheet_t *sprite = projectile->def.sprite.ptr;
++        if (!projectile_hide) {
++            SWITCH_ROM(proj_def->sprite.bank);
++            spritesheet_t *sprite = proj_def->sprite.ptr;
+ 
+-        allocated_hardware_sprites += move_metasprite(
+-            *(sprite->metasprites + projectile->frame),
+-            projectile->def.base_tile,
+-            allocated_hardware_sprites,
+-            screen_x,
+-            screen_y
+-        );
++#ifdef DYNPROJ_ENABLE_CHAIN
++            if (proj_def->type == CHAIN && projectile->phase) {
++                // A chain is nothing but its links - there is no separate head
++                // sprite to draw at the projectile's own position, which is
++                // only the midpoint it keeps for bookkeeping.
++                UBYTE n = strand_length(proj_def);
++                upoint16_t *link = STRAND_POINTS(projectile);
++                UBYTE frame = projectile->frame;
++                for (UBYTE i = 0; i != n; ++i) {
++                    render_strand_point(sprite, &link[i], frame);
++                    frame = next_strand_frame(frame);
++                }
++            } else
++#endif
++            {
++#ifdef DYNPROJ_ENABLE_TRAIL
++                // A trail strung from an actor draws only its tail - the engine
++                // is already drawing that actor at the head of it, and a second
++                // sprite on the same spot would just eat OAM.
++                if (proj_def->type != TRAIL || !TRAIL_HAS_HEAD(projectile))
++#endif
++                {
++                    allocated_hardware_sprites += move_metasprite(
++                        *(sprite->metasprites + projectile->frame),
++                        proj_def->base_tile,
++                        allocated_hardware_sprites,
++                        screen_x,
++                        screen_y
++                    );
++                }
+ 
++#ifdef DYNPROJ_ENABLE_TRAIL
++                if (proj_def->type == TRAIL && projectile->phase) {
++                    // One sprite every `spacing` entries back through the
++                    // history, so each segment lags a little further behind
++                    // than the one in front of it. Starting at spacing - 1 puts
++                    // the last segment on the oldest entry, which is what makes
++                    // the run exactly the requested segment count.
++                    UBYTE n = strand_length(proj_def);
++                    UBYTE spacing = trail_spacing(proj_def);
++                    UBYTE head = strand_head[STRAND_INDEX(projectile)];
++                    upoint16_t *point = STRAND_POINTS(projectile);
++                    UBYTE frame = projectile->frame;
++                    for (UBYTE i = spacing - 1; i < n; i += spacing) {
++                        UBYTE index = head + i;
++                        if (index >= n) index -= n;
++                        frame = next_strand_frame(frame);
++                        render_strand_point(sprite, &point[index], frame);
++                    }
++                }
++#endif
++            }
++        }
++
++        prev_projectile = projectile;
+         projectile = projectile->next;
+     }
+ 
+     SWITCH_ROM(_save_bank);
+@@ -172,66 +1558,189 @@
+ 
+ void projectile_launch(UBYTE index, upoint16_t *pos, UBYTE angle) BANKED {
+     projectile_t *projectile = projectiles_inactive_head;
+     if (projectile) {
+-        memcpy(&projectile->def, &projectile_defs[index], sizeof(projectile_def_t));
++        proj_def = projectile_defs + index;
++        projectile->def_index = index;
++        projectile->life_time = proj_def->life_time;
+ 
+         // Set correct projectile frames based on angle
+-        UBYTE dir = DIR_UP;
++        projectile->dir = DIR_UP;
+         if (angle <= 224) {
+             if (angle >= 160) {
+-                dir = DIR_LEFT;
++                projectile->dir = DIR_LEFT;
+             } else if (angle > 96) {
+-                dir = DIR_DOWN;
++                projectile->dir = DIR_DOWN;
+             } else if (angle >= 32) {
+-                dir = DIR_RIGHT;
++                projectile->dir = DIR_RIGHT;
+             }
+         }
+ 
+         // set animation
+-        projectile->frame = projectile->frame_start = projectile->def.animations[dir].start;
+-        projectile->frame_end = projectile->def.animations[dir].end + 1;
++        projectile->frame = proj_def->animations[projectile->dir].start;
+ 
+         // set coordinates
+-        UINT16 initial_offset = projectile->def.initial_offset;
+-        UINT8 move_speed = projectile->def.move_speed;
+-
++        UINT16 initial_offset = proj_def->initial_offset;
+         projectile->pos.x = pos->x;
+         projectile->pos.y = pos->y;
+ 
+-        if (angle == ANGLE_LEFT) {
+-            projectile->pos.x -= initial_offset;
+-            projectile->delta_pos.x = -move_speed;
+-            projectile->delta_pos.y = 0;
+-        } else if (angle == ANGLE_RIGHT) {
+-            projectile->pos.x += initial_offset;
+-            projectile->delta_pos.x = move_speed;
+-            projectile->delta_pos.y = 0;
+-        } else if (angle == ANGLE_UP) {
+-            projectile->pos.y -= initial_offset;
+-            projectile->delta_pos.x = 0;
+-            projectile->delta_pos.y = -move_speed;
+-        } else if (angle == ANGLE_DOWN) {
+-            projectile->pos.y += initial_offset;
+-            projectile->delta_pos.x = 0;
+-            projectile->delta_pos.y = move_speed;
+-        } else {
+-            INT8 sinv = SIN(angle), cosv = COS(angle);
++        INT8 sinv = SIN(angle), cosv = COS(angle);
+ 
+-            // Offset by initial amount
+-            while (initial_offset > 0xFFu) {
+-                projectile->pos.x += ((sinv * (UINT8)(0xFF)) >> 7);
+-                projectile->pos.y -= ((cosv * (UINT8)(0xFF)) >> 7);
+-                initial_offset -= 0xFFu;
++        // Offset by initial amount, in chunks the 8 bit maths can handle.
++        while (initial_offset > 0xFFu) {
++            projectile->pos.x += ((sinv * (UINT8)(0xFF)) >> 7);
++            projectile->pos.y -= ((cosv * (UINT8)(0xFF)) >> 7);
++            initial_offset -= 0xFFu;
++        }
++        if (initial_offset > 0) {
++            projectile->pos.x += ((sinv * (UINT8)(initial_offset)) >> 7);
++            projectile->pos.y -= ((cosv * (UINT8)(initial_offset)) >> 7);
++        }
++
++        // type, flags, collision, gravity, bounce, amplitude and frequency all
++        // live in the definition, written by "Define Projectile Slot". Only the
++        // per-instance seeds come from the launch globals.
++        projectile->phase = projectile_phase;      // sine start / anchor offset
++        projectile->x = projectile_distance;       // hookshot chain / orbit x
++        projectile->y = projectile_distance2;      // hookshot source / orbit y
++
++        point_translate_angle_to_delta(&projectile->delta_pos, angle, proj_def->move_speed);
++        // The 4.3.0 helper uses delta.y negative-for-up; this plugin's handlers
++        // treat delta.y as positive-for-up, so flip it back to that convention.
++        projectile->delta_pos.y = -projectile->delta_pos.y;
++
++        switch (proj_def->type) {
++#ifdef DYNPROJ_ENABLE_ARC
++            case ARC:
++                projectile->delta_pos.y = projectile->y << 1;
++                break;
++#endif
++#ifdef DYNPROJ_ENABLE_HOOKSHOT
++            case HOOKSHOT:
++                projectile_hookshot_state = HOOKSHOT_FIRING;
++                if (projectile->x == 0) {
++                    // Launching the head: re-anchor the shared chain position.
++                    // The links are launched in the same frame but sit earlier
++                    // in the active list, so they run handle_hookshot() before
++                    // the head does - without this they would interpolate
++                    // against the previous hook's position and flash there for
++                    // a frame.
++                    head_pos.x = projectile->pos.x;
++                    head_pos.y = projectile->pos.y;
++                }
++                break;
++#endif
++#ifdef DYNPROJ_ENABLE_ANCHOR
++            case ANCHOR:
++                // phase is the actor index for this behaviour, and it can come
++                // from a variable, so it must not index past the array.
++                if (projectile->phase >= MAX_ACTORS) projectile->phase = 0;
++                break;
++#endif
++#ifdef DYNPROJ_ENABLE_CHAIN
++            case CHAIN:
++#endif
++#ifdef DYNPROJ_ENABLE_TRAIL
++            case TRAIL:
++#endif
++#ifdef DYNPROJ_USES_STRANDS
++            {
++                // No strand to be had means no chain and no trail: launching
++                // one regardless would leave it reading whichever strand phase
++                // 0 happens to point at. Dropping the launch is the same
++                // outcome the projectile pool already gives when it is full.
++                UBYTE strand = strand_claim();
++                if (!strand) return;
++                projectile->phase = strand;
++                UBYTE n = strand_length(proj_def);
++                upoint16_t *point = strand_points[strand - 1];
++#ifdef DYNPROJ_ENABLE_CHAIN
++                if (proj_def->type == CHAIN) {
++                    // The chain's ends are actor indexes, and either can come
++                    // from a variable, so neither may index past the array.
++                    if ((UBYTE)projectile->x >= MAX_ACTORS) projectile->x = 0;
++                    if ((UBYTE)projectile->y >= MAX_ACTORS) projectile->y = 0;
++                    // Lay it out now: this both avoids a frame of stale links
++                    // before the first update pass and gives a loose chain the
++                    // real positions its relaxation has to start from.
++                    place_chain(projectile, TRUE);
++                } else
++#endif
++                {
++                    // The head actor index is biased by one and can come from a
++                    // variable, so anything past the array falls back to 0 -
++                    // the trail carrying its own head, which is always safe.
++                    if ((UBYTE)projectile->x > MAX_ACTORS) projectile->x = TRAIL_HEAD_SELF;
++                    if (TRAIL_HAS_HEAD(projectile)) {
++                        // Start on the actor rather than wherever the launch
++                        // put us, so the tail does not have to catch up from
++                        // the muzzle on its first few passes.
++                        actor_t *head = TRAIL_HEAD(projectile);
++                        projectile->pos.x = head->pos.x;
++                        projectile->pos.y = head->pos.y;
++                    }
++                    // Seed the whole history with that position, so the trail
++                    // unfurls from where it starts instead of snapping in from
++                    // wherever the strand's previous owner left it.
++                    for (UBYTE i = 0; i != n; ++i) {
++                        point[i].x = projectile->pos.x;
++                        point[i].y = projectile->pos.y;
++                    }
++                }
++                break;
+             }
+-            if (initial_offset > 0) {
+-                projectile->pos.x += ((sinv * (UINT8)(initial_offset)) >> 7);
+-                projectile->pos.y -= ((cosv * (UINT8)(initial_offset)) >> 7);
+-            }
+-
+-            point_translate_angle_to_delta(&projectile->delta_pos, angle, move_speed);
++#endif
++            default:
++                break;
+         }
+ 
+         LL_REMOVE_HEAD(projectiles_inactive_head);
+         LL_PUSH_HEAD(projectiles_active_head, projectile);
+     }
+ }
++
++// Writes a whole behaviour into a projectile slot, the way Define Actor
++// Behavior does for actors. Everything that describes how projectiles from this
++// slot move and react lives in the definition.
++void vm_define_projectile_behavior(SCRIPT_CTX * THIS) OLDCALL BANKED {
++    UBYTE slot = *(UBYTE *)VM_REF_TO_PTR(FN_ARG0);
++    if (slot >= MAX_PROJECTILE_DEFS) return;
++    projectile_def_t *def = projectile_defs + slot;
++    def->type      = *(UBYTE *)VM_REF_TO_PTR(FN_ARG1);
++    def->flags     = *(UBYTE *)VM_REF_TO_PTR(FN_ARG2);
++    def->collision = *(UBYTE *)VM_REF_TO_PTR(FN_ARG3);
++    // Clamped rather than truncated: gravity is only 4 bits, and a value from a
++    // variable (or an older project saved when the range was wider) would
++    // otherwise wrap round into the opposite sign.
++    BYTE gravity = *(BYTE *)VM_REF_TO_PTR(FN_ARG4);
++    if (gravity > DEF_GRAVITY_MAX) gravity = DEF_GRAVITY_MAX;
++    else if (gravity < DEF_GRAVITY_MIN) gravity = DEF_GRAVITY_MIN;
++    def->gravity   = (UBYTE)(gravity + DEF_GRAVITY_BIAS);
++    def->bounce    = *(UBYTE *)VM_REF_TO_PTR(FN_ARG5);
++    def->amplitude = *(BYTE  *)VM_REF_TO_PTR(FN_ARG6);
++    def->frequency = *(UBYTE *)VM_REF_TO_PTR(FN_ARG7);
++    (void)THIS;
++}
++
++void set_removal_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
++    UBYTE *bank = VM_REF_TO_PTR(FN_ARG1);
++    UBYTE **ptr = VM_REF_TO_PTR(FN_ARG0);
++    script_bank = *bank;
++    script_address = *ptr;
++    (void)THIS;
++}
++
++void set_tile_hit_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
++    UBYTE *bank = VM_REF_TO_PTR(FN_ARG1);
++    UBYTE **ptr = VM_REF_TO_PTR(FN_ARG0);
++    tile_hit_script_bank = *bank;
++    tile_hit_script_address = *ptr;
++    (void)THIS;
++}
++
++void set_actor_hit_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
++    UBYTE *bank = VM_REF_TO_PTR(FN_ARG1);
++    UBYTE **ptr = VM_REF_TO_PTR(FN_ARG0);
++    actor_hit_script_bank = *bank;
++    actor_hit_script_address = *ptr;
++    (void)THIS;
++}

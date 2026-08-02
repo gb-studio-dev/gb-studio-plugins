@@ -1,7 +1,7 @@
-Index: src\states\adventure.c
+Index: src/states/adventure.c
 ===================================================================
---- src\states\adventure.c
-+++ src\states\adventure.c
+--- src/states/adventure.c
++++ src/states/adventure.c
 @@ -15,8 +15,9 @@
  #include "events.h"
  #include "rand.h"

@@ -18,7 +18,7 @@
           "Mico27/SceneStackExPlugin"
         ]
       },
-      "use": "Cont_Scr_M_Sce"
+      "use": "Cont_ScreenS_M_Sce"
     },
     {
       "when": {
@@ -29,7 +29,7 @@
           "SceneStackExPlugin"
         ]
       },
-      "use": "Cont_Scr_M_Sce"
+      "use": "Cont_ScreenS_M_Sce"
     },
     {
       "when": {
@@ -59,7 +59,7 @@
           "Mico27/MetaTilePlugin"
         ]
       },
-      "use": "Cont_Scr_M"
+      "use": "Cont_ScreenS_M"
     },
     {
       "when": {
@@ -69,7 +69,7 @@
           "MetaTilePlugin"
         ]
       },
-      "use": "Cont_Scr_M"
+      "use": "Cont_ScreenS_M"
     },
     {
       "when": {
@@ -79,7 +79,7 @@
           "Mico27/SceneStackExPlugin"
         ]
       },
-      "use": "Cont_Scr_Sce"
+      "use": "Cont_ScreenS_Sce"
     },
     {
       "when": {
@@ -89,7 +89,7 @@
           "SceneStackExPlugin"
         ]
       },
-      "use": "Cont_Scr_Sce"
+      "use": "Cont_ScreenS_Sce"
     },
     {
       "when": {
@@ -99,7 +99,7 @@
           "Mico27/SceneStackExPlugin"
         ]
       },
-      "use": "Scr_M_Sce"
+      "use": "ScreenS_M_Sce"
     },
     {
       "when": {
@@ -109,7 +109,7 @@
           "SceneStackExPlugin"
         ]
       },
-      "use": "Scr_M_Sce"
+      "use": "ScreenS_M_Sce"
     },
     {
       "when": {
@@ -154,7 +154,7 @@
           "Mico27/ScreenScrollPlugin"
         ]
       },
-      "use": "Cont_Scr"
+      "use": "Cont_ScreenS"
     },
     {
       "when": {
@@ -163,7 +163,7 @@
           "ScreenScrollPlugin"
         ]
       },
-      "use": "Cont_Scr"
+      "use": "Cont_ScreenS"
     },
     {
       "when": {
@@ -190,7 +190,7 @@
           "Mico27/MetaTilePlugin"
         ]
       },
-      "use": "Scr_M"
+      "use": "ScreenS_M"
     },
     {
       "when": {
@@ -199,7 +199,7 @@
           "MetaTilePlugin"
         ]
       },
-      "use": "Scr_M"
+      "use": "ScreenS_M"
     },
     {
       "when": {
@@ -208,7 +208,7 @@
           "Mico27/SceneStackExPlugin"
         ]
       },
-      "use": "Scr_Sce"
+      "use": "ScreenS_Sce"
     },
     {
       "when": {
@@ -217,7 +217,7 @@
           "SceneStackExPlugin"
         ]
       },
-      "use": "Scr_Sce"
+      "use": "ScreenS_Sce"
     },
     {
       "when": {
@@ -273,7 +273,7 @@
           "Mico27/ScreenScrollPlugin"
         ]
       },
-      "use": "Scr"
+      "use": "ScreenS"
     },
     {
       "when": {
@@ -281,7 +281,7 @@
           "ScreenScrollPlugin"
         ]
       },
-      "use": "Scr"
+      "use": "ScreenS"
     }
   ]
 }

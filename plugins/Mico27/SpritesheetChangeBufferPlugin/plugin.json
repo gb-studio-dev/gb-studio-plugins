@@ -5,7 +5,7 @@
   "url": "https://github.com/Mico27/gbs-SpritesheetChangeBufferPlugin",
   "description": "Actors that uses the set actor spritesheet event have reserved space in the tileset VRAM. When using that event, the updating of the tileset might not happen on the same frame as the update of the tiles in the OAM, which can result in garbled tiles for a brief moment. This plugin create a buffer in the tileset VRAM to prevent the display of that visual glitch, this however means that the reserved space in the tileset VRAM will be doubled for that actor.",
   "license": "MIT",
-  "version": "4.3.2",
+  "version": "4.3.3",
   "gbsVersion": ">=4.3.0",
   "order": -4,
   "engineAltRules": [
@@ -20,7 +20,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "Cont_ScreenS_M_Sce_D_F"
+      "use": "Cont_ScreenS_M_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -33,7 +33,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "Cont_ScreenS_M_Sce_D_F"
+      "use": "Cont_ScreenS_M_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -45,7 +45,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "Cont_M_Sce_D_F"
+      "use": "Cont_M_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -57,7 +57,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "Cont_M_Sce_D_F"
+      "use": "Cont_M_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -69,7 +69,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "Cont_ScreenS_M_D_F"
+      "use": "Cont_ScreenS_M_DynamicA_F"
     },
     {
       "when": {
@@ -81,7 +81,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "Cont_ScreenS_M_D_F"
+      "use": "Cont_ScreenS_M_DynamicA_F"
     },
     {
       "when": {
@@ -93,7 +93,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Cont_ScreenS_M_Sce_D"
+      "use": "Cont_ScreenS_M_Sce_DynamicA"
     },
     {
       "when": {
@@ -105,7 +105,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Cont_ScreenS_M_Sce_D"
+      "use": "Cont_ScreenS_M_Sce_DynamicA"
     },
     {
       "when": {
@@ -141,7 +141,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "Cont_ScreenS_Sce_D_F"
+      "use": "Cont_ScreenS_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -153,7 +153,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "Cont_ScreenS_Sce_D_F"
+      "use": "Cont_ScreenS_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -165,7 +165,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "ScreenS_M_Sce_D_F"
+      "use": "ScreenS_M_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -177,7 +177,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "ScreenS_M_Sce_D_F"
+      "use": "ScreenS_M_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -188,7 +188,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "Cont_M_D_F"
+      "use": "Cont_M_DynamicA_F"
     },
     {
       "when": {
@@ -199,7 +199,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "Cont_M_D_F"
+      "use": "Cont_M_DynamicA_F"
     },
     {
       "when": {
@@ -210,7 +210,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Cont_M_Sce_D"
+      "use": "Cont_M_Sce_DynamicA"
     },
     {
       "when": {
@@ -221,7 +221,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Cont_M_Sce_D"
+      "use": "Cont_M_Sce_DynamicA"
     },
     {
       "when": {
@@ -254,7 +254,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "Cont_Sce_D_F"
+      "use": "Cont_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -265,7 +265,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "Cont_Sce_D_F"
+      "use": "Cont_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -276,7 +276,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "Cont_ScreenS_D_F"
+      "use": "Cont_ScreenS_DynamicA_F"
     },
     {
       "when": {
@@ -287,7 +287,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "Cont_ScreenS_D_F"
+      "use": "Cont_ScreenS_DynamicA_F"
     },
     {
       "when": {
@@ -298,7 +298,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Cont_ScreenS_M_D"
+      "use": "Cont_ScreenS_M_DynamicA"
     },
     {
       "when": {
@@ -309,7 +309,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Cont_ScreenS_M_D"
+      "use": "Cont_ScreenS_M_DynamicA"
     },
     {
       "when": {
@@ -364,7 +364,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Cont_ScreenS_Sce_D"
+      "use": "Cont_ScreenS_Sce_DynamicA"
     },
     {
       "when": {
@@ -375,7 +375,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Cont_ScreenS_Sce_D"
+      "use": "Cont_ScreenS_Sce_DynamicA"
     },
     {
       "when": {
@@ -408,7 +408,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "M_Sce_D_F"
+      "use": "M_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -419,7 +419,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "M_Sce_D_F"
+      "use": "M_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -430,7 +430,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "ScreenS_M_D_F"
+      "use": "ScreenS_M_DynamicA_F"
     },
     {
       "when": {
@@ -441,7 +441,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "ScreenS_M_D_F"
+      "use": "ScreenS_M_DynamicA_F"
     },
     {
       "when": {
@@ -452,7 +452,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_M_Sce_D"
+      "use": "ScreenS_M_Sce_DynamicA"
     },
     {
       "when": {
@@ -463,7 +463,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_M_Sce_D"
+      "use": "ScreenS_M_Sce_DynamicA"
     },
     {
       "when": {
@@ -496,7 +496,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "ScreenS_Sce_D_F"
+      "use": "ScreenS_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -507,7 +507,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "ScreenS_Sce_D_F"
+      "use": "ScreenS_Sce_DynamicA_F"
     },
     {
       "when": {
@@ -517,7 +517,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "Cont_D_F"
+      "use": "Cont_DynamicA_F"
     },
     {
       "when": {
@@ -527,7 +527,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "Cont_D_F"
+      "use": "Cont_DynamicA_F"
     },
     {
       "when": {
@@ -537,7 +537,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Cont_M_D"
+      "use": "Cont_M_DynamicA"
     },
     {
       "when": {
@@ -547,7 +547,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Cont_M_D"
+      "use": "Cont_M_DynamicA"
     },
     {
       "when": {
@@ -597,7 +597,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Cont_Sce_D"
+      "use": "Cont_Sce_DynamicA"
     },
     {
       "when": {
@@ -607,7 +607,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Cont_Sce_D"
+      "use": "Cont_Sce_DynamicA"
     },
     {
       "when": {
@@ -637,7 +637,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Cont_ScreenS_D"
+      "use": "Cont_ScreenS_DynamicA"
     },
     {
       "when": {
@@ -647,7 +647,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Cont_ScreenS_D"
+      "use": "Cont_ScreenS_DynamicA"
     },
     {
       "when": {
@@ -717,7 +717,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "M_D_F"
+      "use": "M_DynamicA_F"
     },
     {
       "when": {
@@ -727,7 +727,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "M_D_F"
+      "use": "M_DynamicA_F"
     },
     {
       "when": {
@@ -737,7 +737,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "M_Sce_D"
+      "use": "M_Sce_DynamicA"
     },
     {
       "when": {
@@ -747,7 +747,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "M_Sce_D"
+      "use": "M_Sce_DynamicA"
     },
     {
       "when": {
@@ -777,7 +777,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "Sce_D_F"
+      "use": "Sce_DynamicA_F"
     },
     {
       "when": {
@@ -787,7 +787,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "Sce_D_F"
+      "use": "Sce_DynamicA_F"
     },
     {
       "when": {
@@ -797,7 +797,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "ScreenS_D_F"
+      "use": "ScreenS_DynamicA_F"
     },
     {
       "when": {
@@ -807,7 +807,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "ScreenS_D_F"
+      "use": "ScreenS_DynamicA_F"
     },
     {
       "when": {
@@ -817,7 +817,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_M_D"
+      "use": "ScreenS_M_DynamicA"
     },
     {
       "when": {
@@ -827,7 +827,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_M_D"
+      "use": "ScreenS_M_DynamicA"
     },
     {
       "when": {
@@ -877,7 +877,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_Sce_D"
+      "use": "ScreenS_Sce_DynamicA"
     },
     {
       "when": {
@@ -887,7 +887,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_Sce_D"
+      "use": "ScreenS_Sce_DynamicA"
     },
     {
       "when": {
@@ -916,7 +916,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Cont_D"
+      "use": "Cont_DynamicA"
     },
     {
       "when": {
@@ -925,7 +925,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Cont_D"
+      "use": "Cont_DynamicA"
     },
     {
       "when": {
@@ -1006,7 +1006,7 @@
           "Mico27/FadeStreetPlugin"
         ]
       },
-      "use": "D_F"
+      "use": "DynamicA_F"
     },
     {
       "when": {
@@ -1015,7 +1015,7 @@
           "FadeStreetPlugin"
         ]
       },
-      "use": "D_F"
+      "use": "DynamicA_F"
     },
     {
       "when": {
@@ -1024,7 +1024,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "M_D"
+      "use": "M_DynamicA"
     },
     {
       "when": {
@@ -1033,7 +1033,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "M_D"
+      "use": "M_DynamicA"
     },
     {
       "when": {
@@ -1078,7 +1078,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Sce_D"
+      "use": "Sce_DynamicA"
     },
     {
       "when": {
@@ -1087,7 +1087,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Sce_D"
+      "use": "Sce_DynamicA"
     },
     {
       "when": {
@@ -1114,7 +1114,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_D"
+      "use": "ScreenS_DynamicA"
     },
     {
       "when": {
@@ -1123,7 +1123,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_D"
+      "use": "ScreenS_DynamicA"
     },
     {
       "when": {
@@ -1201,7 +1201,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "D"
+      "use": "DynamicA"
     },
     {
       "when": {
@@ -1209,7 +1209,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "D"
+      "use": "DynamicA"
     },
     {
       "when": {

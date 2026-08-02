@@ -1,7 +1,7 @@
-Index: include\load_save.h
+Index: include/load_save.h
 ===================================================================
---- include\load_save.h
-+++ include\load_save.h
+--- include/load_save.h
++++ include/load_save.h
 @@ -2,9 +2,9 @@
  #define _LOADSAVE_H_INCLUDE
  

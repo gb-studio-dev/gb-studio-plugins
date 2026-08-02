@@ -1,7 +1,7 @@
-Index: src\core\actor.c
+Index: src/core/actor.c
 ===================================================================
---- src\core\actor.c
-+++ src\core\actor.c
+--- src/core/actor.c
++++ src/core/actor.c
 @@ -16,9 +16,10 @@
  #include "collision.h"
  #include "ui.h"
@@ -14,17 +14,28 @@ Index: src\core\actor.c
  #ifdef STRICT
      #include <gb/bgb_emu.h>
      #include <gb/crash_handler.h>
-@@ -71,8 +72,9 @@
+@@ -71,9 +72,20 @@
      player_moving           = FALSE;
      player_iframes          = 0;
      player_collision_actor  = NULL;
      emote_actor             = NULL;
 +
      memset(actors, 0, sizeof(actors));
++
++    // Cache each actor's own index in actors[]. The dynamic actor runtime holds
++    // pointers to actors but has to report their index; reading it back from the
++    // actor avoids deriving it with (actor - actors), which SDCC compiles to a
++    // __divsint call because sizeof(actor_t) is not a power of two.
++    UBYTE actor_i;
++    actor_t * actor_p = actors;
++    for (actor_i = 0; actor_i != MAX_ACTORS; ++actor_i, ++actor_p) {
++        actor_p->actor_index = actor_i;
++    }
  }
  
  void player_init(void) BANKED {
-@@ -205,12 +207,20 @@
+     actor_set_anim_idle(&PLAYER);
+@@ -205,12 +217,20 @@
          }
  
          if (CHK_FLAG(actor->flags, ACTOR_FLAG_PINNED)) {
@@ -45,7 +56,7 @@ Index: src\core\actor.c
  
          if (((window_hide_actors) && (((screen_x + 8) > WX_REG) && ((screen_y - 8) > WY_REG)))) {
              continue;
-@@ -549,5 +559,6 @@
+@@ -549,5 +569,6 @@
      } else if (player_iframes != 0) {
          player_iframes--;
      }

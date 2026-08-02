@@ -1,7 +1,7 @@
-Index: src\states\topdown.c
+Index: src/states/topdown.c
 ===================================================================
---- src\states\topdown.c
-+++ src\states\topdown.c
+--- src/states/topdown.c
++++ src/states/topdown.c
 @@ -11,17 +11,16 @@
  #include "input.h"
  #include "trigger.h"

@@ -1,7 +1,7 @@
-Index: src\core\actor.c
+Index: src/core/actor.c
 ===================================================================
---- src\core\actor.c
-+++ src\core\actor.c
+--- src/core/actor.c
++++ src/core/actor.c
 @@ -71,8 +71,9 @@
      player_moving           = FALSE;
      player_iframes          = 0;

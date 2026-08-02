@@ -1,7 +1,7 @@
-Index: include\gbs_types.h
+Index: include/gbs_types.h
 ===================================================================
---- include\gbs_types.h
-+++ include\gbs_types.h
+--- include/gbs_types.h
++++ include/gbs_types.h
 @@ -10,8 +10,9 @@
  #include "data/scene_types.h"
  #include "bankdata.h"

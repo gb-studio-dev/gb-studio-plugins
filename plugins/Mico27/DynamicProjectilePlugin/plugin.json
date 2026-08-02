@@ -1,0 +1,136 @@
+{
+  "type": "enginePlugin",
+  "name": "Dynamic Projectile Plugin",
+  "author": "fredrikofstad (ported by Mico27)",
+  "description": "Custom projectile behaviours (arc, boomerang, sine, orbit, hookshot, anchor and script-driven) with per-projectile gravity, bounce, tile collision, infinite lifetime, pause/hide controls and on-removal scripts. Port of the CustomProjectile plugin updated for GB Studio 4.3.*.",
+  "license": "MIT",
+  "url": "https://github.com/fredrikofstad/GBStudioPlugins",
+  "version": "4.3.0",
+  "gbsVersion": ">=4.3.0",
+  "filename": "DynamicProjectilePlugin",
+  "order": -3,
+  "engineAltRules": [
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/SceneStackExPlugin",
+          "Mico27/DynamicActorPlugin",
+          "Mico27/SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Sce_DynamicA_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "SceneStackExPlugin",
+          "DynamicActorPlugin",
+          "SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Sce_DynamicA_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/DynamicActorPlugin",
+          "Mico27/SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "DynamicA_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "DynamicActorPlugin",
+          "SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "DynamicA_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/SceneStackExPlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "Sce_DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "SceneStackExPlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "Sce_DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/SceneStackExPlugin",
+          "Mico27/SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Sce_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "SceneStackExPlugin",
+          "SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Sce_Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/SceneStackExPlugin"
+        ]
+      },
+      "use": "Sce"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "SceneStackExPlugin"
+        ]
+      },
+      "use": "Sce"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Spr"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "SpritesheetChangeBufferPlugin"
+        ]
+      },
+      "use": "Spr"
+    }
+  ]
+}

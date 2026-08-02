@@ -43,7 +43,7 @@ void dynamic_actor_hit_actors(actor_t *actor) BANKED {
             (other->script.bank) &&
             ((other->hscript_hit == 0) || (other->hscript_hit & SCRIPT_TERMINATED)) &&
             bb_intersects(&actor->bounds, &actor->pos, &other->bounds, &other->pos)) {
-            dynamic_actor_event_actor_idx = (UBYTE)(actor - actors);
+            dynamic_actor_event_actor_idx = actor->actor_index;
             script_execute(other->script.bank, other->script.ptr, &other->hscript_hit, 1, group);
             return;
         }
@@ -59,18 +59,18 @@ UBYTE actor_last_trigger[MAX_ACTORS];
 // last-trigger slot: run the leave script of the trigger it left and the enter
 // script of the trigger it entered when the intersected trigger changes.
 void dynamic_actor_activate_triggers(actor_t *actor) BANKED {
-    UBYTE idx = (UBYTE)(actor - actors);
+    UBYTE idx = actor->actor_index;
     UBYTE hit = trigger_at_intersection(&actor->bounds, &actor->pos);
     UBYTE prev = actor_last_trigger[idx];
     if (hit != prev) {
         if ((prev != NO_TRIGGER_COLLISON) &&
             (triggers[prev].script_flags & TRIGGER_HAS_LEAVE_SCRIPT)) {
-            dynamic_actor_event_actor_idx = (UBYTE)(actor - actors);
+            dynamic_actor_event_actor_idx = idx;
             script_execute(triggers[prev].script.bank, triggers[prev].script.ptr, 0, 1, 2);
         }
         if ((hit != NO_TRIGGER_COLLISON) &&
             (triggers[hit].script_flags & TRIGGER_HAS_ENTER_SCRIPT)) {
-            dynamic_actor_event_actor_idx = (UBYTE)(actor - actors);
+            dynamic_actor_event_actor_idx = idx;
             script_execute(triggers[hit].script.bank, triggers[hit].script.ptr, 0, 1, 1);
         }
         actor_last_trigger[idx] = hit;
@@ -271,7 +271,7 @@ void vm_get_actor_parent(SCRIPT_CTX * THIS) OLDCALL BANKED {
     if (!actor->actor_parent) {
         *A = -1;
     } else {
-        *A = (int16_t)(actor->actor_parent - actors);
+        *A = (int16_t)actor->actor_parent->actor_index;
     }
 }
 #endif
@@ -302,7 +302,7 @@ void vm_get_actor_collision(SCRIPT_CTX * THIS) OLDCALL BANKED {
             UWORD bottom = actor->pos.y + actor->bounds.bottom;
             if ((point_x >= left) && (point_x <= right) &&
                 (point_y >= top) && (point_y <= bottom)) {
-                *A = (int16_t)(actor - actors);
+                *A = (int16_t)actor->actor_index;
                 return;
             }
         }

@@ -1,0 +1,33 @@
+Index: include/camera.h
+===================================================================
+--- include/camera.h
++++ include/camera.h
+@@ -2,8 +2,13 @@
+ #define CAMERA_H
+ 
+ #include <gbdk/platform.h>
+ 
++#include "camera_ex.h"
++
++// ContinuousScenePlugin variant: the camera coordinates are signed so that the
++// view can sit partly outside the scene while a scene transition scrolls.
++
+ #define SCREEN_WIDTH 160
+ #define SCREEN_HEIGHT 144
+ #define SCREEN_WIDTH_HALF 80
+ #define SCREEN_HEIGHT_HALF 72
+@@ -29,10 +34,11 @@
+ 
+ void camera_init(void) BANKED;
+ 
+ inline void camera_reset(void) {
+-    //camera_deadzone_x = camera_deadzone_y = 0;
++    camera_deadzone_x = camera_deadzone_y = 0;
++    camera_ex_reset();
+ }
+ 
+ void camera_update(void) BANKED;
+\ No newline at end of file
+ 
+-#endif
++#endif

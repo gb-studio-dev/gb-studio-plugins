@@ -1,0 +1,86 @@
+Index: include/projectiles.h
+===================================================================
+--- include/projectiles.h
++++ include/projectiles.h
+@@ -2,23 +2,78 @@
+ #define PROJECTILES_H
+ 
+ #include <gbdk/platform.h>
+ 
++// Must come first: the DYNPROJ_ENABLE_* behaviour switches are used by the
++// declarations below, so this header has to see them whatever order the
++// including file uses.
++#include "data/states_defines.h"
++
+ #include "math.h"
+ #include "collision.h"
+ #include "gbs_types.h"
++#include "vm.h"
+ 
+-#define MAX_PROJECTILES 5
+-#define MAX_PROJECTILE_DEFS 5
++// Size of the live projectile pool, from the "Max concurrent projectiles"
++// setting under Settings -> Engine -> Custom Projectiles. Each entry is a
++// projectile_t in WRAM, so raising it costs memory; the fallback keeps this
++// header usable if the define is ever missing.
++#ifndef DYNPROJ_MAX_PROJECTILES
++#define DYNPROJ_MAX_PROJECTILES 6
++#endif
++#define MAX_PROJECTILES DYNPROJ_MAX_PROJECTILES
+ 
++// Number of projectile definition slots, from the "Max projectile slots"
++// setting. GB Studio itself only ever fills slots 0-4 (its compiler caps a
++// scene's projectile list at 5 and the stock Load Projectile Slot event offers
++// five buttons), so five is the floor; anything above that is reachable only
++// through this plugin's own slot events.
++#ifndef DYNPROJ_MAX_PROJECTILE_DEFS
++#define DYNPROJ_MAX_PROJECTILE_DEFS 5
++#endif
++#define MAX_PROJECTILE_DEFS DYNPROJ_MAX_PROJECTILE_DEFS
++
++// Declared for gbs-SceneStackExPlugin, which saves and restores the whole
++// projectile pool when a scene is pushed. All four are defined by projectiles.c.
+ extern projectile_t projectiles[MAX_PROJECTILES];
+ extern projectile_def_t projectile_defs[MAX_PROJECTILE_DEFS];
+ extern projectile_t *projectiles_active_head;
+ extern projectile_t *projectiles_inactive_head;
+ 
+ void projectiles_init(void) BANKED;
+-void projectiles_update(void) NONBANKED;
++void projectiles_update(void) BANKED;
+ void projectiles_render(void) NONBANKED;
+ 
++// Signature kept identical to stock GB Studio 4.3.0 so vm_projectiles.c does
++// not need to be overridden. All the custom behaviour parameters are read from
++// the engine-field globals below (set by the events before launching).
+ void projectile_launch(UBYTE index, upoint16_t *pos, UBYTE angle) BANKED;
+ 
++// VM native: stores the bank/pointer of the "on removal" script.
++void vm_define_projectile_behavior(SCRIPT_CTX * THIS) OLDCALL BANKED;
++void set_removal_script(SCRIPT_CTX * THIS) OLDCALL BANKED;
++void set_tile_hit_script(SCRIPT_CTX * THIS) OLDCALL BANKED;
++void set_actor_hit_script(SCRIPT_CTX * THIS) OLDCALL BANKED;
++
++// Engine-field globals (declaration order must match engine.json field order).
++extern UBYTE projectile_pause;
++extern UBYTE projectile_hide;
++extern UBYTE projectile_no_lifetime;
++extern UBYTE projectile_actor_index;
++extern BYTE  projectile_distance;
++extern BYTE  projectile_distance2;
++extern UBYTE projectile_phase;
++extern UBYTE projectile_hookshot_state;
++extern UBYTE projectile_hookshot_tile_hit;
++extern UBYTE projectile_hookshot_actor_hit;
++extern UBYTE projectile_hit_actor;
++extern UWORD projectile_hit_x;
++extern UWORD projectile_hit_y;
++extern UBYTE projectile_hit_type;
++
++// Non-field globals written directly by the Custom Projectile event via
++// _setConstMemInt16 (variable memory offsets for the Custom/Update-Variable
++// behaviours).
++extern UWORD projectile_delta_x;
++extern UWORD projectile_delta_y;
++
+ #endif

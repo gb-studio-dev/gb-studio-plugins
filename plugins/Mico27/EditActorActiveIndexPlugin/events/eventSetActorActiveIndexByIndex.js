@@ -1,3 +1,5 @@
+const l10n = require("../helpers/l10n").default;
+
 export const id = "EVENT_SET_ACTOR_ACTIVE_INDEX_BY_INDEX";
 export const name = "Set Actor Active Index By Index";
 export const groups = ["EVENT_GROUP_ACTOR"];

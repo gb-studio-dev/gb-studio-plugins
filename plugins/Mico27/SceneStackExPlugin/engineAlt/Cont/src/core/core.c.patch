@@ -1,7 +1,7 @@
-Index: src\core\core.c
+Index: src/core/core.c
 ===================================================================
---- src\core\core.c
-+++ src\core\core.c
+--- src/core/core.c
++++ src/core/core.c
 @@ -32,8 +32,9 @@
  #include "palette.h"
  #include "parallax.h"

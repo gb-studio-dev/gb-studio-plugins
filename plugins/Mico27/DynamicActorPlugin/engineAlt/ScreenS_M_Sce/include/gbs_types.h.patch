@@ -1,7 +1,7 @@
-Index: include\gbs_types.h
+Index: include/gbs_types.h
 ===================================================================
---- include\gbs_types.h
-+++ include\gbs_types.h
+--- include/gbs_types.h
++++ include/gbs_types.h
 @@ -1,5 +1,5 @@
 -#ifndef GBS_TYPES_H
 +﻿#ifndef GBS_TYPES_H
@@ -19,12 +19,19 @@ Index: include\gbs_types.h
  #define COLLISION_GROUP_NONE 0x0
  #define COLLISION_GROUP_PLAYER 0x1
  #define COLLISION_GROUP_1 0x2
-@@ -59,8 +60,34 @@
+@@ -59,8 +60,41 @@
  
      // Collisions
      uint8_t collision_group;
  
 +    //Dynamic actor
++    // This actor's own index in actors[], cached once per scene by actors_init.
++    // The runtime often holds only a pointer to an actor but has to report its
++    // index (event fields, per-actor side tables). Deriving it with
++    // (actor - actors) makes SDCC emit a call to __divsint - a 16 bit restoring
++    // division, ~2600 cycles - because sizeof(actor_t) is not a power of two.
++    // One byte per actor buys that back everywhere.
++    uint8_t actor_index;
 +    uint8_t actor_behavior_id;
 +    uint8_t actor_state;
 +    int8_t actor_vel_x;
@@ -54,7 +61,7 @@ Index: include\gbs_types.h
      struct actor_t *next;
      struct actor_t *prev;
  } actor_t;
-@@ -197,4 +224,6 @@
+@@ -197,4 +231,6 @@
      palette_entry_t cgb_palette[];
  } palette_t;
  

@@ -1,7 +1,7 @@
-Index: src\core\load_save.c
+Index: src/core/load_save.c
 ===================================================================
---- src\core\load_save.c
-+++ src\core\load_save.c
+--- src/core/load_save.c
++++ src/core/load_save.c
 @@ -61,9 +61,9 @@
  size_t save_blob_size;
  

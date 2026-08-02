@@ -1,4 +1,4 @@
-Index: src\core\interrupts.c
+Index: src/core/interrupts.c
 ===================================================================
---- src\core\interrupts.c
-+++ src\core\interrupts.c
+--- src/core/interrupts.c
++++ src/core/interrupts.c

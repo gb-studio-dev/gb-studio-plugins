@@ -1,7 +1,7 @@
-Index: src\states\shmup.c
+Index: src/states/shmup.c
 ===================================================================
---- src\states\shmup.c
-+++ src\states\shmup.c
+--- src/states/shmup.c
++++ src/states/shmup.c
 @@ -12,8 +12,9 @@
  #include "game_time.h"
  #include "input.h"

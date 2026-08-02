@@ -1,7 +1,7 @@
-Index: src\states\platform.c
+Index: src/states/platform.c
 ===================================================================
---- src\states\platform.c
-+++ src\states\platform.c
+--- src/states/platform.c
++++ src/states/platform.c
 @@ -14,8 +14,9 @@
  #include "math.h"
  #include "scroll.h"

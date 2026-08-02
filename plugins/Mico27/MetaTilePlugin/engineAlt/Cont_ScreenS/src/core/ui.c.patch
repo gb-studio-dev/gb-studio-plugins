@@ -1,4 +1,4 @@
-Index: src\core\ui.c
+Index: src/core/ui.c
 ===================================================================
---- src\core\ui.c
-+++ src\core\ui.c
+--- src/core/ui.c
++++ src/core/ui.c

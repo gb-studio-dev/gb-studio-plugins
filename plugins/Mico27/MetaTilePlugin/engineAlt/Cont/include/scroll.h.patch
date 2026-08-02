@@ -1,7 +1,7 @@
-Index: include\scroll.h
+Index: include/scroll.h
 ===================================================================
---- include\scroll.h
-+++ include\scroll.h
+--- include/scroll.h
++++ include/scroll.h
 @@ -60,9 +60,10 @@
   */
  void scroll_repaint(void) BANKED;

@@ -1,7 +1,7 @@
-Index: src\core\interrupts.c
+Index: src/core/interrupts.c
 ===================================================================
---- src\core\interrupts.c
-+++ src\core\interrupts.c
+--- src/core/interrupts.c
++++ src/core/interrupts.c
 @@ -1,11 +1,15 @@
  #pragma bank 255
  

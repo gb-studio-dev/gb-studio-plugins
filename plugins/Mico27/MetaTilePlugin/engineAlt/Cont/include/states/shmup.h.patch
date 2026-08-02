@@ -1,4 +1,4 @@
-Index: include\states\shmup.h
+Index: include/states/shmup.h
 ===================================================================
---- include\states\shmup.h
-+++ include\states\shmup.h
+--- include/states/shmup.h
++++ include/states/shmup.h

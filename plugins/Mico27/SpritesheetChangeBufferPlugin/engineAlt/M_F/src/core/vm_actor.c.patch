@@ -1,7 +1,7 @@
-Index: src\core\vm_actor.c
+Index: src/core/vm_actor.c
 ===================================================================
---- src\core\vm_actor.c
-+++ src\core\vm_actor.c
+--- src/core/vm_actor.c
++++ src/core/vm_actor.c
 @@ -497,9 +497,11 @@
  
  void vm_actor_set_spritesheet(SCRIPT_CTX * THIS, INT16 idx, UBYTE spritesheet_bank, const spritesheet_t *spritesheet) OLDCALL BANKED {

@@ -1,7 +1,7 @@
-Index: include\collision.h
+Index: include/collision.h
 ===================================================================
---- include\collision.h
-+++ include\collision.h
+--- include/collision.h
++++ include/collision.h
 @@ -4,9 +4,8 @@
  #include <gbdk/platform.h>
  

@@ -21,6 +21,10 @@
 //   0xFC, pattern     duty cycle pattern (rotated 2 bits every frame)
 //   0xEC, duty        fixed duty cycle (bits 7-6)
 //   0xFF              end of channel
+//
+// Banking: everything lives in the plugin's own switchable bank except two
+// small NONBANKED stubs that must be resident in bank 0 — the VBL entry
+// point and the stream fetch window (see below).
 
 #include <gbdk/platform.h>
 #include <stdint.h>
@@ -50,12 +54,53 @@ static uint8_t dynsfx_pitch;
 static uint8_t dynsfx_stream_bank;  // ROM bank holding the playing streams
 static uint8_t dynsfx_vbl_installed;
 
+// staging window for one stream command: the longest is a pulse note
+// (cmd, envelope, freq lo, freq hi)
+#define DYNSFX_WINDOW 4
+static uint8_t dynsfx_window[DYNSFX_WINDOW];
+
 // ---------------------------------------------------------------------------
-// Per-frame update (VBL handler context — everything below is NONBANKED;
-// the data bank is mapped manually around the stream reads)
+// Bank 0 residents
+//
+// The parser runs from the plugin bank, so it cannot page in the stream bank
+// itself. dynsfx_fetch is the one piece that has to stay NONBANKED: it maps
+// the stream bank, copies the next command plus its widest possible operand
+// set into dynsfx_window, and maps the caller's bank back. Reading up to
+// three bytes past a command is harmless — the extra bytes are only consumed
+// once the opcode says they exist.
+//
+// This deliberately does NOT use MemcpyBanked / ReadBankedUBYTE: every helper
+// in the engine's bankdata.c stashes the outgoing bank in one shared static
+// (_save) and is documented non-reentrant. We run from the VBL handler while
+// the main thread is very likely inside one of them (tile loads, text, scene
+// setup), and clobbering _save would leave that caller restoring the wrong
+// bank. Keeping the saved bank in a stack local here makes the fetch
+// reentrant. The main-thread entry points below have no such constraint and
+// use MemcpyBanked.
 // ---------------------------------------------------------------------------
 
-static void dynsfx_channel_update(uint8_t idx) NONBANKED {
+void dynsfx_update_banked(void) BANKED;
+
+static void dynsfx_fetch(const uint8_t * pc) NONBANKED {
+    uint8_t save_bank = CURRENT_BANK;
+    SWITCH_ROM(dynsfx_stream_bank);
+    uint8_t * dest = dynsfx_window;
+    *dest++ = *pc++;
+    *dest++ = *pc++;
+    *dest++ = *pc++;
+    *dest = *pc;
+    SWITCH_ROM(save_bank);
+}
+
+void dynsfx_update_isr(void) NONBANKED {
+    if (dynsfx_active_channels) dynsfx_update_banked();
+}
+
+// ---------------------------------------------------------------------------
+// Per-frame update (plugin bank, VBL handler context)
+// ---------------------------------------------------------------------------
+
+static void dynsfx_channel_update(uint8_t idx) {
     dynsfx_channel_t * ch = &dynsfx_channels[idx];
     const uint8_t * pc = ch->pc;
     if (!pc) return;
@@ -75,38 +120,41 @@ static void dynsfx_channel_update(uint8_t idx) NONBANKED {
 
     // fetch commands until a note is played or the stream ends
     for (;;) {
-        uint8_t cmd = *pc++;
+        dynsfx_fetch(pc);
+        uint8_t cmd = dynsfx_window[0];
         if (cmd == 0xFF) {  // sound_ret
             ch->pc = NULL;
             dynsfx_active_channels &= ~(1 << idx);
             return;
         }
         if (cmd == 0xFC) {  // duty_cycle_pattern
-            ch->duty_pattern = *pc++;
+            ch->duty_pattern = dynsfx_window[1];
             ch->duty = ch->duty_pattern & 0xC0;
             ch->rotate = TRUE;
+            pc += 2;
             continue;
         }
         if (cmd == 0xEC) {  // duty_cycle (fixed)
-            ch->duty = *pc++;
+            ch->duty = dynsfx_window[1];
+            pc += 2;
             continue;
         }
         // note: low nibble is length-1 in 16ths
         {
             uint16_t d = (uint16_t)((cmd & 0x0F) + 1) * dynsfx_tempo + ch->frac;
-            uint8_t env = *pc++;
+            uint8_t env = dynsfx_window[1];
             ch->frac = (uint8_t)d;
             ch->delay = (uint8_t)(d >> 8);
             ch->len6 = ch->delay & 0x3F;
             if (idx == 2) {
-                uint8_t poly = *pc++ + dynsfx_pitch;
+                uint8_t poly = dynsfx_window[2] + dynsfx_pitch;
                 NR41_REG = ch->len6;
                 NR42_REG = env;
                 NR43_REG = poly;
                 NR44_REG = 0x80;
+                pc += 3;
             } else {
-                uint16_t freq = *pc++;
-                freq |= ((uint16_t)(*pc++)) << 8;
+                uint16_t freq = dynsfx_window[2] | (((uint16_t)dynsfx_window[3]) << 8);
                 freq += dynsfx_pitch;
                 if (idx == 0) {
                     NR11_REG = ch->duty | ch->len6;
@@ -119,6 +167,7 @@ static void dynsfx_channel_update(uint8_t idx) NONBANKED {
                     NR23_REG = (uint8_t)freq;
                     NR24_REG = 0x80 | ((freq >> 8) & 0x07);
                 }
+                pc += 4;
             }
         }
         ch->pc = pc;
@@ -126,9 +175,7 @@ static void dynsfx_channel_update(uint8_t idx) NONBANKED {
     }
 }
 
-void dynsfx_update_isr(void) NONBANKED {
-    if (!dynsfx_active_channels) return;
-
+void dynsfx_update_banked(void) BANKED {
     // keep the music driver off our channels: the engine resets the mute
     // mask when one of its own sfx streams finishes, so re-assert it
     uint8_t wanted = music_global_mute_mask | music_mute_mask | DYNSFX_MUTE_MASK;
@@ -136,12 +183,9 @@ void dynsfx_update_isr(void) NONBANKED {
         music_effective_mute = driver_set_mute_mask(wanted);
     }
 
-    uint8_t save_bank = CURRENT_BANK;
-    SWITCH_ROM(dynsfx_stream_bank);
     dynsfx_channel_update(0);
     dynsfx_channel_update(1);
     dynsfx_channel_update(2);
-    SWITCH_ROM(save_bank);
 
     if (!dynsfx_active_channels) {
         // sound finished: hand channels back (last envelopes ring out unless
@@ -154,7 +198,13 @@ void dynsfx_update_isr(void) NONBANKED {
 // Control (main thread)
 // ---------------------------------------------------------------------------
 
-void dynsfx_play_far(uint8_t bank, const dynsfx_base_t * base, uint8_t pitch, uint8_t length) NONBANKED {
+void dynsfx_play_far(uint8_t bank, const dynsfx_base_t * base, uint8_t pitch, uint8_t length) BANKED {
+    // read the three stream pointers out of the data bank before touching
+    // anything: this function runs banked, so it cannot page that bank in
+    // itself (MemcpyBanked is the engine's NONBANKED cross-bank reader)
+    dynsfx_base_t streams;
+    MemcpyBanked(&streams, base, sizeof(streams), bank);
+
     if (!dynsfx_vbl_installed) {
         dynsfx_vbl_installed = TRUE;
         CRITICAL {
@@ -163,12 +213,9 @@ void dynsfx_play_far(uint8_t bank, const dynsfx_base_t * base, uint8_t pitch, ui
     }
 
     CRITICAL {
-        uint8_t save_bank = CURRENT_BANK;
-        SWITCH_ROM(bank);
-        dynsfx_channels[0].pc = base->pulse1;
-        dynsfx_channels[1].pc = base->pulse2;
-        dynsfx_channels[2].pc = base->noise;
-        SWITCH_ROM(save_bank);
+        dynsfx_channels[0].pc = streams.pulse1;
+        dynsfx_channels[1].pc = streams.pulse2;
+        dynsfx_channels[2].pc = streams.noise;
         dynsfx_stream_bank = bank;
 
         for (uint8_t i = 0; i < 3; i++) {
@@ -190,7 +237,7 @@ void dynsfx_play_far(uint8_t bank, const dynsfx_base_t * base, uint8_t pitch, ui
     }
 }
 
-void dynsfx_stop(void) NONBANKED {
+void dynsfx_stop(void) BANKED {
     CRITICAL {
         if (dynsfx_active_channels) {
             dynsfx_active_channels = 0;

@@ -1,7 +1,7 @@
-Index: src\core\actor.c
+Index: src/core/actor.c
 ===================================================================
---- src\core\actor.c
-+++ src\core\actor.c
+--- src/core/actor.c
++++ src/core/actor.c
 @@ -16,8 +16,9 @@
  #include "collision.h"
  #include "ui.h"
@@ -12,7 +12,26 @@ Index: src\core\actor.c
  
  #ifdef STRICT
      #include <gb/bgb_emu.h>
-@@ -205,12 +206,20 @@
+@@ -72,8 +73,18 @@
+     player_iframes          = 0;
+     player_collision_actor  = NULL;
+     emote_actor             = NULL;
+     memset(actors, 0, sizeof(actors));
++
++    // Cache each actor's own index in actors[]. The dynamic actor runtime holds
++    // pointers to actors but has to report their index; reading it back from the
++    // actor avoids deriving it with (actor - actors), which SDCC compiles to a
++    // __divsint call because sizeof(actor_t) is not a power of two.
++    UBYTE actor_i;
++    actor_t * actor_p = actors;
++    for (actor_i = 0; actor_i != MAX_ACTORS; ++actor_i, ++actor_p) {
++        actor_p->actor_index = actor_i;
++    }
+ }
+ 
+ void player_init(void) BANKED {
+     actor_set_anim_idle(&PLAYER);
+@@ -205,12 +216,20 @@
          }
  
          if (CHK_FLAG(actor->flags, ACTOR_FLAG_PINNED)) {

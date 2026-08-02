@@ -1,7 +1,7 @@
-Index: src\core\scroll.c
+Index: src/core/scroll.c
 ===================================================================
---- src\core\scroll.c
-+++ src\core\scroll.c
+--- src/core/scroll.c
++++ src/core/scroll.c
 @@ -15,8 +15,9 @@
  #include "palette.h"
  #include "continuous_scene.h"

@@ -26,8 +26,10 @@ typedef struct {
 // nonzero while a dynamic sfx is playing (bit per channel)
 extern volatile uint8_t dynsfx_active_channels;
 
-void dynsfx_play_far(uint8_t bank, const dynsfx_base_t * base, uint8_t pitch, uint8_t length) NONBANKED;
-void dynsfx_stop(void) NONBANKED;
+// both run from the plugin's own bank — safe to call from anywhere on the
+// main thread, but not from an interrupt handler
+void dynsfx_play_far(uint8_t bank, const dynsfx_base_t * base, uint8_t pitch, uint8_t length) BANKED;
+void dynsfx_stop(void) BANKED;
 
 void vm_dynsfx_play_data(SCRIPT_CTX * THIS) OLDCALL BANKED;
 void vm_dynsfx_play_preset_data(SCRIPT_CTX * THIS) OLDCALL BANKED;
