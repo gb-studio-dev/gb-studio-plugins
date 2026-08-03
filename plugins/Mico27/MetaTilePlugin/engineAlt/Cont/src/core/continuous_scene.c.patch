@@ -1,4 +1,4 @@
-Index: src\core\continuous_scene.c
+Index: src/core/continuous_scene.c
 ===================================================================
---- src\core\continuous_scene.c
-+++ src\core\continuous_scene.c
+--- src/core/continuous_scene.c
++++ src/core/continuous_scene.c

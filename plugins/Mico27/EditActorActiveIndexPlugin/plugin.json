@@ -5,7 +5,7 @@
   "url": "https://github.com/Mico27/gbs-EditActorActiveIndexPlugin",
   "description": "Allows editing the order of the actors in the active actors list used for rendering/OAM order. This plugins allow sorting actor depending on their vertical position and enable flickering for when more than 10 sprite tile are on a given scanline or then the 40 sprite tile on-screen limit is exceeded.",
   "license": "MIT",
-  "version": "4.3.2",
+  "version": "4.3.4",
   "gbsVersion": ">=4.3.0",
   "order": -1,
   "engineAltRules": [
@@ -19,7 +19,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_ScreenS_M_D_Spr"
+      "use": "Cont_ScreenS_M_DynamicA_Spr"
     },
     {
       "when": {
@@ -31,7 +31,7 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_ScreenS_M_D_Spr"
+      "use": "Cont_ScreenS_M_DynamicA_Spr"
     },
     {
       "when": {
@@ -42,7 +42,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_M_D_Spr"
+      "use": "Cont_M_DynamicA_Spr"
     },
     {
       "when": {
@@ -53,7 +53,7 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_M_D_Spr"
+      "use": "Cont_M_DynamicA_Spr"
     },
     {
       "when": {
@@ -64,7 +64,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_ScreenS_D_Spr"
+      "use": "Cont_ScreenS_DynamicA_Spr"
     },
     {
       "when": {
@@ -75,7 +75,7 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_ScreenS_D_Spr"
+      "use": "Cont_ScreenS_DynamicA_Spr"
     },
     {
       "when": {
@@ -86,7 +86,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Cont_ScreenS_M_D"
+      "use": "Cont_ScreenS_M_DynamicA"
     },
     {
       "when": {
@@ -97,7 +97,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Cont_ScreenS_M_D"
+      "use": "Cont_ScreenS_M_DynamicA"
     },
     {
       "when": {
@@ -130,7 +130,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "ScreenS_M_D_Spr"
+      "use": "ScreenS_M_DynamicA_Spr"
     },
     {
       "when": {
@@ -141,7 +141,7 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "ScreenS_M_D_Spr"
+      "use": "ScreenS_M_DynamicA_Spr"
     },
     {
       "when": {
@@ -151,7 +151,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_D_Spr"
+      "use": "Cont_DynamicA_Spr"
     },
     {
       "when": {
@@ -161,7 +161,7 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "Cont_D_Spr"
+      "use": "Cont_DynamicA_Spr"
     },
     {
       "when": {
@@ -171,7 +171,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Cont_M_D"
+      "use": "Cont_M_DynamicA"
     },
     {
       "when": {
@@ -181,7 +181,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Cont_M_D"
+      "use": "Cont_M_DynamicA"
     },
     {
       "when": {
@@ -211,7 +211,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Cont_ScreenS_D"
+      "use": "Cont_ScreenS_DynamicA"
     },
     {
       "when": {
@@ -221,7 +221,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Cont_ScreenS_D"
+      "use": "Cont_ScreenS_DynamicA"
     },
     {
       "when": {
@@ -271,7 +271,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Cont_Spr_D"
+      "use": "Cont_Spr_DynamicA"
     },
     {
       "when": {
@@ -281,7 +281,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Cont_Spr_D"
+      "use": "Cont_Spr_DynamicA"
     },
     {
       "when": {
@@ -291,7 +291,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "M_D_Spr"
+      "use": "M_DynamicA_Spr"
     },
     {
       "when": {
@@ -301,7 +301,7 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "M_D_Spr"
+      "use": "M_DynamicA_Spr"
     },
     {
       "when": {
@@ -311,7 +311,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "ScreenS_D_Spr"
+      "use": "ScreenS_DynamicA_Spr"
     },
     {
       "when": {
@@ -321,7 +321,7 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "ScreenS_D_Spr"
+      "use": "ScreenS_DynamicA_Spr"
     },
     {
       "when": {
@@ -331,7 +331,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_M_D"
+      "use": "ScreenS_M_DynamicA"
     },
     {
       "when": {
@@ -341,7 +341,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_M_D"
+      "use": "ScreenS_M_DynamicA"
     },
     {
       "when": {
@@ -371,7 +371,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_Spr_D"
+      "use": "ScreenS_Spr_DynamicA"
     },
     {
       "when": {
@@ -381,7 +381,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_Spr_D"
+      "use": "ScreenS_Spr_DynamicA"
     },
     {
       "when": {
@@ -390,7 +390,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Cont_D"
+      "use": "Cont_DynamicA"
     },
     {
       "when": {
@@ -399,7 +399,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Cont_D"
+      "use": "Cont_DynamicA"
     },
     {
       "when": {
@@ -462,7 +462,7 @@
           "Mico27/SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "D_Spr"
+      "use": "DynamicA_Spr"
     },
     {
       "when": {
@@ -471,7 +471,7 @@
           "SpritesheetChangeBufferPlugin"
         ]
       },
-      "use": "D_Spr"
+      "use": "DynamicA_Spr"
     },
     {
       "when": {
@@ -480,7 +480,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "M_D"
+      "use": "M_DynamicA"
     },
     {
       "when": {
@@ -489,7 +489,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "M_D"
+      "use": "M_DynamicA"
     },
     {
       "when": {
@@ -516,7 +516,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_D"
+      "use": "ScreenS_DynamicA"
     },
     {
       "when": {
@@ -525,7 +525,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "ScreenS_D"
+      "use": "ScreenS_DynamicA"
     },
     {
       "when": {
@@ -570,7 +570,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "Spr_D"
+      "use": "Spr_DynamicA"
     },
     {
       "when": {
@@ -579,7 +579,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "Spr_D"
+      "use": "Spr_DynamicA"
     },
     {
       "when": {
@@ -603,7 +603,7 @@
           "Mico27/DynamicActorPlugin"
         ]
       },
-      "use": "D"
+      "use": "DynamicA"
     },
     {
       "when": {
@@ -611,7 +611,7 @@
           "DynamicActorPlugin"
         ]
       },
-      "use": "D"
+      "use": "DynamicA"
     },
     {
       "when": {

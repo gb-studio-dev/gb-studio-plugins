@@ -1,7 +1,7 @@
-Index: src\core\data_manager.c
+Index: src/core/data_manager.c
 ===================================================================
---- src\core\data_manager.c
-+++ src\core\data_manager.c
+--- src/core/data_manager.c
++++ src/core/data_manager.c
 @@ -18,8 +18,9 @@
  #include "meta_tiles.h"
  #include "data/states_defines.h"

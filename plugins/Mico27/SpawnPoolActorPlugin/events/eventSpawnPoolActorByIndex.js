@@ -5,19 +5,18 @@ export const name = "Spawn Actor From Pool By Index";
 export const groups = ["EVENT_GROUP_ACTOR"];
 
 export const autoLabel = (fetchArg) => {
-  return `Spawn Actor From Pool By Index ${fetchArg("poolActorIndex")} : ${fetchArg("x")}, ${fetchArg("y")}`;
+  return `Spawn Actor From Pool : ${fetchArg("x")}, ${fetchArg("y")}`;
 };
 
 export const fields = [
   {
     key: "poolActorIndex",
     label: "First pool actor index",
-    description:
-      "Index of the first actor of the spawn pool (as used by Actor By Index events). The pool is this actor plus the next (pool size - 1) actors in the scene's actor order. Deactivate them on init and don't mark them pinned or persistent.",
+    description: "Index of the first actor of the spawn pool. The pool is this actor plus the next (pool size - 1) actors in the scene's actor order. Deactivate them on init and don't mark them pinned or persistent.",
     type: "value",
     defaultValue: {
       type: "number",
-      value: 0,
+      value: 1,
     },
   },
   {
@@ -90,14 +89,17 @@ const scriptValueToPixels = (value, units) => {
 
 export const compile = (input, helpers) => {
   const {
+    variableSetToScriptValue,
     _callNative,
+    _stackPush,
     _stackPushConst,
     _stackPop,
     _addComment,
     _declareLocal,
+    _stackPushScriptValue,
     getVariableAlias,
     _isIndirectVariable,
-    _stackPushScriptValue,
+    _setInd,
   } = helpers;
 
   const variableAlias = getVariableAlias(input.variable);

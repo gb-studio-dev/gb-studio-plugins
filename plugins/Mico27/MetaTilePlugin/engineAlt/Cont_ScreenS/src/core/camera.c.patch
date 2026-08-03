@@ -1,7 +1,7 @@
-Index: src\core\camera.c
+Index: src/core/camera.c
 ===================================================================
---- src\core\camera.c
-+++ src\core\camera.c
+--- src/core/camera.c
++++ src/core/camera.c
 @@ -2,9 +2,9 @@
  
  #include "camera.h"

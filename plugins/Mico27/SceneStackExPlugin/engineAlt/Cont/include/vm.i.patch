@@ -1,7 +1,7 @@
-Index: include\vm.i
+Index: include/vm.i
 ===================================================================
---- include\vm.i
-+++ include\vm.i
+--- include/vm.i
++++ include/vm.i
 @@ -3,12 +3,14 @@
  ;      args: big-endian
  ;      order: left-to-right (leftmost argument pushed first)

@@ -1,7 +1,7 @@
-Index: include\scroll.h
+Index: include/scroll.h
 ===================================================================
---- include\scroll.h
-+++ include\scroll.h
+--- include/scroll.h
++++ include/scroll.h
 @@ -14,9 +14,13 @@
  #define SCREEN_PAD_TOP 1
  #define SCREEN_PAD_BOTTOM 2

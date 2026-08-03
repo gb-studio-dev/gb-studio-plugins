@@ -1,0 +1,37 @@
+{
+    "version": "4.3.0-e1",
+    "fields": [
+        {
+            "key": "streamable_actor_enabled",
+            "label": "Streaming enabled",
+            "description": "Master switch for the VBlank tile streamer. Turn it off to suspend all actor tile streaming (can also be changed at runtime with the 'Streamed Actor Set Enabled' event).",
+            "group": "Streamable Actors",
+            "type": "checkbox",
+            "cType": "UBYTE",
+            "defaultValue": 1
+        },
+        {
+            "key": "streamable_actor_budget",
+            "label": "Tiles uploaded per frame",
+            "description": "Maximum number of 8x8 sprite tiles copied to VRAM per VBlank. Higher values let several actors change frame on the same frame, but a too high value overruns VBlank and corrupts tiles. 8 is safe on DMG, 16 on Game Boy Color (double speed).",
+            "group": "Streamable Actors",
+            "type": "slider",
+            "cType": "UBYTE",
+            "defaultValue": 8,
+            "min": 1,
+            "max": 32
+        },
+        {
+            "key": "STREAMABLE_ACTOR_SLOTS",
+            "label": "Streamed actor slots",
+            "description": "How many actors can stream their frames at the same time. Each slot costs 13 bytes of WRAM.",
+            "group": "Streamable Actors",
+            "type": "slider",
+            "cType": "define",
+            "defaultValue": 4,
+            "min": 1,
+            "max": 16
+        }
+    ],
+    "sceneTypes": []
+}

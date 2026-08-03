@@ -1,7 +1,7 @@
-Index: src\core\vm_actor.c
+Index: src/core/vm_actor.c
 ===================================================================
---- src\core\vm_actor.c
-+++ src\core\vm_actor.c
+--- src/core/vm_actor.c
++++ src/core/vm_actor.c
 @@ -150,12 +150,12 @@
              SET_FLAG(THIS->flags, MOVE_ALLOW_V);
          }

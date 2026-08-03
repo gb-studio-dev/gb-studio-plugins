@@ -1,7 +1,7 @@
-Index: src\core\collision.c
+Index: src/core/collision.c
 ===================================================================
---- src\core\collision.c
-+++ src\core\collision.c
+--- src/core/collision.c
++++ src/core/collision.c
 @@ -1,20 +1,16 @@
  #pragma bank 255
  

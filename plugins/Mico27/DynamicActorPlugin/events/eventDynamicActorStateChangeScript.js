@@ -19,6 +19,8 @@ export const fields = [
       ["4", "Tile collision (Left)"],
       ["10", "Tile collision (Any)"],
       ["5", "Tile enter"],
+      ["6", "Actor activated"],
+      ["7", "Actor deactivated"],
     ],
   },
   {
@@ -48,6 +50,21 @@ export const compile = (input, helpers) => {
   const { appendRaw, _compileSubScript, _addComment } = helpers;
   const scriptRef = _compileSubScript("dynamic_actor_state_change", input.script, "dynamic_actor_state_change");
   const eventSlot = `${parseInt(input.eventSlot !== undefined ? input.eventSlot : "0", 10)}`;
+
+  // Slots 6 and 7 only exist when the activation hooks are compiled in
+  if (eventSlot === "6" || eventSlot === "7") {
+    const fv =
+      helpers.engineFieldValues &&
+      helpers.engineFieldValues.find((s) => s.id === "DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS");
+    const def = helpers.engineFields && helpers.engineFields["DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS"];
+    const enabled =
+      fv && fv.value !== undefined && fv.value !== null ? !!fv.value : def ? !!def.defaultValue : true;
+    if (!enabled) {
+      throw new Error(
+        'The "Actor activated" and "Actor deactivated" event slots require the "Events: Actor activated / deactivated" engine setting to be enabled (Settings → Engine → Dynamic actor).',
+      );
+    }
+  }
   const bank = `___bank_${scriptRef}`;
   const ptr = `_${scriptRef}`;
 

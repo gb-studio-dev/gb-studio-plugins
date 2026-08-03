@@ -97,6 +97,7 @@ export const compile = (input, helpers) => {
     setActorId,
     getVariableAlias,
     _isIndirectVariable,
+    _setInd,
   } = helpers;
 
   const variableAlias = getVariableAlias(input.variable);

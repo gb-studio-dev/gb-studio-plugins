@@ -203,6 +203,42 @@
           "defaultValue": 1
         },
         {
+          "key": "DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS",
+          "label": "Events: Actor activated / deactivated",
+          "description": "Compile the 'Actor activated' and 'Actor deactivated' event slots of 'Attach a Script to a Dynamic Actor Event'. The scripts are launched by the engine when an actor becomes active or is deactivated, including when it scrolls offscreen. Adds two callback slots (5 bytes of RAM each). Unchecking this makes the plugin's actor.c compile as if the hooks were not there.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_ACTOR_ITERATION",
+          "label": "Tools: Iterate actors in area",
+          "description": "Compile the 'Actor Iterate In Area' event. Uncheck to save ROM if unused.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_ACTOR_PROPERTIES",
+          "label": "Tools: Get / Set extended actor properties",
+          "description": "Compile the 'Actor Get Property (Extended)' and 'Actor Set Property (Extended)' events, which reach actor fields no stock event exposes (collision group, flags, animation range, bounds, script handles...). Uncheck to save ROM if unused.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_TRIGGER_SCRIPT",
+          "label": "Tools: Force trigger actor script",
+          "description": "Compile the 'Actor Trigger Script' event, which forces an actor's On Interact / On Hit / On Update script to run. Uncheck to save ROM if unused.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
           "key": "DYNAMIC_ACTOR_ENABLE_VM_WAIT_FOR_COLLISION",
           "label": "VM: Wait for collision",
           "description": "Compile vm_wait_for_collision waitable helper.",

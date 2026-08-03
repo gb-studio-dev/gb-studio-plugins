@@ -1,7 +1,7 @@
-Index: src\states\pointnclick.c
+Index: src/states/pointnclick.c
 ===================================================================
---- src\states\pointnclick.c
-+++ src\states\pointnclick.c
+--- src/states/pointnclick.c
++++ src/states/pointnclick.c
 @@ -10,10 +10,10 @@
  #include "game_time.h"
  #include "input.h"

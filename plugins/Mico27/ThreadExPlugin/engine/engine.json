@@ -1,0 +1,42 @@
+{
+    "version": "4.3.0-e1",
+    "fields": [
+        {
+          "key": "THREAD_EX_ENABLE_THREAD_PAUSE",
+          "label": "Feature: Pause / resume threads",
+          "description": "Compile the 'Thread Pause' and 'Thread Resume' events, which freeze a thread by handle and continue it from the exact instruction where it stopped.",
+          "group": "Thread Ex",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "THREAD_EX_ENABLE_ACTOR_UPDATE_PAUSE",
+          "label": "Feature: Pause / resume actor update scripts",
+          "description": "Compile the 'Actor Pause Update Script' and 'Actor Resume Update Script' events, which do the same for an actor's On Update script addressed by actor index.",
+          "group": "Thread Ex",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "THREAD_EX_ENABLE_THREAD_STATE",
+          "label": "Feature: Check thread state",
+          "description": "Compile the 'If Thread State' event, which branches on whether a thread is running, paused or terminated.",
+          "group": "Thread Ex",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "THREAD_EX_ENABLE_THREAD_COUNT",
+          "label": "Feature: Read thread count",
+          "description": "Compile the 'Get Thread Count' event, which stores how many of the engine's 16 thread contexts are currently in use.",
+          "group": "Thread Ex",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        }
+    ],
+    "sceneTypes": []
+}

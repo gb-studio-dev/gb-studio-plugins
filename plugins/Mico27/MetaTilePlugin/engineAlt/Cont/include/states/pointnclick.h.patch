@@ -1,4 +1,4 @@
-Index: include\states\pointnclick.h
+Index: include/states/pointnclick.h
 ===================================================================
---- include\states\pointnclick.h
-+++ include\states\pointnclick.h
+--- include/states/pointnclick.h
++++ include/states/pointnclick.h

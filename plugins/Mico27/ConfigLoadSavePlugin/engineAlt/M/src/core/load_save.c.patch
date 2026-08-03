@@ -1,7 +1,7 @@
-Index: src\core\load_save.c
+Index: src/core/load_save.c
 ===================================================================
---- src\core\load_save.c
-+++ src\core\load_save.c
+--- src/core/load_save.c
++++ src/core/load_save.c
 @@ -9,16 +9,22 @@
  #include "vm.h"
  #include "events.h"

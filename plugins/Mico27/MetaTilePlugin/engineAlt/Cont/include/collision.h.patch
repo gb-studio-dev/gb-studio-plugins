@@ -1,7 +1,7 @@
-Index: include\collision.h
+Index: include/collision.h
 ===================================================================
---- include\collision.h
-+++ include\collision.h
+--- include/collision.h
++++ include/collision.h
 @@ -14,26 +14,46 @@
  #define COLLISION_RIGHT 0x8
  #define COLLISION_ALL 0xF

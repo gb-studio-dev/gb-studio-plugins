@@ -29,7 +29,7 @@
           "Mico27/ScreenScrollPlugin"
         ]
       },
-      "use": "Scr"
+      "use": "ScreenS"
     },
     {
       "when": {
@@ -37,7 +37,7 @@
           "ScreenScrollPlugin"
         ]
       },
-      "use": "Scr"
+      "use": "ScreenS"
     }
   ]
 }

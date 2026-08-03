@@ -1,0 +1,86 @@
+Index: src/core/camera.c
+===================================================================
+--- src/core/camera.c
++++ src/core/camera.c
+@@ -1,13 +1,18 @@
+ #pragma bank 255
+ 
++// Camera Ex Plugin - stock camera.c override.
++//
++// The stock globals keep their names and types so that every other engine file
++// links unchanged. camera_update() delegates to camera_ex_update(), which lives
++// in camera_ex.c and is shared verbatim by every engineAlt variant - only this
++// file differs between variants.
++
+ #include "camera.h"
++#include "camera_ex.h"
+ 
+ #include "actor.h"
+ 
+-#define CAMERA_FIXED_OFFSET_X PX_TO_SUBPX(8)
+-#define CAMERA_FIXED_OFFSET_Y PX_TO_SUBPX(8)
+-
+ UINT16 camera_x;
+ UINT16 camera_y;
+ UINT16 camera_clamp_x;
+ UINT16 camera_clamp_y;
+@@ -25,58 +30,6 @@
+     camera_reset();
+ }
+ 
+ void camera_update(void) BANKED {
+-    if (camera_settings & CAMERA_LOCK_X_FLAG)
+-    {
+-        UWORD target_pos = PLAYER.pos.x + CAMERA_FIXED_OFFSET_X - PX_TO_SUBPX(camera_offset_x);
+-        WORD tolerance = PX_TO_SUBPX(camera_deadzone_x);
+-        UWORD target_min_pos = (tolerance > target_pos) ? 0 : target_pos - tolerance;
+-        UWORD target_max_pos = target_pos + tolerance;
+-        UWORD new_cam_pos = camera_x;
+-
+-        if (new_cam_pos < target_min_pos)
+-        {
+-            new_cam_pos = target_min_pos;
+-            if ((camera_settings & CAMERA_LOCK_X_MAX_FLAG) && new_cam_pos > camera_clamp_x)
+-            {
+-                new_cam_pos = camera_clamp_x;
+-            }
+-        }
+-        else if (new_cam_pos > target_max_pos)
+-        {
+-            new_cam_pos = target_max_pos;
+-            if ((camera_settings & CAMERA_LOCK_X_MIN_FLAG) && new_cam_pos < camera_clamp_x)
+-            {
+-                new_cam_pos = camera_clamp_x;
+-            }
+-        }
+-        camera_x = camera_clamp_x = new_cam_pos;
+-    }
+-
+-    if (camera_settings & CAMERA_LOCK_Y_FLAG)
+-    {
+-        UWORD target_pos = PLAYER.pos.y + CAMERA_FIXED_OFFSET_Y - PX_TO_SUBPX(camera_offset_y);
+-        WORD tolerance = PX_TO_SUBPX(camera_deadzone_y);
+-        UWORD target_min_pos = (tolerance > target_pos) ? 0 : target_pos - tolerance;
+-        UWORD target_max_pos = target_pos + tolerance;
+-        UWORD new_cam_pos = camera_y;
+-
+-        if (new_cam_pos < target_min_pos)
+-        {
+-            new_cam_pos = target_min_pos;
+-            if ((camera_settings & CAMERA_LOCK_Y_MAX_FLAG) && new_cam_pos > camera_clamp_y)
+-            {
+-                new_cam_pos = camera_clamp_y;
+-            }
+-        }
+-        else if (new_cam_pos > target_max_pos)
+-        {
+-            new_cam_pos = target_max_pos;
+-            if ((camera_settings & CAMERA_LOCK_Y_MIN_FLAG) && new_cam_pos < camera_clamp_y)
+-            {
+-                new_cam_pos = camera_clamp_y;
+-            }
+-        }
+-        camera_y = camera_clamp_y = new_cam_pos;
+-    }
++    camera_ex_update();
+ }

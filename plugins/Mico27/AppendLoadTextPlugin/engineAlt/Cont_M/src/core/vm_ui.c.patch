@@ -1,7 +1,7 @@
-Index: src\core\vm_ui.c
+Index: src/core/vm_ui.c
 ===================================================================
---- src\core\vm_ui.c
-+++ src\core\vm_ui.c
+--- src/core/vm_ui.c
++++ src/core/vm_ui.c
 @@ -44,10 +44,16 @@
      if (vwf_direction != UI_PRINT_LEFTTORIGHT) reverse(d);
      return len;

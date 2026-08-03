@@ -1,7 +1,7 @@
-Index: include\vm_exceptions.h
+Index: include/vm_exceptions.h
 ===================================================================
---- include\vm_exceptions.h
-+++ include\vm_exceptions.h
+--- include/vm_exceptions.h
++++ include/vm_exceptions.h
 @@ -4,7 +4,8 @@
  #define EXCEPTION_RESET 1
  #define EXCEPTION_CHANGE_SCENE 2

@@ -98,12 +98,36 @@ static void dynamic_actor_execute_state_change(actor_t *actor) {
         return;
     }
     if ((event->handle == 0) || ((event->handle & SCRIPT_TERMINATED) != 0)) {
-        dynamic_actor_event_actor_idx = (UBYTE)(actor - actors);
+        dynamic_actor_event_actor_idx = actor->actor_index;
         dynamic_actor_event_behavior_idx = actor->actor_behavior_id;
         dynamic_actor_event_state = actor->actor_state;
         script_execute(event->script_bank, event->script_addr, &event->handle, 0, 0);
     }
 }
+
+#ifdef DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS
+void dynamic_actor_execute_activation(actor_t *actor, UBYTE activated) BANKED {
+    // load_scene() activates the player before state_init() has run
+    // dynamic_actor_init(), so at that point the callback table still holds the
+    // previous scene's scripts. The player is activated exactly once per scene
+    // load and is never deactivated afterwards, so skipping it both closes that
+    // window and costs nothing.
+    if (actor == &PLAYER) {
+        return;
+    }
+    script_event_t *event = &dynamic_actor_events[
+        (activated) ? DYNAMIC_ACTOR_EVENT_ACTOR_ACTIVATED : DYNAMIC_ACTOR_EVENT_ACTOR_DEACTIVATED];
+    if (!event->script_addr) {
+        return;
+    }
+    if ((event->handle == 0) || ((event->handle & SCRIPT_TERMINATED) != 0)) {
+        dynamic_actor_event_actor_idx = actor->actor_index;
+        dynamic_actor_event_behavior_idx = actor->actor_behavior_id;
+        dynamic_actor_event_state = actor->actor_state;
+        script_execute(event->script_bank, event->script_addr, &event->handle, 0, 0);
+    }
+}
+#endif
 
 static void dynamic_actor_execute_tile_interaction(actor_t *actor, UBYTE tile_x, UBYTE tile_y, dynamic_actor_event_e event_type) {
     script_event_t *event = &dynamic_actor_events[event_type];    
@@ -111,7 +135,7 @@ static void dynamic_actor_execute_tile_interaction(actor_t *actor, UBYTE tile_x,
         return;
     }
     if ((event->handle == 0) || ((event->handle & SCRIPT_TERMINATED) != 0)) {
-        dynamic_actor_event_actor_idx = (UBYTE)(actor - actors);
+        dynamic_actor_event_actor_idx = actor->actor_index;
         dynamic_actor_event_behavior_idx = actor->actor_behavior_id;
         dynamic_actor_event_tile_idx = tile_at(tile_x, tile_y);
         dynamic_actor_event_tile_x = tile_x;
@@ -152,20 +176,11 @@ static void dynamic_actor_execute_tile_collision_left(actor_t *actor, UBYTE tile
     dynamic_actor_execute_tile_interaction(actor, tile_x, tile_y, DYNAMIC_ACTOR_EVENT_TILE_COLLISION_LEFT);
 }
 
-static void dynamic_actor_execute_tile_enter(actor_t *actor, UBYTE tile_x, UBYTE tile_y) {    
-    script_event_t *event = &dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_ENTER];
-    if (!event->script_addr) {
-        return;
-    }
-    if ((event->handle == 0) || ((event->handle & SCRIPT_TERMINATED) != 0)) {
-        dynamic_actor_event_actor_idx = (UBYTE)(actor - actors);
-        dynamic_actor_event_behavior_idx = actor->actor_behavior_id;
-        dynamic_actor_event_tile_idx = tile_at(tile_x, tile_y);
-        dynamic_actor_event_tile_x = tile_x;
-        dynamic_actor_event_tile_y = tile_y;
-        script_execute(event->script_bank, event->script_addr, &event->handle, 0, 0);
-    }
-}
+// Tile enter is the same dispatch as a tile collision, only the callback slot
+// differs - dynamic_actor_execute_tile_interaction covers it, no second copy of
+// the body is needed.
+#define dynamic_actor_execute_tile_enter(actor, tile_x, tile_y) \
+    dynamic_actor_execute_tile_interaction((actor), (tile_x), (tile_y), DYNAMIC_ACTOR_EVENT_TILE_ENTER)
 
 void dynamic_actor_init(void) BANKED {
     memset(behavior_defs, 0, sizeof(behavior_defs));

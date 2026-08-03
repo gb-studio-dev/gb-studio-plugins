@@ -1,7 +1,7 @@
-Index: src\core\fade_manager.c
+Index: src/core/fade_manager.c
 ===================================================================
---- src\core\fade_manager.c
-+++ src\core\fade_manager.c
+--- src/core/fade_manager.c
++++ src/core/fade_manager.c
 @@ -1,349 +1,51 @@
  #pragma bank 255
  

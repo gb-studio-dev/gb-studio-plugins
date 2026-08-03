@@ -1,7 +1,7 @@
-Index: src\core\vm_scene.c
+Index: src/core/vm_scene.c
 ===================================================================
---- src\core\vm_scene.c
-+++ src\core\vm_scene.c
+--- src/core/vm_scene.c
++++ src/core/vm_scene.c
 @@ -11,12 +11,15 @@
  
  BANKREF(VM_SCENE)

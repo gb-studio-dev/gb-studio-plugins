@@ -1,4 +1,4 @@
-Index: src\core\camera.c
+Index: src/core/camera.c
 ===================================================================
---- src\core\camera.c
-+++ src\core\camera.c
+--- src/core/camera.c
++++ src/core/camera.c

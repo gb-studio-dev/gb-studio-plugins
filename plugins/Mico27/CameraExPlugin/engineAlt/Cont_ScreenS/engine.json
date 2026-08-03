@@ -1,0 +1,51 @@
+{
+    "version": "4.3.0-e1",
+    "fields": [
+        {
+            "key": "CAMERA_EX_SMOOTH",
+            "label": "Enable smooth camera transitions",
+            "description": "Compiles the eased camera follow / camera path code. Turn off to save ROM if you only need the extra lock targets.",
+            "group": "Camera Ex",
+            "type": "checkbox",
+            "cType": "define",
+            "defaultValue": 1
+        },
+        {
+            "key": "CAMERA_EX_MULTI_TARGET",
+            "label": "Enable multiple lock targets",
+            "description": "Compiles the code that locks the camera onto the median position of several actors. Turn off to save ROM if you only ever lock onto a single actor.",
+            "group": "Camera Ex",
+            "type": "checkbox",
+            "cType": "define",
+            "defaultValue": 1
+        },
+        {
+            "key": "camera_default_smooth_speed",
+            "label": "Default smoothing speed",
+            "description": "How fast the camera catches up with its target. 0 = instant, which is the stock camera behaviour. Re-applied on every scene load.",
+            "group": "Camera Ex",
+            "type": "slider",
+            "cType": "UBYTE",
+            "min": 0,
+            "max": 255,
+            "defaultValue": 0,
+            "editUnits": "subpxVel"
+        },
+        {
+            "key": "camera_default_smooth_mode",
+            "label": "Default smoothing path",
+            "description": "Path the camera takes while catching up with its target. Re-applied on every scene load.",
+            "group": "Camera Ex",
+            "type": "select",
+            "options": [
+                [3, "Direct line"],
+                [0, "Diagonal"],
+                [1, "Horizontal first"],
+                [2, "Vertical first"]
+            ],
+            "cType": "UBYTE",
+            "defaultValue": 3
+        }
+    ],
+    "sceneTypes": []
+}

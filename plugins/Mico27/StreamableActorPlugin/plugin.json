@@ -1,0 +1,10 @@
+{
+  "type": "enginePlugin",
+  "name": "Streamable Actor Plugin",
+  "author": "Mico27",
+  "url": "https://github.com/Mico27/gbs-StreamableActorPlugin",
+  "description": "Streams an actor's animation frames straight into sprite VRAM one frame at a time (Link's Awakening style), so a large spritesheet only costs the VRAM of its biggest single frame. Handles frames with different metasprite/OAM layouts and tile counts.",
+  "license": "MIT",
+  "version": "4.3.0",
+  "gbsVersion": ">=4.3.0"
+}

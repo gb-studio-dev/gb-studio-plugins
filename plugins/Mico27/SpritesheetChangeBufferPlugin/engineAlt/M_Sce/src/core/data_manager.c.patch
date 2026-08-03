@@ -1,7 +1,7 @@
-Index: src\core\data_manager.c
+Index: src/core/data_manager.c
 ===================================================================
---- src\core\data_manager.c
-+++ src\core\data_manager.c
+--- src/core/data_manager.c
++++ src/core/data_manager.c
 @@ -237,10 +237,16 @@
  
      if (scene_type != SCENE_TYPE_LOGO) {

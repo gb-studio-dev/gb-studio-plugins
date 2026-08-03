@@ -1,7 +1,7 @@
-Index: src\core\scroll.c
+Index: src/core/scroll.c
 ===================================================================
---- src\core\scroll.c
-+++ src\core\scroll.c
+--- src/core/scroll.c
++++ src/core/scroll.c
 @@ -14,8 +14,9 @@
  #include "parallax.h"
  #include "palette.h"

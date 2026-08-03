@@ -1,7 +1,7 @@
-Index: src\core\core.c
+Index: src/core/core.c
 ===================================================================
---- src\core\core.c
-+++ src\core\core.c
+--- src/core/core.c
++++ src/core/core.c
 @@ -15,8 +15,9 @@
  #include "linked_list.h"
  #include "ui.h"
