@@ -2,17 +2,19 @@ Index: src/core/projectiles.c
 ===================================================================
 --- src/core/projectiles.c
 +++ src/core/projectiles.c
-@@ -3,168 +3,1554 @@
+@@ -2,169 +2,1555 @@
+ 
  #include "projectiles.h"
  
  #include <gbdk/metasprites.h>
- 
--#include <string.h>
++#include <stdlib.h>
 +// DYNPROJ_ENABLE_* come from here: each behaviour is an engine setting under
 +// Settings -> Engine -> Custom Projectiles, and turning one off keeps its code
 +// out of the ROM entirely.
 +#include "data/states_defines.h"
  
+-#include <string.h>
+-
  #include "sincos.h"
  #include "scroll.h"
  #include "actor.h"
@@ -1836,9 +1838,9 @@ Index: src/core/projectiles.c
 +    // variable (or an older project saved when the range was wider) would
 +    // otherwise wrap round into the opposite sign.
 +    BYTE gravity = *(BYTE *)VM_REF_TO_PTR(FN_ARG4);
-+    if (gravity > DEF_GRAVITY_MAX) gravity = DEF_GRAVITY_MAX;
-+    else if (gravity < DEF_GRAVITY_MIN) gravity = DEF_GRAVITY_MIN;
-+    def->gravity   = (UBYTE)(gravity + DEF_GRAVITY_BIAS);
++    gravity = CLAMP(gravity, -DEF_GRAVITY_MAX, DEF_GRAVITY_MAX);
++    def->gravity   = abs(gravity);
++    def->invert_gravity = gravity < 0 ? 1 : 0;
 +    def->bounce    = *(UBYTE *)VM_REF_TO_PTR(FN_ARG5);
 +    def->amplitude = *(BYTE  *)VM_REF_TO_PTR(FN_ARG6);
 +    def->frequency = *(UBYTE *)VM_REF_TO_PTR(FN_ARG7);
