@@ -2,17 +2,19 @@ Index: src/core/actor.c
 ===================================================================
 --- src/core/actor.c
 +++ src/core/actor.c
-@@ -16,8 +16,9 @@
+@@ -16,10 +16,10 @@
  #include "collision.h"
  #include "ui.h"
  #include "vm.h"
  #include "macro.h"
 +#include "actor_active_index.h"
  #include "data/states_defines.h"
+-#include "dynamic_actor.h"
  
  #ifdef STRICT
      #include <gb/bgb_emu.h>
-@@ -32,8 +33,12 @@
+     #include <gb/crash_handler.h>
+@@ -33,8 +33,12 @@
  #define SCREEN_TILE16_H            9u
  #define ACTOR_BOUNDS_TILE16        6u
  #define ACTOR_BOUNDS_TILE16_HALF   3u
@@ -25,7 +27,7 @@ Index: src/core/actor.c
  
  const BYTE emote_offsets[] = {2, 1, 0, -1, -2, -3, -4, -5, -6, -5, -4, -3, -2, -1, 0};
  
-@@ -62,8 +67,10 @@
+@@ -63,8 +67,10 @@
  UBYTE emote_timer;
  
  UBYTE allocated_sprite_tiles;
@@ -36,7 +38,7 @@ Index: src/core/actor.c
  static void deactivate_actor_impl(actor_t *actor);
  
  void actors_init(void) BANKED {
-@@ -73,18 +80,8 @@
+@@ -74,18 +80,8 @@
      player_collision_actor  = NULL;
      emote_actor             = NULL;
  
@@ -55,7 +57,7 @@ Index: src/core/actor.c
  
  void player_init(void) BANKED {
      actor_set_anim_idle(&PLAYER);
-@@ -95,9 +92,9 @@
+@@ -96,9 +92,9 @@
  void actors_update(void) BANKED {
      actor_t *actor;
      static uint8_t screen_tile16_x, screen_tile16_y, screen_tile16_x_end, screen_tile16_y_end;
@@ -66,7 +68,7 @@ Index: src/core/actor.c
  
      // Convert scroll pos to 16px tile coordinates
      // allowing full range of scene to be represented in 7 bits
-@@ -107,9 +104,9 @@
+@@ -108,9 +104,9 @@
      screen_tile16_x_end = screen_tile16_x + ACTOR_BOUNDS_TILE16 + SCREEN_TILE16_W;
      screen_tile16_y = PX_TO_TILE16(draw_scroll_y) + TILE16_OFFSET;
      screen_tile16_y_end = screen_tile16_y + ACTOR_BOUNDS_TILE16 + SCREEN_TILE16_H;
@@ -77,7 +79,7 @@ Index: src/core/actor.c
      actor = actors_active_tail;
      while (actor) {
          actor_flags = actor->flags;
-@@ -208,43 +205,10 @@
+@@ -209,43 +205,10 @@
  #else
      window_hide_actors = (!show_actors_on_overlay) && (WX_REG > DEVICE_WINDOW_PX_OFFSET_X);
  #endif
@@ -123,7 +125,7 @@ Index: src/core/actor.c
             continue;
          }
  
-@@ -268,18 +232,62 @@
+@@ -269,18 +232,62 @@
              continue;
          }
          SWITCH_ROM(actor->sprite.bank);
@@ -188,7 +190,7 @@ Index: src/core/actor.c
  }
  
  static void deactivate_actor_impl(actor_t *actor) {
-@@ -298,8 +306,11 @@
+@@ -299,16 +306,18 @@
      if (!CHK_FLAG(actor->flags, ACTOR_FLAG_ACTIVE)) return;
      if (actor == &PLAYER) return;
      CLR_FLAG(actor->flags, ACTOR_FLAG_ACTIVE);
@@ -200,7 +202,25 @@ Index: src/core/actor.c
      if ((actor->hscript_update & SCRIPT_TERMINATED) == 0) {
          script_terminate(actor->hscript_update);
      }
-@@ -477,17 +488,17 @@
+     if ((actor->hscript_hit & SCRIPT_TERMINATED) == 0) {
+         script_detach_hthread(actor->hscript_hit);
+     }
+-    DYNAMIC_ACTOR_ON_DEACTIVATE(actor);
+ }
+ 
+ void deactivate_actor(actor_t *actor) BANKED {
+     deactivate_actor_impl(actor);
+@@ -363,9 +372,8 @@
+     if (actor->script_update.bank) {
+         script_execute(actor->script_update.bank, actor->script_update.ptr, &(actor->hscript_update), 0);
+     }
+     actor->hscript_hit = SCRIPT_TERMINATED;
+-    DYNAMIC_ACTOR_ON_ACTIVATE(actor);
+ }
+ 
+ void activate_actor(actor_t *actor) BANKED {
+     activate_actor_impl(actor);
+@@ -480,17 +488,17 @@
      upoint16_t offset;
      offset.x = PLAYER.pos.x;
      offset.y = PLAYER.pos.y;
@@ -220,7 +240,7 @@ Index: src/core/actor.c
              continue;
          }
          if ((actor->pos.x + actor->bounds.left)   > a_right)  { actor = actor->prev; continue; }
-@@ -500,17 +511,17 @@
+@@ -503,17 +511,17 @@
      return NULL;
  }
  
@@ -240,7 +260,7 @@ Index: src/core/actor.c
              continue;
          }
  
-@@ -525,9 +536,9 @@
+@@ -528,9 +536,9 @@
      return NULL;
  }
  
@@ -251,7 +271,7 @@ Index: src/core/actor.c
      const UWORD a_left   = offset->x + bb->left;
      const UWORD a_right  = offset->x + bb->right;
      const UWORD a_top    = offset->y + bb->top;
-@@ -550,9 +561,9 @@
+@@ -553,9 +561,9 @@
      return NULL;
  }
  
@@ -262,7 +282,7 @@ Index: src/core/actor.c
      const UWORD a_left   = offset->x + bb->left;
      const UWORD a_right  = offset->x + bb->right;
      const UWORD a_top    = offset->y + bb->top;
-@@ -598,5 +609,5 @@
+@@ -601,5 +609,5 @@
      } else if (player_iframes != 0) {
          player_iframes--;
      }

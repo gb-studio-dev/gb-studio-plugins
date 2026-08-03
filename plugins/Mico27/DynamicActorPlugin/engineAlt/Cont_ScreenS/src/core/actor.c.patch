@@ -2,17 +2,18 @@ Index: src/core/actor.c
 ===================================================================
 --- src/core/actor.c
 +++ src/core/actor.c
-@@ -16,8 +16,9 @@
+@@ -16,8 +16,10 @@
  #include "collision.h"
  #include "ui.h"
  #include "vm.h"
  #include "macro.h"
 +#include "data/states_defines.h"
++#include "dynamic_actor.h"
  #include "scene_transition.h"
  
  #ifdef STRICT
      #include <gb/bgb_emu.h>
-@@ -73,8 +74,18 @@
+@@ -73,8 +75,18 @@
      player_collision_actor  = NULL;
      emote_actor             = NULL;
  
@@ -31,7 +32,7 @@ Index: src/core/actor.c
  
  void player_init(void) BANKED {
      actor_set_anim_idle(&PLAYER);
-@@ -206,12 +217,20 @@
+@@ -206,12 +218,20 @@
          }
  
          if (CHK_FLAG(actor->flags, ACTOR_FLAG_PINNED)) {
@@ -52,3 +53,23 @@ Index: src/core/actor.c
  
          if (((window_hide_actors) && (((screen_x + 8) > WX_REG) && ((screen_y - 8) > WY_REG)))) {
              continue;
+@@ -257,8 +277,9 @@
+     }
+     if ((actor->hscript_hit & SCRIPT_TERMINATED) == 0) {
+         script_detach_hthread(actor->hscript_hit);
+     }
++    DYNAMIC_ACTOR_ON_DEACTIVATE(actor);
+ }
+ 
+ void deactivate_actor(actor_t *actor) BANKED {
+     deactivate_actor_impl(actor);
+@@ -313,8 +334,9 @@
+     if (actor->script_update.bank) {
+         script_execute(actor->script_update.bank, actor->script_update.ptr, &(actor->hscript_update), 0);
+     }
+     actor->hscript_hit = SCRIPT_TERMINATED;
++    DYNAMIC_ACTOR_ON_ACTIVATE(actor);
+ }
+ 
+ void activate_actor(actor_t *actor) BANKED {
+     activate_actor_impl(actor);

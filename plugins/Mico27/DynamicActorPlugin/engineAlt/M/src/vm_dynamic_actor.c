@@ -8,11 +8,13 @@
 #include "gbs_types.h"
 #include "math.h"
 #include "actor.h"
+#include "data_manager.h"
 #include "game_time.h"
 #include "dynamic_actor.h"
 #include "sincos.h"
 #include "data/states_defines.h"
 #include "collision.h"
+#include "scroll.h"
 #include "events.h"
 #include "macro.h"
 #ifdef DYNAMIC_ACTOR_ENABLE_ACTOR_TRIGGERS
@@ -639,3 +641,307 @@ UBYTE vm_wait_for_actor_state(void * THIS, UBYTE start, UWORD * stack_frame) OLD
     return FALSE;
 }
 #endif
+
+// ---------------------------------------------------------------------------
+// Extended actor tooling
+//
+// Generic helpers over the stock actors[] table: iterating actors inside an
+// area, and reading / writing actor fields no stock event exposes.
+// ---------------------------------------------------------------------------
+
+#if defined(DYNAMIC_ACTOR_ENABLE_ACTOR_ITERATION) || defined(DYNAMIC_ACTOR_ENABLE_ACTOR_PROPERTIES)
+
+// Write a 16-bit result into a script destination.
+//   idx >= 0 : global variable slot (script_memory + idx)
+//   idx <  0 : stack-local; the destination index was pushed as a constant
+//              before the call arguments, so compensate for the `nargs` values
+//              still sitting on the VM stack at native-call time.
+static void dynamic_actor_write(SCRIPT_CTX * THIS, INT16 idx, INT16 value, UBYTE nargs) {
+    INT16 * A;
+    if (idx < 0) {
+        A = (INT16 *)(THIS->stack_ptr + idx - nargs);
+    } else {
+        A = (INT16 *)(script_memory + idx);
+    }
+    *A = value;
+}
+
+#endif
+
+#ifdef DYNAMIC_ACTOR_ENABLE_ACTOR_ITERATION
+
+#define ACTOR_AREA_UNITS_PIXELS  0x01
+#define ACTOR_AREA_ACTIVE_ONLY   0x02
+#define ACTOR_AREA_SKIP_PLAYER   0x04
+#define ACTOR_AREA_TEST_BOUNDS   0x08
+#define ACTOR_AREA_RELATIVE_TO_SCROLL 0x10
+
+// Scans actors[] starting at the cursor and reports the first actor inside the
+// area. Writes 0xFF into the result slot when none is left and advances the
+// cursor past the reported actor, so calling this in a loop walks every match
+// exactly once.
+//
+// The state block is a 2 word script local: [0] = found actor (out),
+// [1] = cursor (in/out).
+//
+// args (push order): stateSlot, x, y, width, height, options
+void vm_actor_find_in_area(SCRIPT_CTX * THIS) OLDCALL BANKED {
+    INT16 state_idx = *(INT16 *)VM_REF_TO_PTR(FN_ARG5);
+    UWORD x         = *(UWORD *)VM_REF_TO_PTR(FN_ARG4);
+    UWORD y         = *(UWORD *)VM_REF_TO_PTR(FN_ARG3);
+    UWORD w         = *(UWORD *)VM_REF_TO_PTR(FN_ARG2);
+    UWORD h         = *(UWORD *)VM_REF_TO_PTR(FN_ARG1);
+    UBYTE options   = *(UBYTE *)VM_REF_TO_PTR(FN_ARG0);
+
+    UWORD * state;
+    if (state_idx < 0) {
+        state = (UWORD *)(THIS->stack_ptr + state_idx - 6);
+    } else {
+        state = (UWORD *)(script_memory + state_idx);
+    }
+
+    UBYTE i = (UBYTE)(state[1]);
+    UBYTE found = 0xFF;
+
+    // Area is inclusive and expressed in subpixels (32 subpixels per pixel,
+    // 256 per tile) to match actor_t.pos / actor_t.bounds.
+    UWORD x1, y1, x2, y2;
+    if (options & ACTOR_AREA_UNITS_PIXELS) {
+        x1 = x << 5;
+        y1 = y << 5;
+        x2 = ((x + w) << 5) - 1;
+        y2 = ((y + h) << 5) - 1;
+    } else {
+        x1 = x << 8;
+        y1 = y << 8;
+        x2 = ((x + w) << 8) - 1;
+        y2 = ((y + h) << 8) - 1;
+    }
+    // A zero width/height area still matches its own origin cell.
+    if (w == 0) x2 = x1;
+    if (h == 0) y2 = y1;
+
+    // Optionally anchor the area to the top-left of what is on screen this
+    // frame. draw_scroll_x/y is the scroll the engine rendered with, the same
+    // value actor.c uses for its on-screen activation checks, so an area given
+    // here lines up with what the player can actually see.
+    if (options & ACTOR_AREA_RELATIVE_TO_SCROLL) {
+        UWORD offset_x = ((UWORD)draw_scroll_x) << 5;
+        UWORD offset_y = ((UWORD)draw_scroll_y) << 5;
+        x1 += offset_x;
+        x2 += offset_x;
+        y1 += offset_y;
+        y2 += offset_y;
+    }
+
+    for (; i < actors_len; i++) {
+        actor_t * actor = actors + i;
+        if ((i == 0) && (options & ACTOR_AREA_SKIP_PLAYER)) continue;
+        if ((options & ACTOR_AREA_ACTIVE_ONLY) && !CHK_FLAG(actor->flags, ACTOR_FLAG_ACTIVE)) continue;
+        if (options & ACTOR_AREA_TEST_BOUNDS) {
+            if ((UWORD)(actor->pos.x + actor->bounds.left)   > x2) continue;
+            if ((UWORD)(actor->pos.x + actor->bounds.right)  < x1) continue;
+            if ((UWORD)(actor->pos.y + actor->bounds.top)    > y2) continue;
+            if ((UWORD)(actor->pos.y + actor->bounds.bottom) < y1) continue;
+        } else {
+            if ((actor->pos.x < x1) || (actor->pos.x > x2)) continue;
+            if ((actor->pos.y < y1) || (actor->pos.y > y2)) continue;
+        }
+        found = i;
+        i++;
+        break;
+    }
+
+    state[0] = found;
+    state[1] = i;
+}
+
+#endif // DYNAMIC_ACTOR_ENABLE_ACTOR_ITERATION
+
+#ifdef DYNAMIC_ACTOR_ENABLE_ACTOR_PROPERTIES
+
+#define ACTOR_PROP_FLAGS_RAW         0
+#define ACTOR_PROP_ACTIVE            1
+#define ACTOR_PROP_HIDDEN            2
+#define ACTOR_PROP_PINNED            3
+#define ACTOR_PROP_PERSISTENT        4
+#define ACTOR_PROP_DISABLED          5
+#define ACTOR_PROP_COLLISION_ENABLED 6
+#define ACTOR_PROP_ANIM_NOLOOP       7
+#define ACTOR_PROP_INTERRUPT         8
+#define ACTOR_PROP_COLL_GROUP        9
+#define ACTOR_PROP_COLL_FLAGS        10
+#define ACTOR_PROP_COLL_RAW          11
+#define ACTOR_PROP_DIRECTION         12
+#define ACTOR_PROP_MOVE_SPEED        13
+#define ACTOR_PROP_ANIMATION         14
+#define ACTOR_PROP_ANIM_TICK         15
+#define ACTOR_PROP_FRAME             16
+#define ACTOR_PROP_FRAME_START       17
+#define ACTOR_PROP_FRAME_END         18
+#define ACTOR_PROP_BASE_TILE         19
+#define ACTOR_PROP_RESERVE_TILES     20
+#define ACTOR_PROP_BOUNDS_LEFT       21
+#define ACTOR_PROP_BOUNDS_RIGHT      22
+#define ACTOR_PROP_BOUNDS_TOP        23
+#define ACTOR_PROP_BOUNDS_BOTTOM     24
+#define ACTOR_PROP_HAS_SCRIPT        25
+#define ACTOR_PROP_HAS_UPDATE_SCRIPT 26
+#define ACTOR_PROP_UPDATE_RUNNING    27
+#define ACTOR_PROP_UPDATE_HANDLE     28
+#define ACTOR_PROP_HIT_HANDLE        29
+
+static INT16 dynamic_actor_flag_value(actor_t * actor, UBYTE mask) {
+    return CHK_FLAG(actor->flags, mask) ? 1 : 0;
+}
+
+static void dynamic_actor_flag_assign(actor_t * actor, UBYTE mask, INT16 value) {
+    if (value) {
+        SET_FLAG(actor->flags, mask);
+    } else {
+        CLR_FLAG(actor->flags, mask);
+    }
+}
+
+// args (push order): dest, actorIndex, propertyId
+void vm_actor_get_property(SCRIPT_CTX * THIS) OLDCALL BANKED {
+    INT16 dest_idx = *(INT16 *)VM_REF_TO_PTR(FN_ARG2);
+    UBYTE i        = *(UBYTE *)VM_REF_TO_PTR(FN_ARG1);
+    UBYTE prop     = *(UBYTE *)VM_REF_TO_PTR(FN_ARG0);
+    actor_t * actor;
+    INT16 value = 0;
+
+    if (i >= MAX_ACTORS) {
+        dynamic_actor_write(THIS, dest_idx, 0, 3);
+        return;
+    }
+    actor = actors + i;
+
+    switch (prop) {
+        case ACTOR_PROP_FLAGS_RAW:         value = actor->flags; break;
+        case ACTOR_PROP_ACTIVE:            value = dynamic_actor_flag_value(actor, ACTOR_FLAG_ACTIVE); break;
+        case ACTOR_PROP_HIDDEN:            value = dynamic_actor_flag_value(actor, ACTOR_FLAG_HIDDEN); break;
+        case ACTOR_PROP_PINNED:            value = dynamic_actor_flag_value(actor, ACTOR_FLAG_PINNED); break;
+        case ACTOR_PROP_PERSISTENT:        value = dynamic_actor_flag_value(actor, ACTOR_FLAG_PERSISTENT); break;
+        case ACTOR_PROP_DISABLED:          value = dynamic_actor_flag_value(actor, ACTOR_FLAG_DISABLED); break;
+        case ACTOR_PROP_COLLISION_ENABLED: value = dynamic_actor_flag_value(actor, ACTOR_FLAG_COLLISION); break;
+        case ACTOR_PROP_ANIM_NOLOOP:       value = dynamic_actor_flag_value(actor, ACTOR_FLAG_ANIM_NOLOOP); break;
+        case ACTOR_PROP_INTERRUPT:         value = dynamic_actor_flag_value(actor, ACTOR_FLAG_INTERRUPT); break;
+        case ACTOR_PROP_COLL_GROUP:        value = actor->collision_group & COLLISION_GROUP_MASK; break;
+        case ACTOR_PROP_COLL_FLAGS:        value = actor->collision_group & ~COLLISION_GROUP_MASK; break;
+        case ACTOR_PROP_COLL_RAW:          value = actor->collision_group; break;
+        case ACTOR_PROP_DIRECTION:         value = actor->dir; break;
+        case ACTOR_PROP_MOVE_SPEED:        value = actor->move_speed; break;
+        case ACTOR_PROP_ANIMATION:         value = actor->animation; break;
+        case ACTOR_PROP_ANIM_TICK:         value = actor->anim_tick; break;
+        case ACTOR_PROP_FRAME:             value = actor->frame; break;
+        case ACTOR_PROP_FRAME_START:       value = actor->frame_start; break;
+        case ACTOR_PROP_FRAME_END:         value = actor->frame_end; break;
+        case ACTOR_PROP_BASE_TILE:         value = actor->base_tile; break;
+        case ACTOR_PROP_RESERVE_TILES:     value = actor->reserve_tiles; break;
+        case ACTOR_PROP_BOUNDS_LEFT:       value = actor->bounds.left; break;
+        case ACTOR_PROP_BOUNDS_RIGHT:      value = actor->bounds.right; break;
+        case ACTOR_PROP_BOUNDS_TOP:        value = actor->bounds.top; break;
+        case ACTOR_PROP_BOUNDS_BOTTOM:     value = actor->bounds.bottom; break;
+        case ACTOR_PROP_HAS_SCRIPT:        value = (actor->script.bank) ? 1 : 0; break;
+        case ACTOR_PROP_HAS_UPDATE_SCRIPT: value = (actor->script_update.bank) ? 1 : 0; break;
+        case ACTOR_PROP_UPDATE_RUNNING:    value = (actor->hscript_update & SCRIPT_TERMINATED) ? 0 : 1; break;
+        case ACTOR_PROP_UPDATE_HANDLE:     value = actor->hscript_update; break;
+        case ACTOR_PROP_HIT_HANDLE:        value = actor->hscript_hit; break;
+    }
+
+    dynamic_actor_write(THIS, dest_idx, value, 3);
+}
+
+// args (push order): actorIndex, propertyId, value
+void vm_actor_set_property(SCRIPT_CTX * THIS) OLDCALL BANKED {
+    UBYTE i    = *(UBYTE *)VM_REF_TO_PTR(FN_ARG2);
+    UBYTE prop = *(UBYTE *)VM_REF_TO_PTR(FN_ARG1);
+    INT16 v    = *(INT16 *)VM_REF_TO_PTR(FN_ARG0);
+    actor_t * actor;
+    (void)THIS;
+
+    if (i >= MAX_ACTORS) return;
+    actor = actors + i;
+
+    switch (prop) {
+        // ACTOR_FLAG_ACTIVE is owned by the active/inactive linked lists and is
+        // preserved here; use the stock Activate/Deactivate Actor events instead.
+        case ACTOR_PROP_FLAGS_RAW:
+            actor->flags = (UBYTE)((v & ~ACTOR_FLAG_ACTIVE) | (actor->flags & ACTOR_FLAG_ACTIVE));
+            break;
+        case ACTOR_PROP_HIDDEN:            dynamic_actor_flag_assign(actor, ACTOR_FLAG_HIDDEN, v); break;
+        case ACTOR_PROP_PINNED:            dynamic_actor_flag_assign(actor, ACTOR_FLAG_PINNED, v); break;
+        case ACTOR_PROP_PERSISTENT:        dynamic_actor_flag_assign(actor, ACTOR_FLAG_PERSISTENT, v); break;
+        case ACTOR_PROP_DISABLED:          dynamic_actor_flag_assign(actor, ACTOR_FLAG_DISABLED, v); break;
+        case ACTOR_PROP_COLLISION_ENABLED: dynamic_actor_flag_assign(actor, ACTOR_FLAG_COLLISION, v); break;
+        case ACTOR_PROP_ANIM_NOLOOP:       dynamic_actor_flag_assign(actor, ACTOR_FLAG_ANIM_NOLOOP, v); break;
+        case ACTOR_PROP_INTERRUPT:         dynamic_actor_flag_assign(actor, ACTOR_FLAG_INTERRUPT, v); break;
+        case ACTOR_PROP_COLL_GROUP:
+            actor->collision_group = (UBYTE)((actor->collision_group & ~COLLISION_GROUP_MASK) | (v & COLLISION_GROUP_MASK));
+            break;
+        case ACTOR_PROP_COLL_FLAGS:
+            actor->collision_group = (UBYTE)((actor->collision_group & COLLISION_GROUP_MASK) | (v & ~COLLISION_GROUP_MASK));
+            break;
+        case ACTOR_PROP_COLL_RAW:          actor->collision_group = (UBYTE)v; break;
+        case ACTOR_PROP_DIRECTION:         actor->dir = (direction_e)v; break;
+        case ACTOR_PROP_MOVE_SPEED:        actor->move_speed = (UBYTE)v; break;
+        case ACTOR_PROP_ANIMATION:         actor_set_anim(actor, (UBYTE)v); break;
+        case ACTOR_PROP_ANIM_TICK:         actor->anim_tick = (UBYTE)v; break;
+        case ACTOR_PROP_FRAME:             actor->frame = (UBYTE)v; break;
+        case ACTOR_PROP_FRAME_START:       actor->frame_start = (UBYTE)v; break;
+        case ACTOR_PROP_FRAME_END:         actor->frame_end = (UBYTE)v; break;
+        case ACTOR_PROP_BASE_TILE:         actor->base_tile = (UBYTE)v; break;
+        case ACTOR_PROP_RESERVE_TILES:     actor->reserve_tiles = (UBYTE)v; break;
+        case ACTOR_PROP_BOUNDS_LEFT:       actor->bounds.left = v; break;
+        case ACTOR_PROP_BOUNDS_RIGHT:      actor->bounds.right = v; break;
+        case ACTOR_PROP_BOUNDS_TOP:        actor->bounds.top = v; break;
+        case ACTOR_PROP_BOUNDS_BOTTOM:     actor->bounds.bottom = v; break;
+    }
+}
+
+#endif // DYNAMIC_ACTOR_ENABLE_ACTOR_PROPERTIES
+
+#ifdef DYNAMIC_ACTOR_ENABLE_TRIGGER_SCRIPT
+
+#define ACTOR_TRIGGER_INTERACT 0
+#define ACTOR_TRIGGER_HIT      1
+#define ACTOR_TRIGGER_UPDATE   2
+
+// The stock compiler emits a single actor script that branches on thread local
+// 0: 0 runs "On Interact", 2 / 4 / 8 run the "On Hit" script of collision
+// group 1 / 2 / 3.
+//
+// args (push order): actorIndex, which, collisionGroup
+void vm_actor_trigger_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
+    UBYTE i     = *(UBYTE *)VM_REF_TO_PTR(FN_ARG2);
+    UBYTE which = *(UBYTE *)VM_REF_TO_PTR(FN_ARG1);
+    UBYTE group = *(UBYTE *)VM_REF_TO_PTR(FN_ARG0);
+    actor_t * actor;
+    (void)THIS;
+
+    if (i >= MAX_ACTORS) return;
+    actor = actors + i;
+
+    switch (which) {
+        case ACTOR_TRIGGER_INTERACT:
+            if (actor->script.bank) {
+                script_execute(actor->script.bank, actor->script.ptr, 0, 1, 0);
+            }
+            break;
+        case ACTOR_TRIGGER_HIT:
+            // Reuses the stock hit handle so the same actor cannot stack up
+            // several concurrent hit scripts, exactly like projectile hits.
+            if ((actor->script.bank) && (actor->hscript_hit & SCRIPT_TERMINATED)) {
+                script_execute(actor->script.bank, actor->script.ptr, &(actor->hscript_hit), 1, (UWORD)group);
+            }
+            break;
+        case ACTOR_TRIGGER_UPDATE:
+            if ((actor->script_update.bank) && (actor->hscript_update & SCRIPT_TERMINATED)) {
+                script_execute(actor->script_update.bank, actor->script_update.ptr, &(actor->hscript_update), 0);
+            }
+            break;
+    }
+}
+
+#endif // DYNAMIC_ACTOR_ENABLE_TRIGGER_SCRIPT

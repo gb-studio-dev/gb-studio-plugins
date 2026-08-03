@@ -2,19 +2,20 @@ Index: src/core/actor.c
 ===================================================================
 --- src/core/actor.c
 +++ src/core/actor.c
-@@ -16,9 +16,10 @@
+@@ -16,9 +16,11 @@
  #include "collision.h"
  #include "ui.h"
  #include "vm.h"
  #include "macro.h"
 -#include "continuous_scene.h"
 +#include "data/states_defines.h"
++#include "dynamic_actor.h"
 +#include "scene_transition.h"
  
  #ifdef STRICT
      #include <gb/bgb_emu.h>
      #include <gb/crash_handler.h>
-@@ -71,9 +72,20 @@
+@@ -71,9 +73,20 @@
      player_moving           = FALSE;
      player_iframes          = 0;
      player_collision_actor  = NULL;
@@ -35,7 +36,7 @@ Index: src/core/actor.c
  
  void player_init(void) BANKED {
      actor_set_anim_idle(&PLAYER);
-@@ -205,12 +217,20 @@
+@@ -205,12 +218,20 @@
          }
  
          if (CHK_FLAG(actor->flags, ACTOR_FLAG_PINNED)) {
@@ -56,7 +57,27 @@ Index: src/core/actor.c
  
          if (((window_hide_actors) && (((screen_x + 8) > WX_REG) && ((screen_y - 8) > WY_REG)))) {
              continue;
-@@ -549,5 +569,6 @@
+@@ -256,8 +277,9 @@
+     }
+     if ((actor->hscript_hit & SCRIPT_TERMINATED) == 0) {
+         script_detach_hthread(actor->hscript_hit);
+     }
++    DYNAMIC_ACTOR_ON_DEACTIVATE(actor);
+ }
+ 
+ void deactivate_actor(actor_t *actor) BANKED {
+     deactivate_actor_impl(actor);
+@@ -312,8 +334,9 @@
+     if (actor->script_update.bank) {
+         script_execute(actor->script_update.bank, actor->script_update.ptr, &(actor->hscript_update), 0);
+     }
+     actor->hscript_hit = SCRIPT_TERMINATED;
++    DYNAMIC_ACTOR_ON_ACTIVATE(actor);
+ }
+ 
+ void activate_actor(actor_t *actor) BANKED {
+     activate_actor_impl(actor);
+@@ -549,5 +572,6 @@
      } else if (player_iframes != 0) {
          player_iframes--;
      }

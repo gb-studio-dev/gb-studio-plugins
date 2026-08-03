@@ -17,6 +17,8 @@ export const fields = [
       ["4", "Tile collision (Left)"],
       ["10", "Tile collision (Any)"],
       ["5", "Tile enter"],
+      ["6", "Actor activated"],
+      ["7", "Actor deactivated"],
     ],
   },
 ];

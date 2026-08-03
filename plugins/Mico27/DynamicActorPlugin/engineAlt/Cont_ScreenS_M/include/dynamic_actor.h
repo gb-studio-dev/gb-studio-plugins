@@ -111,6 +111,10 @@ typedef enum dynamic_actor_event_e {
     DYNAMIC_ACTOR_EVENT_TILE_COLLISION_BOTTOM = 3,
     DYNAMIC_ACTOR_EVENT_TILE_COLLISION_LEFT = 4,
     DYNAMIC_ACTOR_EVENT_TILE_ENTER = 5,
+#ifdef DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS
+    DYNAMIC_ACTOR_EVENT_ACTOR_ACTIVATED = 6,
+    DYNAMIC_ACTOR_EVENT_ACTOR_DEACTIVATED = 7,
+#endif
     DYNAMIC_ACTOR_CALLBACK_SIZE
 } dynamic_actor_event_e;
 
@@ -147,6 +151,36 @@ void dynamic_actor_mark_parenting_used(void) BANKED;
 
 void dynamic_actor_init(void) BANKED;
 void dynamic_actor_update(void) BANKED;
+
+#ifdef DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS
+// Runs the "Actor activated" / "Actor deactivated" callback scripts. The two
+// macros are what the overridden actor.c calls at the end of
+// activate_actor_impl() / deactivate_actor_impl(); with the feature disabled
+// they expand to nothing and actor.c compiles as if they were not there.
+void dynamic_actor_execute_activation(actor_t *actor, UBYTE activated) BANKED;
+#define DYNAMIC_ACTOR_ON_ACTIVATE(actor)   dynamic_actor_execute_activation((actor), TRUE)
+#define DYNAMIC_ACTOR_ON_DEACTIVATE(actor) dynamic_actor_execute_activation((actor), FALSE)
+#else
+#define DYNAMIC_ACTOR_ON_ACTIVATE(actor)   ((void)0)
+#define DYNAMIC_ACTOR_ON_DEACTIVATE(actor) ((void)0)
+#endif
+
+#ifdef DYNAMIC_ACTOR_ENABLE_ACTOR_ITERATION
+// args (push order): stateSlot, x, y, width, height, options
+void vm_actor_find_in_area(SCRIPT_CTX * THIS) OLDCALL BANKED;
+#endif
+
+#ifdef DYNAMIC_ACTOR_ENABLE_ACTOR_PROPERTIES
+// args (push order): dest, actorIndex, propertyId
+void vm_actor_get_property(SCRIPT_CTX * THIS) OLDCALL BANKED;
+// args (push order): actorIndex, propertyId, value
+void vm_actor_set_property(SCRIPT_CTX * THIS) OLDCALL BANKED;
+#endif
+
+#ifdef DYNAMIC_ACTOR_ENABLE_TRIGGER_SCRIPT
+// args (push order): actorIndex, which, collisionGroup
+void vm_actor_trigger_script(SCRIPT_CTX * THIS) OLDCALL BANKED;
+#endif
 
 #ifdef DYNAMIC_ACTOR_ENABLE_HIT_ACTORS
 // On collision, run the collided actor's onHit script - the same script the
