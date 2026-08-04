@@ -1,5 +1,5 @@
 {
-    "version": "4.3.0-e0",
+    "version": "4.3.0-e1",
     "fields": [
         { "key": "TRANSITION_WIPE", "label": "Wipe", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
         { "key": "TRANSITION_CURTAIN", "label": "Curtain", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
