@@ -13,44 +13,6 @@
       "when": {
         "additionalPlugins": [
           "Mico27/ContinuousScenePlugin",
-          "Mico27/ScreenScrollPlugin",
-          "Mico27/MetaTilePlugin"
-        ]
-      },
-      "use": "Cont_ScreenS_M"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ContinuousScenePlugin",
-          "ScreenScrollPlugin",
-          "MetaTilePlugin"
-        ]
-      },
-      "use": "Cont_ScreenS_M"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/ContinuousScenePlugin",
-          "Mico27/MetaTilePlugin"
-        ]
-      },
-      "use": "Cont_M"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ContinuousScenePlugin",
-          "MetaTilePlugin"
-        ]
-      },
-      "use": "Cont_M"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/ContinuousScenePlugin",
           "Mico27/ScreenScrollPlugin"
         ]
       },
@@ -68,24 +30,6 @@
     {
       "when": {
         "additionalPlugins": [
-          "Mico27/ScreenScrollPlugin",
-          "Mico27/MetaTilePlugin"
-        ]
-      },
-      "use": "ScreenS_M"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ScreenScrollPlugin",
-          "MetaTilePlugin"
-        ]
-      },
-      "use": "ScreenS_M"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
           "Mico27/ContinuousScenePlugin"
         ]
       },
@@ -98,22 +42,6 @@
         ]
       },
       "use": "Cont"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/MetaTilePlugin"
-        ]
-      },
-      "use": "M"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "MetaTilePlugin"
-        ]
-      },
-      "use": "M"
     },
     {
       "when": {
