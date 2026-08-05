@@ -2,7 +2,7 @@ Index: include/gbs_types.h
 ===================================================================
 --- include/gbs_types.h
 +++ include/gbs_types.h
-@@ -125,33 +125,69 @@
+@@ -125,33 +125,64 @@
      far_ptr_t tileset;              // far pointer to sprite tileset
      far_ptr_t cgb_tileset;          // far pointer to additional CGB tileset (may be NULL)
  } spritesheet_t;
@@ -16,7 +16,8 @@ Index: include/gbs_types.h
 -    bool anim_noloop          : 1;
 -    bool strong               : 1;
 +    uint8_t type              : 4;   // plugin: behaviour (see projectile_state)
-+    uint8_t gravity           : 4;   // plugin: biased by +8, see DEF_GRAVITY
++    uint8_t gravity           : 3;   // plugin: gravity
++    uint8_t invert_gravity    : 1;   // plugin: invert gravity
 +    uint8_t flags             : 5;   // plugin: EXECUTE_SCRIPT / IGNORE_PLAYER / ...
 +    uint8_t collision         : 2;   // plugin: tile collision behaviour 0-3
 +    uint8_t anim_noloop       : 1;
@@ -38,14 +39,8 @@ Index: include/gbs_types.h
 +    int8_t  amplitude;        // sine / orbit wave
  } projectile_def_t;
  
-+// gravity is a 4 bit unsigned field holding a +8 biased value, so it covers the
-+// -8..7 the event offers without relying on signed bitfields. It gave up a bit
-+// to widen `type`, since the two share a byte and SDCC will not straddle a
-+// bitfield across a byte boundary.
-+#define DEF_GRAVITY_BIAS 8
-+#define DEF_GRAVITY_MIN  (-8)
 +#define DEF_GRAVITY_MAX  7
-+#define DEF_GRAVITY(d)   (((BYTE)((d)->gravity)) - DEF_GRAVITY_BIAS)
++#define DEF_GRAVITY(d)   ((d)->invert_gravity ? -((BYTE)((d)->gravity)) : ((BYTE)((d)->gravity)))
 +
 +// Extended by the Dynamic Projectile Plugin: the fields below the stock
 +// members carry per-projectile state for the custom behaviours (orbit,
