@@ -280,11 +280,3 @@ Index: src/core/actor.c
      const UWORD a_left   = offset->x + bb->left;
      const UWORD a_right  = offset->x + bb->right;
      const UWORD a_top    = offset->y + bb->top;
-@@ -601,5 +610,5 @@
-     } else if (player_iframes != 0) {
-         player_iframes--;
-     }
-     player_collision_actor = NULL;
--}
-\ No newline at end of file
-+}

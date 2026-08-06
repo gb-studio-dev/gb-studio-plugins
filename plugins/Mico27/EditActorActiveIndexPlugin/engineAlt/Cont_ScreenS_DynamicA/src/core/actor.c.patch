@@ -172,11 +172,3 @@ Index: src/core/actor.c
  
  void activate_actor(actor_t *actor) BANKED {
      activate_actor_impl(actor);
-@@ -573,5 +612,5 @@
-         player_iframes--;
-     }
-     player_collision_actor = NULL;
-     check_transition_to_scene_collision();
--}
-\ No newline at end of file
-+}

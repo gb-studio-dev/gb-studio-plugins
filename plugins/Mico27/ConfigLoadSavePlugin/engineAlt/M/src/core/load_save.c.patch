@@ -163,4 +163,3 @@ Index: src/core/load_save.c
 +void vm_data_load_ex(SCRIPT_CTX * THIS) OLDCALL BANKED {
 +    data_load(*(uint8_t *)VM_REF_TO_PTR(FN_ARG0));
 +}
-\ No newline at end of file
