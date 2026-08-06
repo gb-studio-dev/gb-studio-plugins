@@ -9,7 +9,7 @@ Index: include/gbs_types.h
  
  #include <gbdk/platform.h>
  #include <gbdk/metasprites.h>
-@@ -157,33 +157,64 @@
+@@ -147,33 +147,64 @@
      far_ptr_t tileset;              // far pointer to sprite tileset
      far_ptr_t cgb_tileset;          // far pointer to additional CGB tileset (may be NULL)
  } spritesheet_t;
@@ -80,7 +80,7 @@ Index: include/gbs_types.h
  
  #define FONT_RECODE     1
  #define FONT_VWF        2
-@@ -231,6 +262,4 @@
+@@ -221,6 +252,4 @@
      palette_entry_t cgb_palette[];
  } palette_t;
  

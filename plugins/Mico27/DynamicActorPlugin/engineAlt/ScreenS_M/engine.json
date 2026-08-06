@@ -38,14 +38,25 @@
           "defaultValue": 0
         },
         {
-          "key": "DYNAMIC_ACTOR_MAX_BEHAVIORS",
-          "label": "Max behavior slots",
-          "description": "Number of behavior definition slots available (each slot uses 8 bytes of RAM)",
+          "key": "DYNAMIC_ACTOR_MAX_ACTORS",
+          "label": "Max actors",
+          "description": "Size of the engine's actors[] array, player included. Stock is 21 = the player plus the 20 actors the editor allows in a scene, so 21 is the useful maximum. Lowering it frees a whole actor slot of RAM each (60-71 bytes depending on the components enabled) plus one byte per actor of plugin side tables; a scene holding more actors than this simply loads the first ones and drops the rest.",
           "group": "Dynamic actor",
           "type": "slider",
           "cType": "define",
           "min": 1,
-          "max": 32,
+          "max": 21,
+          "defaultValue": 21
+        },
+        {
+          "key": "DYNAMIC_ACTOR_MAX_BEHAVIORS",
+          "label": "Max behavior slots",
+          "description": "Number of behavior definition slots available (each slot uses 8 bytes of RAM). Capped at 15 because each actor stores its behavior id in 4 bits of a byte it shares with its behavior state.",
+          "group": "Dynamic actor",
+          "type": "slider",
+          "cType": "define",
+          "min": 1,
+          "max": 15,
           "defaultValue": 8
         },
         {

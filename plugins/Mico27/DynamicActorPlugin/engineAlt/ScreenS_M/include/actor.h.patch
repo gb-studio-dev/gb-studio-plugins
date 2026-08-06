@@ -1,0 +1,20 @@
+Index: include/actor.h
+===================================================================
+--- include/actor.h
++++ include/actor.h
+@@ -4,10 +4,15 @@
+ #include <gbdk/platform.h>
+ #include "bankdata.h"
+ #include "gbs_types.h"
+ #include "math.h"
++#include "data/states_defines.h"
+ 
++#ifdef DYNAMIC_ACTOR_MAX_ACTORS
++#define MAX_ACTORS            DYNAMIC_ACTOR_MAX_ACTORS
++#else
+ #define MAX_ACTORS            21
++#endif
+ #define MAX_ACTORS_ACTIVE     12
+ 
+ #define PLAYER                actors[0]
+ #define ON_8PX_GRID(A)        ((((A).x | (A).y) & 0xFF) == 0)

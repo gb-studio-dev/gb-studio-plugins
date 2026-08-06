@@ -19,7 +19,7 @@ export const fields = [
   {
     key: "stateId",
     label: "State id",
-    description: "State id",
+    description: "State id. 0 pauses the behavior, 1 grounded, 2 airborne Y, 3 airborne Z; 4 to 15 are free for your own use. The field is 4 bits wide, so values above 15 wrap around.",
     type: "value",
      defaultValue: {
           type: "number",

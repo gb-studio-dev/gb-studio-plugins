@@ -97,7 +97,9 @@
 #define BHV_EVENT_ACTIVATE_TRIGGERS 0x80u // fire trigger onEnter/onLeave scripts as this actor
                                           // moves in/out of a trigger (player-style activation)
 
-// Actor behavior states (actor_state)
+// Actor behavior states (actor_state). 4 through 15 are free for your own use.
+// BHV_STATE_KEEP is a "leave it alone" marker for Set Actor Behavior, never a
+// value that reaches the actor.
 #define BHV_STATE_PAUSED    0
 #define BHV_STATE_GROUNDED  1
 #define BHV_STATE_AIRBORNE_Y 2

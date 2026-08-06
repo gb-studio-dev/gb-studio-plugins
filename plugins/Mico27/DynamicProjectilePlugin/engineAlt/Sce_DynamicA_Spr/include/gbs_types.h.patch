@@ -9,23 +9,7 @@ Index: include/gbs_types.h
  
  #include <gbdk/platform.h>
  #include <gbdk/metasprites.h>
-@@ -62,8 +62,15 @@
-     uint8_t collision_group;
-     uint8_t using_sprite_buffer;
- 
-     //Dynamic actor
-+    // This actor's own index in actors[], cached once per scene by actors_init.
-+    // The runtime often holds only a pointer to an actor but has to report its
-+    // index (event fields, per-actor side tables). Deriving it with
-+    // (actor - actors) makes SDCC emit a call to __divsint - a 16 bit restoring
-+    // division, ~2600 cycles - because sizeof(actor_t) is not a power of two.
-+    // One byte per actor buys that back everywhere.
-+    uint8_t actor_index;
-     uint8_t actor_behavior_id;
-     uint8_t actor_state;
-     int8_t actor_vel_x;
-     int8_t actor_vel_y;
-@@ -151,33 +158,64 @@
+@@ -148,33 +148,64 @@
      far_ptr_t tileset;              // far pointer to sprite tileset
      far_ptr_t cgb_tileset;          // far pointer to additional CGB tileset (may be NULL)
  } spritesheet_t;
@@ -96,7 +80,7 @@ Index: include/gbs_types.h
  
  #define FONT_RECODE     1
  #define FONT_VWF        2
-@@ -225,6 +263,4 @@
+@@ -222,6 +253,4 @@
      palette_entry_t cgb_palette[];
  } palette_t;
  

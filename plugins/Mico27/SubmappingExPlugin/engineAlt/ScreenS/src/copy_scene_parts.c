@@ -5,19 +5,56 @@
 #include "vm.h"
 #include "gbs_types.h"
 #include "scroll.h"
+#include "math.h"
 #include "bankdata.h"
 #include "data_manager.h"
 #include "data/states_defines.h"   // engine-field enable/disable #defines
 
-// engineAlt variant for ScreenScrollPlugin / ContinuousScenePlugin.
-// Those plugins shift the background tilemap in VRAM by (bkg_offset_x,
-// bkg_offset_y) (declared extern in their scroll.h). Every background VRAM
-// tile position below therefore adds bkg_offset_x/y before the & 31 wrap.
-// Overlay/window positions and ROM tilemap reads are unchanged.
-
 UBYTE tmp_tile_buffer[32];
 
 void set_xy_win_submap(const UBYTE * source, UBYTE bank, UBYTE width, UBYTE x, UBYTE y, UBYTE w, UBYTE h) OLDCALL;
+
+// vm.h only declares FN_ARG0..FN_ARG7; one helper here takes a ninth argument.
+#ifndef FN_ARG8
+#define FN_ARG8 -9
+#endif
+
+// ---------------------------------------------------------------------------
+// engineAlt variant for ScreenScrollPlugin / ContinuousScenePlugin.
+// Absolute scene tile coordinate -> background VRAM tilemap cell (0-31).
+// Those plugins shift the background tilemap in VRAM by (bkg_offset_x,
+// bkg_offset_y) (declared extern in their scroll.h), so the offset is added
+// here before the & 31 wrap. This pair of macros is the ONLY difference
+// between this file and the base engine/src/copy_scene_parts.c.
+// Overlay/window cells and ROM tilemap reads are unchanged.
+// ---------------------------------------------------------------------------
+#define BKG_VRAM_X(x) ((UBYTE)((x) + bkg_offset_x) & 31)
+#define BKG_VRAM_Y(y) ((UBYTE)((y) + bkg_offset_y) & 31)
+
+// ---------------------------------------------------------------------------
+// Screen-relative coordinates ("take scrolling into account").
+// When `rel` is non-zero the caller's X/Y are screen tile coordinates, with
+// (0,0) at the top-left tile currently visible, and the camera's scroll
+// position is added to turn them into absolute scene tile coordinates.
+// draw_scroll_x/y are the values actually written to SCX/SCY by the engine.
+// The coordinate argument is evaluated twice, so only pass a plain value or a
+// side-effect-free expression.
+// ---------------------------------------------------------------------------
+#define SCROLL_REL_X(x, rel) ((UBYTE)((rel) ? ((x) + PX_TO_TILE(draw_scroll_x)) : (x)))
+#define SCROLL_REL_Y(y, rel) ((UBYTE)((rel) ? ((y) + PX_TO_TILE(draw_scroll_y)) : (y)))
+
+// ---------------------------------------------------------------------------
+// Tile attribute part selection.
+// The event passes a packed int16: low byte = bit mask, high byte = shift.
+// A mask of 0xFF (shift 0) means "raw attribute value" and lets the fast,
+// write-only paths be used; anything narrower needs a read-modify-write so the
+// bits outside the mask are preserved.
+// ---------------------------------------------------------------------------
+#define ATTR_PART_MASK(part)  ((UBYTE)((part) & 0xFF))
+#define ATTR_PART_SHIFT(part) ((UBYTE)(((part) >> 8) & 0xFF))
+#define ATTR_PART_IS_RAW(part) (ATTR_PART_MASK(part) == 0xFF)
+#define ATTR_PART_APPLY(old_attr, value, mask, shift) \
+    ((UBYTE)(((old_attr) & ~(mask)) | (((UBYTE)((value) << (shift))) & (mask))))
 
 #ifdef SUBMAP_ENABLE_COPY_SCENE_TO_OVERLAY
 void copy_background_submap_to_overlay(SCRIPT_CTX * THIS) OLDCALL BANKED {
@@ -101,6 +138,9 @@ void copy_background_submap_to_background(SCRIPT_CTX * THIS) OLDCALL BANKED {
     uint8_t height = *(int8_t*)VM_REF_TO_PTR(FN_ARG5);
     uint8_t scene_bank = *(uint8_t *) VM_REF_TO_PTR(FN_ARG6);
     const scene_t * scene_ptr = *(scene_t **) VM_REF_TO_PTR(FN_ARG7);
+    uint8_t relative = *(uint8_t *) VM_REF_TO_PTR(FN_ARG8);
+    dest_x = SCROLL_REL_X(dest_x, relative);
+    dest_y = SCROLL_REL_Y(dest_y, relative);
     scene_t scn;
     MemcpyBanked(&scn, scene_ptr, sizeof(scn), scene_bank);
     background_t bkg;
@@ -115,12 +155,12 @@ void copy_background_submap_to_background(SCRIPT_CTX * THIS) OLDCALL BANKED {
         if (_is_CGB) {
             VBK_REG = 1;
             MemcpyBanked(tmp_tile_buffer, tilemap_attr_ptr + offset, buffer_size, bkg.cgb_tilemap_attr.bank);
-            set_bkg_tiles((dest_x + bkg_offset_x) & 31, (dest_y + i + bkg_offset_y) & 31, width, 1, tmp_tile_buffer);
+            set_bkg_tiles(BKG_VRAM_X(dest_x), BKG_VRAM_Y(dest_y + i), width, 1, tmp_tile_buffer);
             VBK_REG = 0;
         }
 #endif
         MemcpyBanked(tmp_tile_buffer, tilemap_ptr + offset, buffer_size, bkg.tilemap.bank);
-        set_bkg_tiles((dest_x + bkg_offset_x) & 31, (dest_y + i + bkg_offset_y) & 31, width, 1, tmp_tile_buffer);
+        set_bkg_tiles(BKG_VRAM_X(dest_x), BKG_VRAM_Y(dest_y + i), width, 1, tmp_tile_buffer);
     }
 
 }
@@ -134,11 +174,12 @@ void copy_background_submap_to_background_base(SCRIPT_CTX * THIS) OLDCALL BANKED
     uint8_t tile_idx_offset = *(int8_t*)VM_REF_TO_PTR(FN_ARG3);
     uint8_t scene_bank = *(uint8_t *) VM_REF_TO_PTR(FN_ARG4);
     const scene_t * scene_ptr = *(scene_t **) VM_REF_TO_PTR(FN_ARG5);
+    uint8_t relative = *(uint8_t *) VM_REF_TO_PTR(FN_ARG6);
 
     UBYTE source_x = bkg_pos & 0xFF;
     UBYTE source_y = (bkg_pos >> 8) & 0xFF;
-    UBYTE dest_x = dest_pos & 0xFF;
-    UBYTE dest_y = (dest_pos >> 8) & 0xFF;
+    UBYTE dest_x = SCROLL_REL_X(dest_pos & 0xFF, relative);
+    UBYTE dest_y = SCROLL_REL_Y((dest_pos >> 8) & 0xFF, relative);
     UBYTE width = (wh & 0xFF);
     UBYTE height = ((wh >> 8) & 0xFF);
 
@@ -157,12 +198,12 @@ void copy_background_submap_to_background_base(SCRIPT_CTX * THIS) OLDCALL BANKED
         if (_is_CGB) {
             VBK_REG = 1;
             MemcpyBanked(tmp_tile_buffer, tilemap_attr_ptr + offset, buffer_size, bkg.cgb_tilemap_attr.bank);
-            set_bkg_tiles((dest_x + bkg_offset_x) & 31, (dest_y + i + bkg_offset_y) & 31, width, 1, tmp_tile_buffer);
+            set_bkg_tiles(BKG_VRAM_X(dest_x), BKG_VRAM_Y(dest_y + i), width, 1, tmp_tile_buffer);
             VBK_REG = 0;
         }
 #endif
         MemcpyBanked(tmp_tile_buffer, tilemap_ptr + offset, buffer_size, bkg.tilemap.bank);
-        set_bkg_based_tiles((dest_x + bkg_offset_x) & 31, (dest_y + i + bkg_offset_y) & 31, width, 1, tmp_tile_buffer, tile_idx_offset);
+        set_bkg_based_tiles(BKG_VRAM_X(dest_x), BKG_VRAM_Y(dest_y + i), width, 1, tmp_tile_buffer, tile_idx_offset);
     }
 }
 #endif
@@ -175,8 +216,9 @@ void copy_background_submap_to_background_base(SCRIPT_CTX * THIS) OLDCALL BANKED
 // this behaves like the built-in scroll refresh but confined to the rectangle.
 void vm_refresh_background_rect(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
-    UBYTE x = *(uint8_t *) VM_REF_TO_PTR(FN_ARG0);
-    UBYTE y = *(uint8_t *) VM_REF_TO_PTR(FN_ARG1);
+    UBYTE relative = *(uint8_t *) VM_REF_TO_PTR(FN_ARG4);
+    UBYTE x = SCROLL_REL_X(*(uint8_t *) VM_REF_TO_PTR(FN_ARG0), relative);
+    UBYTE y = SCROLL_REL_Y(*(uint8_t *) VM_REF_TO_PTR(FN_ARG1), relative);
     UBYTE width = *(uint8_t *) VM_REF_TO_PTR(FN_ARG2);
     UBYTE height = *(uint8_t *) VM_REF_TO_PTR(FN_ARG3);
 
@@ -187,12 +229,12 @@ void vm_refresh_background_rect(SCRIPT_CTX * THIS) OLDCALL BANKED {
         if (_is_CGB) {
             VBK_REG = 1;
             MemcpyBanked(tmp_tile_buffer, image_attr_ptr + offset, buffer_size, image_attr_bank);
-            set_bkg_tiles((x + bkg_offset_x) & 31, (y + i + bkg_offset_y) & 31, width, 1, tmp_tile_buffer);
+            set_bkg_tiles(BKG_VRAM_X(x), BKG_VRAM_Y(y + i), width, 1, tmp_tile_buffer);
             VBK_REG = 0;
         }
 #endif
         MemcpyBanked(tmp_tile_buffer, image_ptr + offset, buffer_size, image_bank);
-        set_bkg_tiles((x + bkg_offset_x) & 31, (y + i + bkg_offset_y) & 31, width, 1, tmp_tile_buffer);
+        set_bkg_tiles(BKG_VRAM_X(x), BKG_VRAM_Y(y + i), width, 1, tmp_tile_buffer);
     }
 }
 #endif
@@ -206,11 +248,12 @@ void copy_background_submap_to_tileset(SCRIPT_CTX * THIS) OLDCALL BANKED {
     uint8_t copy_attributes = *(int8_t*)VM_REF_TO_PTR(FN_ARG4);
     uint8_t scene_bank = *(uint8_t *) VM_REF_TO_PTR(FN_ARG5);
     const scene_t * scene_ptr = *(scene_t **) VM_REF_TO_PTR(FN_ARG6);
+    uint8_t relative = *(uint8_t *) VM_REF_TO_PTR(FN_ARG7);
 
     UBYTE source_x = source_pos & 0xFF;
     UBYTE source_y = (source_pos >> 8) & 0xFF;
-    UBYTE dest_x = dest_pos & 0xFF;
-    UBYTE dest_y = (dest_pos >> 8) & 0xFF;
+    UBYTE dest_x = SCROLL_REL_X(dest_pos & 0xFF, relative);
+    UBYTE dest_y = SCROLL_REL_Y((dest_pos >> 8) & 0xFF, relative);
     UBYTE width = (wh & 0xFF);
     UBYTE height = ((wh >> 8) & 0xFF);
     UBYTE overlay_x = overlay_pos & 0xFF;
@@ -246,7 +289,7 @@ void copy_background_submap_to_tileset(SCRIPT_CTX * THIS) OLDCALL BANKED {
                     if (copy_attributes){
                         VBK_REG = 1;
                         if (copy_attributes == 1){
-                            set_bkg_tile_xy((dest_x + j + bkg_offset_x) & 31, (dest_y + i + bkg_offset_y) & 31, (dest_attr & 0x08)? (source_attr | 0x08): (source_attr & ~0x08));
+                            set_bkg_tile_xy(BKG_VRAM_X(dest_x + j), BKG_VRAM_Y(dest_y + i), (dest_attr & 0x08)? (source_attr | 0x08): (source_attr & ~0x08));
                         } else if (copy_attributes == 2){
                             set_win_tile_xy((overlay_x + j) & 31, (overlay_y + i) & 31, (dest_attr & 0x08)? (source_attr | 0x08): (source_attr & ~0x08));
                         }
@@ -274,8 +317,9 @@ void copy_background_submap_to_tileset(SCRIPT_CTX * THIS) OLDCALL BANKED {
 
 #ifdef SUBMAP_ENABLE_TILE_GET_SET
 void vm_get_background_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
-    UBYTE x = ((*(uint8_t *) VM_REF_TO_PTR(FN_ARG0)));
-    UBYTE y = ((*(uint8_t *) VM_REF_TO_PTR(FN_ARG1)));
+    UBYTE relative = *(uint8_t *) VM_REF_TO_PTR(FN_ARG3);
+    UBYTE x = SCROLL_REL_X(*(uint8_t *) VM_REF_TO_PTR(FN_ARG0), relative);
+    UBYTE y = SCROLL_REL_Y(*(uint8_t *) VM_REF_TO_PTR(FN_ARG1), relative);
     int16_t idx = *(int16_t*)VM_REF_TO_PTR(FN_ARG2);
     int16_t * A;
     if (idx < 0) A = THIS->stack_ptr + idx - 3; else A = script_memory + idx;
@@ -284,7 +328,10 @@ void vm_get_background_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
 }
 
 void vm_replace_background_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
-    set_bkg_tile_xy((((*(uint8_t *) VM_REF_TO_PTR(FN_ARG0)) + bkg_offset_x) & 31), (((*(uint8_t *) VM_REF_TO_PTR(FN_ARG1)) + bkg_offset_y) & 31), (*(uint8_t *) VM_REF_TO_PTR(FN_ARG2)));
+    UBYTE relative = *(uint8_t *) VM_REF_TO_PTR(FN_ARG3);
+    UBYTE x = SCROLL_REL_X(*(uint8_t *) VM_REF_TO_PTR(FN_ARG0), relative);
+    UBYTE y = SCROLL_REL_Y(*(uint8_t *) VM_REF_TO_PTR(FN_ARG1), relative);
+    set_bkg_tile_xy(BKG_VRAM_X(x), BKG_VRAM_Y(y), (*(uint8_t *) VM_REF_TO_PTR(FN_ARG2)));
 }
 
 void vm_replace_overlay_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
@@ -292,36 +339,48 @@ void vm_replace_overlay_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
 }
 
 #ifdef CGB
-    
+
 void vm_get_background_attribute_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
     if (_is_CGB) {
-        UBYTE x = *(uint8_t*)VM_REF_TO_PTR(FN_ARG0);
-        UBYTE y = *(uint8_t*)VM_REF_TO_PTR(FN_ARG1);
+        int16_t part = *(int16_t*)VM_REF_TO_PTR(FN_ARG3);
+        UBYTE relative = *(uint8_t*)VM_REF_TO_PTR(FN_ARG4);
+        UBYTE x = SCROLL_REL_X(*(uint8_t*)VM_REF_TO_PTR(FN_ARG0), relative);
+        UBYTE y = SCROLL_REL_Y(*(uint8_t*)VM_REF_TO_PTR(FN_ARG1), relative);
         int16_t idx = *(int16_t*)VM_REF_TO_PTR(FN_ARG2);
         int16_t * A;
         if (idx < 0) A = THIS->stack_ptr + idx - 3; else A = script_memory + idx;
-        *A = ReadBankedUBYTE(image_attr_ptr + (uint16_t)((y * (uint16_t)image_tile_width) + x), image_attr_bank);
+        UBYTE attr = ReadBankedUBYTE(image_attr_ptr + (uint16_t)((y * (uint16_t)image_tile_width) + x), image_attr_bank);
+        *A = (int16_t)(UBYTE)((attr & ATTR_PART_MASK(part)) >> ATTR_PART_SHIFT(part));
     }
 }
 
 void vm_replace_background_attribute_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
     if (_is_CGB) {
-        UBYTE x = ((*(uint8_t *) VM_REF_TO_PTR(FN_ARG0)));
-        UBYTE y = ((*(uint8_t *) VM_REF_TO_PTR(FN_ARG1)));
+        int16_t part = *(int16_t*)VM_REF_TO_PTR(FN_ARG3);
+        UBYTE relative = *(uint8_t *) VM_REF_TO_PTR(FN_ARG4);
+        UBYTE x = BKG_VRAM_X(SCROLL_REL_X(*(uint8_t *) VM_REF_TO_PTR(FN_ARG0), relative));
+        UBYTE y = BKG_VRAM_Y(SCROLL_REL_Y(*(uint8_t *) VM_REF_TO_PTR(FN_ARG1), relative));
         UBYTE new_attr = (*(uint8_t *) VM_REF_TO_PTR(FN_ARG2));
         VBK_REG = 1;
-        set_bkg_tile_xy((x + bkg_offset_x) & 31, (y + bkg_offset_y) & 31, new_attr);
+        if (!ATTR_PART_IS_RAW(part)) {
+            new_attr = ATTR_PART_APPLY(get_bkg_tile_xy(x, y), new_attr, ATTR_PART_MASK(part), ATTR_PART_SHIFT(part));
+        }
+        set_bkg_tile_xy(x, y, new_attr);
         VBK_REG = 0;
     }
 }
 
 void vm_replace_overlay_attribute_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
     if (_is_CGB) {
-        UBYTE x = ((*(uint8_t *) VM_REF_TO_PTR(FN_ARG0)));
-        UBYTE y = ((*(uint8_t *) VM_REF_TO_PTR(FN_ARG1)));
+        UBYTE x = ((*(uint8_t *) VM_REF_TO_PTR(FN_ARG0)) & 31);
+        UBYTE y = ((*(uint8_t *) VM_REF_TO_PTR(FN_ARG1)) & 31);
         UBYTE new_attr = (*(uint8_t *) VM_REF_TO_PTR(FN_ARG2));
+        int16_t part = *(int16_t*)VM_REF_TO_PTR(FN_ARG3);
         VBK_REG = 1;
-        set_win_tile_xy((x & 31), (y & 31), new_attr);
+        if (!ATTR_PART_IS_RAW(part)) {
+            new_attr = ATTR_PART_APPLY(get_win_tile_xy(x, y), new_attr, ATTR_PART_MASK(part), ATTR_PART_SHIFT(part));
+        }
+        set_win_tile_xy(x, y, new_attr);
         VBK_REG = 0;
     }
 }
@@ -336,25 +395,47 @@ void vm_replace_overlay_attribute_tile(SCRIPT_CTX * THIS) OLDCALL BANKED {
 #ifdef SUBMAP_ENABLE_FILL_BACKGROUND
 void vm_fill_background_rect(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
-    UBYTE x = *(uint8_t *) VM_REF_TO_PTR(FN_ARG0);
-    UBYTE y = *(uint8_t *) VM_REF_TO_PTR(FN_ARG1);
+    UBYTE relative = *(uint8_t *) VM_REF_TO_PTR(FN_ARG5);
+    UBYTE x = SCROLL_REL_X(*(uint8_t *) VM_REF_TO_PTR(FN_ARG0), relative);
+    UBYTE y = SCROLL_REL_Y(*(uint8_t *) VM_REF_TO_PTR(FN_ARG1), relative);
     UBYTE w = *(uint8_t *) VM_REF_TO_PTR(FN_ARG2);
     UBYTE h = *(uint8_t *) VM_REF_TO_PTR(FN_ARG3);
     UBYTE tile = *(uint8_t *) VM_REF_TO_PTR(FN_ARG4);
-    fill_bkg_rect((x + bkg_offset_x) & 31, (y + bkg_offset_y) & 31, w, h, tile);
+    fill_bkg_rect(BKG_VRAM_X(x), BKG_VRAM_Y(y), w, h, tile);
 }
 
 #ifdef CGB
+// Read-modify-write fill, used when only part of the attribute byte is being
+// replaced. Each cell is wrapped individually so the rectangle behaves the same
+// as the raw fill when it crosses the 32-tile tilemap edge.
+static void fill_bkg_attr_rect_masked(UBYTE x, UBYTE y, UBYTE w, UBYTE h, UBYTE value, UBYTE mask, UBYTE shift) {
+    UBYTE bits = (UBYTE)(value << shift) & mask;
+    UBYTE keep = ~mask;
+    for (UBYTE i = 0; i != h; i++) {
+        UBYTE ty = BKG_VRAM_Y(y + i);
+        for (UBYTE j = 0; j != w; j++) {
+            UBYTE tx = BKG_VRAM_X(x + j);
+            set_bkg_tile_xy(tx, ty, (get_bkg_tile_xy(tx, ty) & keep) | bits);
+        }
+    }
+}
+
 void vm_fill_background_attribute_rect(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
     if (_is_CGB) {
-        UBYTE x = *(uint8_t *) VM_REF_TO_PTR(FN_ARG0);
-        UBYTE y = *(uint8_t *) VM_REF_TO_PTR(FN_ARG1);
+        int16_t part = *(int16_t*)VM_REF_TO_PTR(FN_ARG5);
+        UBYTE relative = *(uint8_t *) VM_REF_TO_PTR(FN_ARG6);
+        UBYTE x = SCROLL_REL_X(*(uint8_t *) VM_REF_TO_PTR(FN_ARG0), relative);
+        UBYTE y = SCROLL_REL_Y(*(uint8_t *) VM_REF_TO_PTR(FN_ARG1), relative);
         UBYTE w = *(uint8_t *) VM_REF_TO_PTR(FN_ARG2);
         UBYTE h = *(uint8_t *) VM_REF_TO_PTR(FN_ARG3);
         UBYTE attr = *(uint8_t *) VM_REF_TO_PTR(FN_ARG4);
         VBK_REG = 1;
-        fill_bkg_rect((x + bkg_offset_x) & 31, (y + bkg_offset_y) & 31, w, h, attr);
+        if (ATTR_PART_IS_RAW(part)) {
+            fill_bkg_rect(BKG_VRAM_X(x), BKG_VRAM_Y(y), w, h, attr);
+        } else {
+            fill_bkg_attr_rect_masked(x, y, w, h, attr, ATTR_PART_MASK(part), ATTR_PART_SHIFT(part));
+        }
         VBK_REG = 0;
     }
 }
@@ -373,6 +454,18 @@ void vm_fill_overlay_rect(SCRIPT_CTX * THIS) OLDCALL BANKED {
 }
 
 #ifdef CGB
+static void fill_win_attr_rect_masked(UBYTE x, UBYTE y, UBYTE w, UBYTE h, UBYTE value, UBYTE mask, UBYTE shift) {
+    UBYTE bits = (UBYTE)(value << shift) & mask;
+    UBYTE keep = ~mask;
+    for (UBYTE i = 0; i != h; i++) {
+        UBYTE ty = (y + i) & 31;
+        for (UBYTE j = 0; j != w; j++) {
+            UBYTE tx = (x + j) & 31;
+            set_win_tile_xy(tx, ty, (get_win_tile_xy(tx, ty) & keep) | bits);
+        }
+    }
+}
+
 void vm_fill_overlay_attribute_rect(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
     if (_is_CGB) {
@@ -381,8 +474,13 @@ void vm_fill_overlay_attribute_rect(SCRIPT_CTX * THIS) OLDCALL BANKED {
         UBYTE w = *(uint8_t *) VM_REF_TO_PTR(FN_ARG2);
         UBYTE h = *(uint8_t *) VM_REF_TO_PTR(FN_ARG3);
         UBYTE attr = *(uint8_t *) VM_REF_TO_PTR(FN_ARG4);
+        int16_t part = *(int16_t*)VM_REF_TO_PTR(FN_ARG5);
         VBK_REG = 1;
-        fill_win_rect(x, y, w, h, attr);
+        if (ATTR_PART_IS_RAW(part)) {
+            fill_win_rect(x, y, w, h, attr);
+        } else {
+            fill_win_attr_rect_masked(x, y, w, h, attr, ATTR_PART_MASK(part), ATTR_PART_SHIFT(part));
+        }
         VBK_REG = 0;
     }
 }
@@ -648,13 +746,14 @@ static void scroll_rect_dir(UBYTE * base_addr, UBYTE w, UBYTE h, UBYTE dir, UBYT
 
 void vm_scroll_background_rect(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
-    UBYTE x    = *(uint8_t *) VM_REF_TO_PTR(FN_ARG0);
-    UBYTE y    = *(uint8_t *) VM_REF_TO_PTR(FN_ARG1);
+    UBYTE relative = *(uint8_t *) VM_REF_TO_PTR(FN_ARG6);
+    UBYTE x    = SCROLL_REL_X(*(uint8_t *) VM_REF_TO_PTR(FN_ARG0), relative);
+    UBYTE y    = SCROLL_REL_Y(*(uint8_t *) VM_REF_TO_PTR(FN_ARG1), relative);
     UBYTE w    = *(uint8_t *) VM_REF_TO_PTR(FN_ARG2);
     UBYTE h    = *(uint8_t *) VM_REF_TO_PTR(FN_ARG3);
     UBYTE dir  = *(uint8_t *) VM_REF_TO_PTR(FN_ARG4);
     UBYTE fill = *(uint8_t *) VM_REF_TO_PTR(FN_ARG5);
-    UBYTE * base_addr = GetBkgAddr() + (((y + bkg_offset_y) & 31) << 5) + ((x + bkg_offset_x) & 31);
+    UBYTE * base_addr = GetBkgAddr() + ((UWORD)BKG_VRAM_Y(y) << 5) + BKG_VRAM_X(x);
 #ifdef CGB
     if (_is_CGB) {
         VBK_REG = 1;

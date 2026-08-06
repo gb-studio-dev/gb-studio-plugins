@@ -120,10 +120,10 @@ void vm_define_actor_behavior(SCRIPT_CTX * THIS) OLDCALL BANKED {
 void vm_set_actor_behavior(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
     actor_t * actor = actors + *(uint8_t *)VM_REF_TO_PTR(FN_ARG0);
-    actor->actor_behavior_id = *(uint8_t *)VM_REF_TO_PTR(FN_ARG1);
+    actor->actor_behavior_id = (*(uint8_t *)VM_REF_TO_PTR(FN_ARG1) & 0x0F);
     UBYTE state = *(uint8_t *)VM_REF_TO_PTR(FN_ARG2);
     if (state != BHV_STATE_KEEP) {
-        actor->actor_state = state;
+        actor->actor_state = (state & 0x0F);
     }
 }
 
@@ -138,7 +138,7 @@ void vm_get_actor_behavior(SCRIPT_CTX * THIS) OLDCALL BANKED {
 void vm_set_actor_state(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
     actor_t * actor = actors + *(uint8_t *)VM_REF_TO_PTR(FN_ARG0);
-    actor->actor_state = *(uint8_t *)VM_REF_TO_PTR(FN_ARG1);
+    actor->actor_state = (*(uint8_t *)VM_REF_TO_PTR(FN_ARG1) & 0x0F);
 }
 
 void vm_get_actor_state(SCRIPT_CTX * THIS) OLDCALL BANKED {
@@ -629,7 +629,9 @@ UBYTE vm_wait_for_actor_state(void * THIS, UBYTE start, UWORD * stack_frame) OLD
             return TRUE;
         }
     }
-    UBYTE match = (actor->actor_state == (UBYTE)stack_frame[1]);
+    // Masked like Set Actor State masks on the way in, so waiting for a state
+    // that overflows the 4 bit field matches whatever setting it stored.
+    UBYTE match = (actor->actor_state == ((UBYTE)stack_frame[1] & 0x0F));
     if (stack_frame[2]) {
         match = !match;
     }
