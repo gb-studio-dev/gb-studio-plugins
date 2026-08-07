@@ -92,6 +92,7 @@ WORD new_actor_z;
 UBYTE col_tx;
 UBYTE col_ty;
 
+#ifdef DYNAMIC_ACTOR_ENABLE_STATE_CHANGE_EVENT
 static void dynamic_actor_execute_state_change(actor_t *actor) {
     script_event_t *event = &dynamic_actor_events[DYNAMIC_ACTOR_EVENT_STATE_CHANGE];
     if (!event->script_addr) {
@@ -104,6 +105,7 @@ static void dynamic_actor_execute_state_change(actor_t *actor) {
         script_execute(event->script_bank, event->script_addr, &event->handle, 0, 0);
     }
 }
+#endif
 
 #ifdef DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS
 void dynamic_actor_execute_activation(actor_t *actor, UBYTE activated) BANKED {
@@ -129,6 +131,7 @@ void dynamic_actor_execute_activation(actor_t *actor, UBYTE activated) BANKED {
 }
 #endif
 
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_EVENTS
 static void dynamic_actor_execute_tile_interaction(actor_t *actor, UBYTE tile_x, UBYTE tile_y, dynamic_actor_event_e event_type) {
     script_event_t *event = &dynamic_actor_events[event_type];    
     if (!event->script_addr) {
@@ -181,6 +184,16 @@ static void dynamic_actor_execute_tile_collision_left(actor_t *actor, UBYTE tile
 // the body is needed.
 #define dynamic_actor_execute_tile_enter(actor, tile_x, tile_y) \
     dynamic_actor_execute_tile_interaction((actor), (tile_x), (tile_y), DYNAMIC_ACTOR_EVENT_TILE_ENTER)
+#else
+// Tile events compiled out. The collision helpers below report hits from about
+// thirty call sites; expanding the dispatchers to nothing removes all of them
+// without an #ifdef at each site.
+#define dynamic_actor_execute_tile_collision_top(actor, tile_x, tile_y)    ((void)0)
+#define dynamic_actor_execute_tile_collision_right(actor, tile_x, tile_y)  ((void)0)
+#define dynamic_actor_execute_tile_collision_bottom(actor, tile_x, tile_y) ((void)0)
+#define dynamic_actor_execute_tile_collision_left(actor, tile_x, tile_y)   ((void)0)
+#define dynamic_actor_execute_tile_enter(actor, tile_x, tile_y)            ((void)0)
+#endif
 
 void dynamic_actor_init(void) BANKED {
     memset(behavior_defs, 0, sizeof(behavior_defs));
@@ -809,13 +822,15 @@ void dynamic_actor_update(void) BANKED {
         UBYTE flags = def->flags;
         UBYTE flags2 = def->flags2;
         UBYTE event_flags = def->event_flags;
+        dynamic_actor_current_actor = actor;
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_EVENTS
         UBYTE start_tile_x = 0;
         UBYTE start_tile_y = 0;
-        dynamic_actor_current_actor = actor;
         if (CHK_FLAG(event_flags, BHV_EVENT_TILE_ENTER)) {
             start_tile_x = SUBPX_TO_TILE(actor->pos.x);
             start_tile_y = SUBPX_TO_TILE(actor->pos.y);
         }
+#endif
 
 #if defined(DYNAMIC_ACTOR_ENABLE_PARENT) && (DYNAMIC_ACTOR_PARENT_MODE != DYNAMIC_ACTOR_PARENT_MODE_DELTA)
         // Parenting is not a behavior: every actor with a defined parent
@@ -920,7 +935,9 @@ void dynamic_actor_update(void) BANKED {
         }
 #endif
 
+#ifdef DYNAMIC_ACTOR_ENABLE_STATE_CHANGE_EVENT
         UBYTE old_state = actor->actor_state;
+#endif
 
 #ifdef DYNAMIC_ACTOR_ENABLE_ACTOR_COLLISION
         // Position before this frame's own movement (after any parent carry),
@@ -1158,9 +1175,12 @@ void dynamic_actor_update(void) BANKED {
         }
 #endif
 
+#ifdef DYNAMIC_ACTOR_ENABLE_STATE_CHANGE_EVENT
         if (CHK_FLAG(event_flags, BHV_EVENT_STATE_CHANGE) && old_state != actor->actor_state) {
             dynamic_actor_execute_state_change(actor);
         }
+#endif
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_EVENTS
         if (CHK_FLAG(event_flags, BHV_EVENT_TILE_ENTER)) {
             UBYTE end_tile_x = SUBPX_TO_TILE(actor->pos.x);
             UBYTE end_tile_y = SUBPX_TO_TILE(actor->pos.y);
@@ -1168,6 +1188,7 @@ void dynamic_actor_update(void) BANKED {
                 dynamic_actor_execute_tile_enter(actor, end_tile_x, end_tile_y);
             }
         }
+#endif
 
 #ifdef DYNAMIC_ACTOR_ENABLE_ACTOR_TRIGGERS
         // Let this actor activate scene triggers (onEnter/onLeave). The player

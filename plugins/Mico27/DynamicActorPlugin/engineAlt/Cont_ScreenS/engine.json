@@ -214,6 +214,24 @@
           "defaultValue": 1
         },
         {
+          "key": "DYNAMIC_ACTOR_ENABLE_STATE_CHANGE_EVENT",
+          "label": "Events: Actor state changed",
+          "description": "Compile the 'Actor state changed' event slot of 'Attach a Script to a Dynamic Actor Event', fired when a behavior moves an actor between paused/grounded/airborne. Uncheck to save ROM if no script listens for it.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_TILE_EVENTS",
+          "label": "Events: Tile collision / tile enter",
+          "description": "Compile the four 'Tile collision' event slots and the 'Tile enter' slot of 'Attach a Script to a Dynamic Actor Event'. Unchecking removes the callback dispatch from every collision site in the physics loop and drops 5 callback slots (5 bytes of RAM each).",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
           "key": "DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS",
           "label": "Events: Actor activated / deactivated",
           "description": "Compile the 'Actor activated' and 'Actor deactivated' event slots of 'Attach a Script to a Dynamic Actor Event'. The scripts are launched by the engine when an actor becomes active or is deactivated, including when it scrolls offscreen. Adds two callback slots (5 bytes of RAM each). Unchecking this makes the plugin's actor.c compile as if the hooks were not there.",
@@ -244,6 +262,24 @@
           "key": "DYNAMIC_ACTOR_ENABLE_TRIGGER_SCRIPT",
           "label": "Tools: Force trigger actor script",
           "description": "Compile the 'Actor Trigger Script' event, which forces an actor's On Interact / On Hit / On Update script to run. Uncheck to save ROM if unused.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_VM_GET_TILE_COLLISION",
+          "label": "Tools: Get tile collision",
+          "description": "Compile the 'Get Tile Collision' event, which reads the collision value of a scene tile into a variable. Uncheck to save ROM if unused.",
+          "group": "Dynamic actor",
+          "type": "checkbox",
+          "cType": "define",
+          "defaultValue": 1
+        },
+        {
+          "key": "DYNAMIC_ACTOR_ENABLE_VM_GET_ACTOR_COLLISION",
+          "label": "Tools: Get actor at point",
+          "description": "Compile the 'Get Actor Collision' event, which returns the index of the collidable actor overlapping a pixel position (-1 when none). Uncheck to save ROM if unused.",
           "group": "Dynamic actor",
           "type": "checkbox",
           "cType": "define",

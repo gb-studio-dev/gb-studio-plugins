@@ -106,6 +106,12 @@
 #define BHV_STATE_AIRBORNE_Z 3
 #define BHV_STATE_KEEP      255
 
+// Callback slot numbers are part of the plugin's saved project data (the
+// "Attach a Script to a Dynamic Actor Event" event stores the slot number), so
+// they are fixed and must never be renumbered. The slots are grouped so that
+// each compile-time gate switches off a run of slots at the END of the table,
+// which is what lets DYNAMIC_ACTOR_CALLBACK_SIZE shrink without moving any
+// surviving slot: [0] state change, [1..5] tile events, [6..7] activation.
 typedef enum dynamic_actor_event_e {
     DYNAMIC_ACTOR_EVENT_STATE_CHANGE = 0,
     DYNAMIC_ACTOR_EVENT_TILE_COLLISION_TOP = 1,
@@ -113,12 +119,20 @@ typedef enum dynamic_actor_event_e {
     DYNAMIC_ACTOR_EVENT_TILE_COLLISION_BOTTOM = 3,
     DYNAMIC_ACTOR_EVENT_TILE_COLLISION_LEFT = 4,
     DYNAMIC_ACTOR_EVENT_TILE_ENTER = 5,
-#ifdef DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS
     DYNAMIC_ACTOR_EVENT_ACTOR_ACTIVATED = 6,
-    DYNAMIC_ACTOR_EVENT_ACTOR_DEACTIVATED = 7,
-#endif
-    DYNAMIC_ACTOR_CALLBACK_SIZE
+    DYNAMIC_ACTOR_EVENT_ACTOR_DEACTIVATED = 7
 } dynamic_actor_event_e;
+
+// Slots actually allocated, given the gates. Each entry is a script_event_t
+// (5 bytes of RAM). Never zero - a zero length array is not valid C - so the
+// leanest build still pays for slot 0.
+#if defined(DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS)
+#define DYNAMIC_ACTOR_CALLBACK_SIZE 8
+#elif defined(DYNAMIC_ACTOR_ENABLE_TILE_EVENTS)
+#define DYNAMIC_ACTOR_CALLBACK_SIZE 6
+#else
+#define DYNAMIC_ACTOR_CALLBACK_SIZE 1
+#endif
 
 typedef struct behavior_def_t {
     UBYTE flags;         // BHV_* physics components

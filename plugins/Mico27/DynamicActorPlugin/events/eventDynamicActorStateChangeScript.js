@@ -51,17 +51,30 @@ export const compile = (input, helpers) => {
   const scriptRef = _compileSubScript("dynamic_actor_state_change", input.script, "dynamic_actor_state_change");
   const eventSlot = `${parseInt(input.eventSlot !== undefined ? input.eventSlot : "0", 10)}`;
 
-  // Slots 6 and 7 only exist when the activation hooks are compiled in
-  if (eventSlot === "6" || eventSlot === "7") {
+  // Each slot group is compiled in by its own engine setting; refuse at compile
+  // time rather than silently attaching a script to a slot that does not exist.
+  const slotRequires = {
+    0: ["DYNAMIC_ACTOR_ENABLE_STATE_CHANGE_EVENT", "Events: Actor state changed"],
+    1: ["DYNAMIC_ACTOR_ENABLE_TILE_EVENTS", "Events: Tile collision / tile enter"],
+    2: ["DYNAMIC_ACTOR_ENABLE_TILE_EVENTS", "Events: Tile collision / tile enter"],
+    3: ["DYNAMIC_ACTOR_ENABLE_TILE_EVENTS", "Events: Tile collision / tile enter"],
+    4: ["DYNAMIC_ACTOR_ENABLE_TILE_EVENTS", "Events: Tile collision / tile enter"],
+    5: ["DYNAMIC_ACTOR_ENABLE_TILE_EVENTS", "Events: Tile collision / tile enter"],
+    10: ["DYNAMIC_ACTOR_ENABLE_TILE_EVENTS", "Events: Tile collision / tile enter"],
+    6: ["DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS", "Events: Actor activated / deactivated"],
+    7: ["DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS", "Events: Actor activated / deactivated"],
+  };
+  const required = slotRequires[parseInt(eventSlot, 10)];
+  if (required) {
+    const [key, label] = required;
     const fv =
-      helpers.engineFieldValues &&
-      helpers.engineFieldValues.find((s) => s.id === "DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS");
-    const def = helpers.engineFields && helpers.engineFields["DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS"];
+      helpers.engineFieldValues && helpers.engineFieldValues.find((s) => s.id === key);
+    const def = helpers.engineFields && helpers.engineFields[key];
     const enabled =
       fv && fv.value !== undefined && fv.value !== null ? !!fv.value : def ? !!def.defaultValue : true;
     if (!enabled) {
       throw new Error(
-        'The "Actor activated" and "Actor deactivated" event slots require the "Events: Actor activated / deactivated" engine setting to be enabled (Settings → Engine → Dynamic actor).',
+        `This event slot requires the "${label}" engine setting to be enabled (Settings → Engine → Dynamic actor).`,
       );
     }
   }
