@@ -1,5 +1,5 @@
 const id = "DYNPROJ_EVENT_LOAD_PROJECTILE_SLOT";
-const name = "Define Projectile Slot";
+const name = "Load Dynamic Projectile Into Slot";
 const groups = ["Projectiles"];
 
 // Behaviour ids (must match projectile_state in projectiles.c).
@@ -131,7 +131,7 @@ const autoLabel = (fetchArg, input) => {
     firetrail: "Fire trail",
     custom: "Custom",
   };
-  return `Define Projectile Slot ${fetchArg("slot")} : ${
+  return `Load Dynamic Projectile Into Slot ${fetchArg("slot")} : ${
     labels[input.preset] || "Custom"
   }`;
 };
@@ -150,7 +150,7 @@ const fields = [
     key: "slot",
     label: "Projectile Slot",
     description:
-      "Slot this definition goes into (0 to Max projectile slots - 1). Fire it with Launch Projectile From Slot.",
+      "Slot this definition goes into (0 to Max projectile slots - 1). Fire it with Launch Dynamic Projectile From Slot.",
     type: "number",
     min: 0,
     max: 19,
@@ -629,7 +629,7 @@ const compile = (input, helpers) => {
     throw new Error(
       `Projectile slot ${slot} is out of range. "Max projectile slots" is ${maxSlots}, so slots 0 to ${
         maxSlots - 1
-      } are available (Settings -> Engine -> Custom Projectiles).`
+      } are available (Settings -> Engine -> Dynamic Projectiles).`
     );
   }
 
@@ -648,7 +648,7 @@ const compile = (input, helpers) => {
   const required = typeDefines[type];
   if (required && !featureEnabled(helpers, required[0])) {
     throw new Error(
-      `The "${required[1]}" projectile behaviour is disabled. Enable it under Settings -> Engine -> Custom Projectiles, or pick another behaviour.`
+      `The "${required[1]}" projectile behaviour is disabled. Enable it under Settings -> Engine -> Dynamic Projectiles, or pick another behaviour.`
     );
   }
 
@@ -695,7 +695,7 @@ const compile = (input, helpers) => {
     if (type === TYPE.chain) {
       if (links !== null && (links < 2 || links > budget)) {
         throw new Error(
-          `A chain of ${links} links does not fit: it needs 2 to ${budget} points, and "Points per chain / trail" is ${budget} (Settings -> Engine -> Custom Projectiles).`
+          `A chain of ${links} links does not fit: it needs 2 to ${budget} points, and "Points per chain / trail" is ${budget} (Settings -> Engine -> Dynamic Projectiles).`
         );
       }
     } else if (links !== null && spacing !== null) {
@@ -708,7 +708,7 @@ const compile = (input, helpers) => {
         throw new Error(
           `A trail of ${links} segments spaced ${spacing} apart needs ${
             links * spacing
-          } points, but "Points per chain / trail" is ${budget}. Raise it under Settings -> Engine -> Custom Projectiles, or use fewer or closer segments.`
+          } points, but "Points per chain / trail" is ${budget}. Raise it under Settings -> Engine -> Dynamic Projectiles, or use fewer or closer segments.`
         );
       }
     }

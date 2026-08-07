@@ -51,7 +51,7 @@ const featureEnabled = (helpers, key) => {
 const requireBehaviour = (helpers) => {
   if (!featureEnabled(helpers, "DYNPROJ_ENABLE_HOOKSHOT")) {
     throw new Error(
-      'The "Hookshot" projectile behaviour is disabled. Enable it under Settings -> Engine -> Custom Projectiles.'
+      'The "Hookshot" projectile behaviour is disabled. Enable it under Settings -> Engine -> Dynamic Projectiles.'
     );
   }
 };

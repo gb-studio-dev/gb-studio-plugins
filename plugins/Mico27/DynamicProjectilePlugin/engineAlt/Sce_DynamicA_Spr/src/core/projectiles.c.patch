@@ -2,14 +2,14 @@ Index: src/core/projectiles.c
 ===================================================================
 --- src/core/projectiles.c
 +++ src/core/projectiles.c
-@@ -2,169 +2,1555 @@
+@@ -2,169 +2,1558 @@
  
  #include "projectiles.h"
  
  #include <gbdk/metasprites.h>
 +#include <stdlib.h>
 +// DYNPROJ_ENABLE_* come from here: each behaviour is an engine setting under
-+// Settings -> Engine -> Custom Projectiles, and turning one off keeps its code
++// Settings -> Engine -> Dynamic Projectiles, and turning one off keeps its code
 +// out of the ROM entirely.
 +#include "data/states_defines.h"
  
@@ -111,6 +111,9 @@ Index: src/core/projectiles.c
 +BYTE  projectile_distance;
 +BYTE  projectile_distance2;
 +UBYTE projectile_phase;
++// Frames into the launch direction's animation to start on. 0 is the plain
++// "start at the beginning" every launch used to do.
++UBYTE projectile_frame;
 +UBYTE projectile_hookshot_state;
 +UBYTE projectile_hookshot_tile_hit;
 +UBYTE projectile_hookshot_actor_hit;
@@ -237,7 +240,7 @@ Index: src/core/projectiles.c
 +// How many points of the strand a definition actually occupies. A chain wants
 +// one per link; a trail wants one per sample, so segments times the gap between
 +// them. Both are clamped here rather than at every use, because either can come
-+// from a variable through "Define Projectile Slot".
++// from a variable through "Load Dynamic Projectile Into Slot".
 +#ifdef DYNPROJ_ENABLE_TRAIL
 +// Passes between one tail segment and the next. Two is the floor rather than
 +// one: entry 0 of the history is the position written this pass, which is where
@@ -1641,7 +1644,7 @@ Index: src/core/projectiles.c
      }
  
      SWITCH_ROM(_save_bank);
-@@ -172,66 +1558,189 @@
+@@ -172,66 +1561,189 @@
  
  void projectile_launch(UBYTE index, upoint16_t *pos, UBYTE angle) BANKED {
      projectile_t *projectile = projectiles_inactive_head;
@@ -1670,7 +1673,7 @@ Index: src/core/projectiles.c
          // set animation
 -        projectile->frame = projectile->frame_start = projectile->def.animations[dir].start;
 -        projectile->frame_end = projectile->def.animations[dir].end + 1;
-+        projectile->frame = proj_def->animations[projectile->dir].start;
++        projectile->frame = proj_def->animations[projectile->dir].start + projectile_frame;
  
          // set coordinates
 -        UINT16 initial_offset = projectile->def.initial_offset;
@@ -1717,7 +1720,7 @@ Index: src/core/projectiles.c
 +        }
 +
 +        // type, flags, collision, gravity, bounce, amplitude and frequency all
-+        // live in the definition, written by "Define Projectile Slot". Only the
++        // live in the definition, written by "Load Dynamic Projectile Into Slot". Only the
 +        // per-instance seeds come from the launch globals.
 +        projectile->phase = projectile_phase;      // sine start / anchor offset
 +        projectile->x = projectile_distance;       // hookshot chain / orbit x

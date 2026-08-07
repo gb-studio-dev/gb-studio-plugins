@@ -2,7 +2,7 @@ Index: include/projectiles.h
 ===================================================================
 --- include/projectiles.h
 +++ include/projectiles.h
-@@ -2,21 +2,74 @@
+@@ -2,21 +2,75 @@
  #define PROJECTILES_H
  
  #include <gbdk/platform.h>
@@ -20,7 +20,7 @@ Index: include/projectiles.h
 -#define MAX_PROJECTILES 5
 -#define MAX_PROJECTILE_DEFS 5
 +// Size of the live projectile pool, from the "Max concurrent projectiles"
-+// setting under Settings -> Engine -> Custom Projectiles. Each entry is a
++// setting under Settings -> Engine -> Dynamic Projectiles. Each entry is a
 +// projectile_t in WRAM, so raising it costs memory; the fallback keeps this
 +// header usable if the define is ever missing.
 +#ifndef DYNPROJ_MAX_PROJECTILES
@@ -66,6 +66,7 @@ Index: include/projectiles.h
 +extern BYTE  projectile_distance;
 +extern BYTE  projectile_distance2;
 +extern UBYTE projectile_phase;
++extern UBYTE projectile_frame;
 +extern UBYTE projectile_hookshot_state;
 +extern UBYTE projectile_hookshot_tile_hit;
 +extern UBYTE projectile_hookshot_actor_hit;

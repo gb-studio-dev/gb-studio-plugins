@@ -9,7 +9,29 @@ Index: include/gbs_types.h
  
  #include <gbdk/platform.h>
  #include <gbdk/metasprites.h>
-@@ -147,33 +147,64 @@
+@@ -61,15 +61,18 @@
+     // Collisions
+     uint8_t collision_group;
+ 
+     //Dynamic actor
+-    uint8_t actor_index;
+-    uint8_t actor_behavior_id : 4;
+-    uint8_t actor_state       : 4;
++    uint8_t actor_behavior_id;
++    uint8_t actor_state;
+     int8_t actor_vel_x;
+     int8_t actor_vel_y;
+ #ifdef DYNAMIC_ACTOR_ENABLE_PARENT
+     struct actor_t *actor_parent;
++    // prev_pos is only used by the "Apply all parents positions delta" parenting
++    // mode (DYNAMIC_ACTOR_PARENT_MODE == 2). The static and velocity modes drop
++    // it to save 4 bytes per actor. Kept in sync with DYNAMIC_ACTOR_USES_PREV_POS
++    // in dynamic_actor.h; the default (undefined) is delta.
+ #if !defined(DYNAMIC_ACTOR_PARENT_MODE) || (DYNAMIC_ACTOR_PARENT_MODE == 2)
+     upoint16_t prev_pos;
+ #endif
+ #endif
+@@ -147,33 +150,64 @@
      far_ptr_t tileset;              // far pointer to sprite tileset
      far_ptr_t cgb_tileset;          // far pointer to additional CGB tileset (may be NULL)
  } spritesheet_t;
@@ -80,7 +102,7 @@ Index: include/gbs_types.h
  
  #define FONT_RECODE     1
  #define FONT_VWF        2
-@@ -221,6 +252,4 @@
+@@ -221,6 +255,4 @@
      palette_entry_t cgb_palette[];
  } palette_t;
  

@@ -4,7 +4,7 @@
     {
       "key": "projectile_pause",
       "label": "Pause All Projectiles",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -27,7 +27,7 @@
     {
       "key": "projectile_hide",
       "label": "Hide All Projectiles",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -46,7 +46,7 @@
     {
       "key": "projectile_no_lifetime",
       "label": "Infinite Lifetime",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -65,7 +65,7 @@
     {
       "key": "projectile_actor_index",
       "label": "Actor Index",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "UBYTE",
       "defaultValue": 0,
@@ -74,7 +74,7 @@
     {
       "key": "projectile_distance",
       "label": "Distance Parameter",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "BYTE",
       "defaultValue": 0,
@@ -83,7 +83,7 @@
     {
       "key": "projectile_distance2",
       "label": "Second Distance Parameter",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "BYTE",
       "defaultValue": 0,
@@ -92,7 +92,16 @@
     {
       "key": "projectile_phase",
       "label": "Phase",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
+      "type": "number",
+      "cType": "UBYTE",
+      "defaultValue": 0,
+      "runtimeOnly": true
+    },
+    {
+      "key": "projectile_frame",
+      "label": "Start Frame",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "UBYTE",
       "defaultValue": 0,
@@ -101,7 +110,7 @@
     {
       "key": "projectile_hookshot_state",
       "label": "Hookshot State",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -132,7 +141,7 @@
     {
       "key": "projectile_hookshot_tile_hit",
       "label": "Hookshot Tile Hit",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -159,7 +168,7 @@
     {
       "key": "projectile_hookshot_actor_hit",
       "label": "Hookshot Actor Hit",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -194,7 +203,7 @@
     {
       "key": "projectile_hit_actor",
       "label": "Last Hit: Actor",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "UBYTE",
       "defaultValue": 0,
@@ -203,7 +212,7 @@
     {
       "key": "projectile_hit_x",
       "label": "Last Hit: X",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "UWORD",
       "defaultValue": 0,
@@ -212,7 +221,7 @@
     {
       "key": "projectile_hit_y",
       "label": "Last Hit: Y",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "UWORD",
       "defaultValue": 0,
@@ -221,7 +230,7 @@
     {
       "key": "projectile_hit_type",
       "label": "Last Hit: Behaviour",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -272,7 +281,7 @@
     {
       "key": "DYNPROJ_MAX_PROJECTILES",
       "label": "Max concurrent projectiles",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "slider",
       "min": 1,
       "max": 20,
@@ -282,7 +291,7 @@
     {
       "key": "DYNPROJ_MAX_PROJECTILE_DEFS",
       "label": "Max projectile slots",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "slider",
       "min": 5,
       "max": 20,
@@ -292,7 +301,7 @@
     {
       "key": "DYNPROJ_CLIP_EXT",
       "label": "Off-screen margin (tiles)",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "slider",
       "min": 0,
       "max": 10,
@@ -302,7 +311,7 @@
     {
       "key": "DYNPROJ_TILE_COLLISION",
       "label": "Tile collision detection",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -320,7 +329,7 @@
     {
       "key": "DYNPROJ_ENABLE_ARC",
       "label": "Enable behaviour: Arc",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -328,7 +337,7 @@
     {
       "key": "DYNPROJ_ENABLE_BOOMERANG",
       "label": "Enable behaviour: Boomerang",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -336,7 +345,7 @@
     {
       "key": "DYNPROJ_ENABLE_SINE",
       "label": "Enable behaviour: Sine Wave",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -344,7 +353,7 @@
     {
       "key": "DYNPROJ_ENABLE_ORBIT",
       "label": "Enable behaviour: Orbit",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -352,7 +361,7 @@
     {
       "key": "DYNPROJ_ENABLE_HOOKSHOT",
       "label": "Enable behaviour: Hookshot",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -360,7 +369,7 @@
     {
       "key": "DYNPROJ_HOOKSHOT_PULL_GRID",
       "label": "Hookshot pull realigns to grid",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -389,7 +398,7 @@
     {
       "key": "DYNPROJ_HOOKSHOT_PULL_COLLISION",
       "label": "Hookshot pulls stop at obstacles",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1,
@@ -404,7 +413,7 @@
     {
       "key": "DYNPROJ_ENABLE_ANCHOR",
       "label": "Enable behaviour: Anchor",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -412,7 +421,7 @@
     {
       "key": "DYNPROJ_ENABLE_CUSTOM",
       "label": "Enable behaviour: Custom",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -420,7 +429,7 @@
     {
       "key": "DYNPROJ_ENABLE_CHAIN",
       "label": "Enable behaviour: Chain",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -428,7 +437,7 @@
     {
       "key": "DYNPROJ_ENABLE_TRAIL",
       "label": "Enable behaviour: Trail",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -436,7 +445,7 @@
     {
       "key": "DYNPROJ_MAX_STRANDS",
       "label": "Max chains + trails",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "slider",
       "min": 1,
       "max": 8,
@@ -466,7 +475,7 @@
     {
       "key": "DYNPROJ_STRAND_POINTS",
       "label": "Points per chain / trail",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "slider",
       "min": 2,
       "max": 32,
