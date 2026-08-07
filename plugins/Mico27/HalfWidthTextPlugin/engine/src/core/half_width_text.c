@@ -44,6 +44,18 @@ UBYTE hwt_current_text_speed;
 #endif
 #define HWT_NULL 0xFFu
 
+// HWT_CACHE_ENABLED engine field (Settings -> Half-Width Text): unchecking it
+// compiles the LRU bookkeeping out entirely. Pairs are then composed into the
+// reserved tiles round-robin, which costs no WRAM and no lookup but recomposes
+// every pair on every use, so the reserved range must hold all the pairs
+// visible at once. Without the LRU arrays the entry count is limited by the
+// reserved range alone, not by HWT_CACHE_MAX.
+#ifdef HWT_CACHE_ENABLED
+#define HWT_ENTRY_MAX HWT_CACHE_MAX
+#else
+#define HWT_ENTRY_MAX 254u
+#endif
+
 // where cached tiles live in VRAM (hwt_tile_placement engine field).
 // bank 1 placements only take effect on CGB (color-only or mixed mode on
 // color hardware): the tilemap attribute bit 3 selects the tile data bank,
@@ -61,15 +73,17 @@ static UBYTE hwt_placement_eff;
 // bank-0-only: cache entry i owns VRAM tile (hwt_first_tile + i); alternate
 // placement maps entries 2k/2k+1 onto tile (hwt_first_tile + k) in banks 0
 // and 1 respectively
+#ifdef HWT_CACHE_ENABLED
 static UBYTE hwt_key_l[HWT_CACHE_MAX];   // left character of the pair
 static UBYTE hwt_key_r[HWT_CACHE_MAX];   // right character of the pair
 static UBYTE hwt_next[HWT_CACHE_MAX];    // towards least recently used
 static UBYTE hwt_prev[HWT_CACHE_MAX];    // towards most recently used
 static UBYTE hwt_head;                   // most recently used entry
 static UBYTE hwt_tail;                   // least recently used entry (evicted first)
-static UBYTE hwt_count;                  // entries allocated so far
-static UBYTE hwt_size;                   // usable entries in the reserved range
 static UBYTE hwt_cache_font_idx;         // font the cached tiles were composed with
+#endif
+static UBYTE hwt_count;                  // entries allocated so far (next tile to reuse when uncached)
+static UBYTE hwt_size;                   // usable entries in the reserved range
 static UBYTE hwt_initialized = FALSE;
 
 static UBYTE hwt_tile_buf[16];
@@ -91,24 +105,27 @@ void hwt_cache_reset(void) BANKED {
     hwt_placement_eff = HWT_PLACEMENT_BANK0;
 #endif
     if (hwt_last_tile < hwt_first_tile) {
-        n = HWT_CACHE_MAX;
+        n = HWT_ENTRY_MAX;
     } else {
         UBYTE range = hwt_last_tile - hwt_first_tile + 1u;   // 0 means the full 256 tiles
         if (hwt_placement_eff == HWT_PLACEMENT_ALTERNATE) {
             // one entry per tile per bank; avoid UBYTE overflow before clamping
-            n = (range > (HWT_CACHE_MAX >> 1)) ? HWT_CACHE_MAX : (UBYTE)(range << 1);
+            n = (range > (HWT_ENTRY_MAX >> 1)) ? HWT_ENTRY_MAX : (UBYTE)(range << 1);
         } else {
             n = range;
         }
-        if ((n == 0) || (n > HWT_CACHE_MAX)) n = HWT_CACHE_MAX;
+        if ((n == 0) || (n > HWT_ENTRY_MAX)) n = HWT_ENTRY_MAX;
     }
     hwt_size = n;
     hwt_count = 0;
+#ifdef HWT_CACHE_ENABLED
     hwt_head = hwt_tail = HWT_NULL;
     hwt_cache_font_idx = vwf_current_font_idx;
+#endif
     hwt_initialized = TRUE;
 }
 
+#ifdef HWT_CACHE_ENABLED
 // cached tiles were composed from another font's glyphs: forget them
 static void hwt_check_font(UBYTE font_idx) {
     if (font_idx != hwt_cache_font_idx) {
@@ -116,6 +133,11 @@ static void hwt_check_font(UBYTE font_idx) {
         hwt_cache_font_idx = font_idx;
     }
 }
+#else
+// nothing is retained between characters, so a font change needs no invalidation
+// (and rewinding the round-robin cursor mid-text would overwrite live tiles)
+#define hwt_check_font(font_idx) ((void)(font_idx))
+#endif
 
 // fetch the 8 glyph rows for a character from the current font asset,
 // masked to the left 4px. runs the character through the font's recode
@@ -166,6 +188,7 @@ static void hwt_compose_tile(UBYTE tile, UBYTE bank, UBYTE l, UBYTE r) {
 #endif
 }
 
+#ifdef HWT_CACHE_ENABLED
 // look the pair up in the LRU list; on hit hoist the entry to the head and
 // reuse its tile, on miss allocate a fresh tile (or evict the least recently
 // used one) and render the pair into it.
@@ -212,6 +235,16 @@ static UBYTE hwt_get_pair_entry(UBYTE l, UBYTE r) {
     hwt_compose_tile(hwt_entry_tile(i), hwt_entry_bank(i), l, r);
     return i;
 }
+#else
+// cache disabled: hand the reserved tiles out round-robin and compose the pair
+// every time it is printed
+static UBYTE hwt_get_pair_entry(UBYTE l, UBYTE r) {
+    UBYTE i = hwt_count;
+    if (++hwt_count >= hwt_size) hwt_count = 0;
+    hwt_compose_tile(hwt_entry_tile(i), hwt_entry_bank(i), l, r);
+    return i;
+}
+#endif
 
 static void hwt_emit_pair(UBYTE l, UBYTE r) {
     UBYTE entry = hwt_get_pair_entry(l, r);

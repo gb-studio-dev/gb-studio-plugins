@@ -131,7 +131,7 @@ void dynamic_actor_execute_activation(actor_t *actor, UBYTE activated) BANKED {
 }
 #endif
 
-#ifdef DYNAMIC_ACTOR_ENABLE_TILE_EVENTS
+#ifdef DYNAMIC_ACTOR_USES_TILE_INTERACTION
 static void dynamic_actor_execute_tile_interaction(actor_t *actor, UBYTE tile_x, UBYTE tile_y, dynamic_actor_event_e event_type) {
     script_event_t *event = &dynamic_actor_events[event_type];    
     if (!event->script_addr) {
@@ -146,7 +146,9 @@ static void dynamic_actor_execute_tile_interaction(actor_t *actor, UBYTE tile_x,
         script_execute(event->script_bank, event->script_addr, &event->handle, 0, 0);
     }
 }
+#endif
 
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS
 static void dynamic_actor_execute_tile_collision_top(actor_t *actor, UBYTE tile_x, UBYTE tile_y) {
     behavior_def_t *def = &behavior_defs[actor->actor_behavior_id];
     if ((def->event_flags & BHV_EVENT_TILE_COLLISION_TOP) == 0) {
@@ -178,20 +180,23 @@ static void dynamic_actor_execute_tile_collision_left(actor_t *actor, UBYTE tile
     }
     dynamic_actor_execute_tile_interaction(actor, tile_x, tile_y, DYNAMIC_ACTOR_EVENT_TILE_COLLISION_LEFT);
 }
-
-// Tile enter is the same dispatch as a tile collision, only the callback slot
-// differs - dynamic_actor_execute_tile_interaction covers it, no second copy of
-// the body is needed.
-#define dynamic_actor_execute_tile_enter(actor, tile_x, tile_y) \
-    dynamic_actor_execute_tile_interaction((actor), (tile_x), (tile_y), DYNAMIC_ACTOR_EVENT_TILE_ENTER)
 #else
-// Tile events compiled out. The collision helpers below report hits from about
-// thirty call sites; expanding the dispatchers to nothing removes all of them
-// without an #ifdef at each site.
+// Tile collision events compiled out. The collision helpers below report hits
+// from about thirty call sites; expanding the dispatchers to nothing removes
+// all of them without an #ifdef at each site.
 #define dynamic_actor_execute_tile_collision_top(actor, tile_x, tile_y)    ((void)0)
 #define dynamic_actor_execute_tile_collision_right(actor, tile_x, tile_y)  ((void)0)
 #define dynamic_actor_execute_tile_collision_bottom(actor, tile_x, tile_y) ((void)0)
 #define dynamic_actor_execute_tile_collision_left(actor, tile_x, tile_y)   ((void)0)
+#endif
+
+// Tile enter is the same dispatch as a tile collision, only the callback slot
+// differs - dynamic_actor_execute_tile_interaction covers it, no second copy of
+// the body is needed.
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_ENTER_EVENT
+#define dynamic_actor_execute_tile_enter(actor, tile_x, tile_y) \
+    dynamic_actor_execute_tile_interaction((actor), (tile_x), (tile_y), DYNAMIC_ACTOR_EVENT_TILE_ENTER)
+#else
 #define dynamic_actor_execute_tile_enter(actor, tile_x, tile_y)            ((void)0)
 #endif
 
@@ -823,12 +828,14 @@ void dynamic_actor_update(void) BANKED {
         UBYTE flags2 = def->flags2;
         UBYTE event_flags = def->event_flags;
         dynamic_actor_current_actor = actor;
-#ifdef DYNAMIC_ACTOR_ENABLE_TILE_EVENTS
-        UBYTE start_tile_x = 0;
-        UBYTE start_tile_y = 0;
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_ENTER_EVENT
+        // Which cell of the tile enter grid the actor started this frame in.
+        // Only tracked when something is listening for it.
+        UBYTE start_cell_x = 0;
+        UBYTE start_cell_y = 0;
         if (CHK_FLAG(event_flags, BHV_EVENT_TILE_ENTER)) {
-            start_tile_x = SUBPX_TO_TILE(actor->pos.x);
-            start_tile_y = SUBPX_TO_TILE(actor->pos.y);
+            start_cell_x = DYNAMIC_ACTOR_TILE_ENTER_CELL(SUBPX_TO_TILE(actor->pos.x));
+            start_cell_y = DYNAMIC_ACTOR_TILE_ENTER_CELL(SUBPX_TO_TILE(actor->pos.y));
         }
 #endif
 
@@ -1180,11 +1187,14 @@ void dynamic_actor_update(void) BANKED {
             dynamic_actor_execute_state_change(actor);
         }
 #endif
-#ifdef DYNAMIC_ACTOR_ENABLE_TILE_EVENTS
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_ENTER_EVENT
         if (CHK_FLAG(event_flags, BHV_EVENT_TILE_ENTER)) {
             UBYTE end_tile_x = SUBPX_TO_TILE(actor->pos.x);
             UBYTE end_tile_y = SUBPX_TO_TILE(actor->pos.y);
-            if ((start_tile_x != end_tile_x) || (start_tile_y != end_tile_y)) {
+            // Crossing into a new cell of the tile enter grid. The script still
+            // gets the real 8x8 tile the actor landed on, not the coarse cell.
+            if ((start_cell_x != DYNAMIC_ACTOR_TILE_ENTER_CELL(end_tile_x)) ||
+                (start_cell_y != DYNAMIC_ACTOR_TILE_ENTER_CELL(end_tile_y))) {
                 dynamic_actor_execute_tile_enter(actor, end_tile_x, end_tile_y);
             }
         }

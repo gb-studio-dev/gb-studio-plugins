@@ -24,7 +24,7 @@ const CHAIN_LOOSE = "1";
 // Component flags (must match projectiles.c). The field is 5 bits and all five
 // are in use, so a new flag means finding a bit elsewhere in the definition.
 const EXECUTE_SCRIPT = 1 << 0;
-const INFINITE_LIFETIME = 1 << 1;
+const TILE_ENTER_SCRIPT = 1 << 1;
 const IGNORE_PLAYER = 1 << 2;
 const TILE_HIT_SCRIPT = 1 << 3;
 const ACTOR_HIT_SCRIPT = 1 << 4;
@@ -205,6 +205,8 @@ const fields = [
       {
         key: "lifeTime",
         label: "Life Time",
+        description:
+          "Seconds before the projectile expires on its own. 0 means it never does - it then only goes away by hitting something, leaving the screen, or a script removing it.",
         type: "number",
         min: 0,
         max: 4,
@@ -566,9 +568,10 @@ const fields = [
     conditions: forTypes(TYPE.custom),
   },
   {
-    key: "compInfiniteLifetime",
-    label: "Infinite lifetime",
-    description: "Ignore the life time above so these never expire on their own.",
+    key: "compTileEnterScript",
+    label: "Run Tile Enter script",
+    description:
+      'Trigger the script set by "Set Projectile Tile Enter Script" when one of these crosses into a new tile.',
     type: "checkbox",
     defaultValue: false,
     conditions: [behaviorTab],
@@ -652,12 +655,32 @@ const compile = (input, helpers) => {
     );
   }
 
+  // The three shared triggers each have a compile time switch. A slot that
+  // ticks one while it is off gets the bit cleared rather than an error: the
+  // checkbox cannot be hidden (field conditions cannot read engine settings),
+  // and the flag would be dead weight the engine no longer looks at anyway.
+  // Turning the switch back on restores the tick without touching the slot.
   let flags = 0;
-  if (input.compInfiniteLifetime) flags |= INFINITE_LIFETIME;
+  if (
+    input.compTileEnterScript &&
+    featureEnabled(helpers, "DYNPROJ_ENABLE_TILE_ENTER_SCRIPT")
+  ) {
+    flags |= TILE_ENTER_SCRIPT;
+  }
   if (input.compIgnorePlayer) flags |= IGNORE_PLAYER;
   if (input.compRemoveScript !== false) flags |= EXECUTE_SCRIPT;
-  if (input.compTileHitScript !== false) flags |= TILE_HIT_SCRIPT;
-  if (input.compActorHitScript !== false) flags |= ACTOR_HIT_SCRIPT;
+  if (
+    input.compTileHitScript !== false &&
+    featureEnabled(helpers, "DYNPROJ_ENABLE_TILE_HIT_SCRIPT")
+  ) {
+    flags |= TILE_HIT_SCRIPT;
+  }
+  if (
+    input.compActorHitScript !== false &&
+    featureEnabled(helpers, "DYNPROJ_ENABLE_ACTOR_HIT_SCRIPT")
+  ) {
+    flags |= ACTOR_HIT_SCRIPT;
+  }
 
   const value = (v, fallback) =>
     v === undefined || v === null ? { type: "number", value: fallback } : v;

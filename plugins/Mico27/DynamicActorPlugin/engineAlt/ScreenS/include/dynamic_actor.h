@@ -111,7 +111,8 @@
 // they are fixed and must never be renumbered. The slots are grouped so that
 // each compile-time gate switches off a run of slots at the END of the table,
 // which is what lets DYNAMIC_ACTOR_CALLBACK_SIZE shrink without moving any
-// surviving slot: [0] state change, [1..5] tile events, [6..7] activation.
+// surviving slot: [0] state change, [1..4] tile collision, [5] tile enter,
+// [6..7] activation.
 typedef enum dynamic_actor_event_e {
     DYNAMIC_ACTOR_EVENT_STATE_CHANGE = 0,
     DYNAMIC_ACTOR_EVENT_TILE_COLLISION_TOP = 1,
@@ -128,11 +129,30 @@ typedef enum dynamic_actor_event_e {
 // leanest build still pays for slot 0.
 #if defined(DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS)
 #define DYNAMIC_ACTOR_CALLBACK_SIZE 8
-#elif defined(DYNAMIC_ACTOR_ENABLE_TILE_EVENTS)
+#elif defined(DYNAMIC_ACTOR_ENABLE_TILE_ENTER_EVENT)
 #define DYNAMIC_ACTOR_CALLBACK_SIZE 6
+#elif defined(DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS)
+#define DYNAMIC_ACTOR_CALLBACK_SIZE 5
 #else
 #define DYNAMIC_ACTOR_CALLBACK_SIZE 1
 #endif
+
+// The two tile callback groups share one dispatch helper, so it is compiled
+// whenever either of them is.
+#if defined(DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS) || defined(DYNAMIC_ACTOR_ENABLE_TILE_ENTER_EVENT)
+#define DYNAMIC_ACTOR_USES_TILE_INTERACTION
+#endif
+
+// "Tile enter" granularity, from the engine setting of the same name. The
+// actor's tile is worked out in 8x8 tiles either way; a 16x16 grid is that
+// shifted down once more rather than a second conversion from sub-pixels. Only
+// the change detection is coarsened - the script still receives the real 8x8
+// tile the actor arrived on, so Event tile x/y and the tile collision value
+// keep meaning what they always did.
+#ifndef DYNAMIC_ACTOR_TILE_ENTER_SIZE
+#define DYNAMIC_ACTOR_TILE_ENTER_SIZE 0
+#endif
+#define DYNAMIC_ACTOR_TILE_ENTER_CELL(tile) ((tile) >> DYNAMIC_ACTOR_TILE_ENTER_SIZE)
 
 typedef struct behavior_def_t {
     UBYTE flags;         // BHV_* physics components

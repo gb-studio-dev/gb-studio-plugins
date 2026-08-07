@@ -56,6 +56,18 @@ UBYTE ttx_current_text_speed;
 #endif
 #define TTX_NULL 0xFFu
 
+// TTX_CACHE_ENABLED engine field (Settings -> Tall Text): unchecking it
+// compiles the LRU bookkeeping out entirely. Characters are then rendered into
+// the reserved tile pairs round-robin, which costs no WRAM and no lookup but
+// re-uploads every character on every use, so the reserved range must hold all
+// the characters visible at once. Without the LRU arrays the entry count is
+// limited by the reserved range alone, not by TTX_CACHE_MAX.
+#ifdef TTX_CACHE_ENABLED
+#define TTX_ENTRY_MAX TTX_CACHE_MAX
+#else
+#define TTX_ENTRY_MAX 254u
+#endif
+
 // where cached tiles live in VRAM (ttx_tile_placement engine field).
 // bank 1 placements only take effect on CGB (color-only or mixed mode on
 // color hardware): the tilemap attribute bit 3 selects the tile data bank,
@@ -73,14 +85,16 @@ static UBYTE ttx_placement_eff;
 // bank-0-only: cache entry i owns VRAM tiles (ttx_first_tile + 2*i) and
 // (+ 2*i + 1); alternate placement maps entries 2k/2k+1 onto the same pair
 // of tile indices in banks 0 and 1 respectively
+#ifdef TTX_CACHE_ENABLED
 static UBYTE ttx_key[TTX_CACHE_MAX];     // character the pair was rendered from
 static UBYTE ttx_next[TTX_CACHE_MAX];    // towards least recently used
 static UBYTE ttx_prev[TTX_CACHE_MAX];    // towards most recently used
 static UBYTE ttx_head;                   // most recently used entry
 static UBYTE ttx_tail;                   // least recently used entry (evicted first)
-static UBYTE ttx_count;                  // entries allocated so far
-static UBYTE ttx_size;                   // usable entries in the reserved range
 static UBYTE ttx_cache_font_idx;         // font the cached tiles were rendered with
+#endif
+static UBYTE ttx_count;                  // entries allocated so far (next pair to reuse when uncached)
+static UBYTE ttx_size;                   // usable entries in the reserved range
 static UBYTE ttx_initialized = FALSE;
 
 // char printer internals
@@ -96,7 +110,7 @@ void ttx_cache_reset(void) BANKED {
     ttx_placement_eff = TTX_PLACEMENT_BANK0;
 #endif
     if (ttx_last_tile < ttx_first_tile) {
-        n = TTX_CACHE_MAX;
+        n = TTX_ENTRY_MAX;
     } else {
         UBYTE range = ttx_last_tile - ttx_first_tile + 1u;   // 0 means the full 256 tiles
         if (ttx_placement_eff == TTX_PLACEMENT_ALTERNATE) {
@@ -104,15 +118,22 @@ void ttx_cache_reset(void) BANKED {
         } else {
             n = range >> 1;
         }
-        if ((n == 0) || (n > TTX_CACHE_MAX)) n = TTX_CACHE_MAX;
+#if TTX_ENTRY_MAX < 254u
+        // only the LRU tables can cap the count below what the range holds
+        if (n > TTX_ENTRY_MAX) n = TTX_ENTRY_MAX;
+#endif
+        if (n == 0) n = TTX_ENTRY_MAX;  // range too small for one tile pair
     }
     ttx_size = n;
     ttx_count = 0;
+#ifdef TTX_CACHE_ENABLED
     ttx_head = ttx_tail = TTX_NULL;
     ttx_cache_font_idx = vwf_current_font_idx;
+#endif
     ttx_initialized = TRUE;
 }
 
+#ifdef TTX_CACHE_ENABLED
 // cached tiles were rendered from another font's glyphs: forget them
 static void ttx_check_font(UBYTE font_idx) {
     if (font_idx != ttx_cache_font_idx) {
@@ -120,6 +141,11 @@ static void ttx_check_font(UBYTE font_idx) {
         ttx_cache_font_idx = font_idx;
     }
 }
+#else
+// nothing is retained between characters, so a font change needs no invalidation
+// (and rewinding the round-robin cursor mid-text would overwrite live tiles)
+#define ttx_check_font(font_idx) ((void)(font_idx))
+#endif
 
 // top-half VRAM tile index owned by cache entry i (bottom half is + 1)
 static UBYTE ttx_entry_tile(UBYTE i) {
@@ -155,6 +181,7 @@ static void ttx_load_glyph_tiles(UBYTE tile, UBYTE bank, UBYTE ch) {
 #endif
 }
 
+#ifdef TTX_CACHE_ENABLED
 // look the character up in the LRU list; on hit hoist the entry to the head
 // and reuse its tile pair, on miss allocate a fresh pair (or evict the least
 // recently used one) and render the character into it.
@@ -200,6 +227,16 @@ static UBYTE ttx_get_char_entry(UBYTE ch) {
     ttx_load_glyph_tiles(ttx_entry_tile(i), ttx_entry_bank(i), ch);
     return i;
 }
+#else
+// cache disabled: hand the reserved tile pairs out round-robin and re-upload
+// the character every time it is printed
+static UBYTE ttx_get_char_entry(UBYTE ch) {
+    UBYTE i = ttx_count;
+    if (++ttx_count >= ttx_size) ttx_count = 0;
+    ttx_load_glyph_tiles(ttx_entry_tile(i), ttx_entry_bank(i), ch);
+    return i;
+}
+#endif
 
 // write one tilemap cell; on CGB the attribute byte carries the palette and
 // the tile data bank (bit 3) the glyph was uploaded to

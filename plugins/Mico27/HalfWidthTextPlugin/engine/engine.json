@@ -38,9 +38,18 @@
       "defaultValue": 0
     },
     {
+      "key": "HWT_CACHE_ENABLED",
+      "label": "Enable pair-tile cache",
+      "description": "When enabled, composed pair tiles are tracked in an LRU cache so a pair that was already drawn reuses its tile instead of consuming a new one. Disable it to compile the cache out: every pair is then composed into the next tile of the reserved range, cycling round-robin. That reclaims all of the cache WRAM (4 bytes per entry) and skips the lookup, but each pair is recomposed on every use and the reserved range must be large enough for all pairs visible at once (half the characters of the longest page), otherwise tiles still on screen get overwritten.",
+      "group": "Half-Width Text",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
       "key": "HWT_CACHE_MAX",
       "label": "Pair cache capacity (entries)",
-      "description": "Maximum number of character pairs the LRU cache can track. Each entry costs 4 bytes of WRAM and, when in use, one VRAM tile from the reserved range. The usable entry count at runtime is the smaller of this value and the reserved tile range size. Lower it to reclaim WRAM, raise it only alongside a larger reserved tile range.",
+      "description": "Maximum number of character pairs the LRU cache can track. Each entry costs 4 bytes of WRAM and, when in use, one VRAM tile from the reserved range. The usable entry count at runtime is the smaller of this value and the reserved tile range size. Lower it to reclaim WRAM, raise it only alongside a larger reserved tile range. Ignored when the pair-tile cache is disabled: the whole reserved range is then used.",
       "group": "Half-Width Text",
       "type": "slider",
       "cType": "define",

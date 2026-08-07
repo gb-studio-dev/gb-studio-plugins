@@ -327,6 +327,70 @@
       "defaultValue": 0
     },
     {
+      "key": "DYNPROJ_ENABLE_TILE_HIT_SCRIPT",
+      "label": "Enable script: Tile Hit",
+      "group": "Dynamic Projectiles",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
+      "key": "DYNPROJ_TILE_HIT_BY_FACE",
+      "label": "Tile hit script per face",
+      "group": "Dynamic Projectiles",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1,
+      "indent": 1,
+      "conditions": [
+        {
+          "key": "DYNPROJ_ENABLE_TILE_HIT_SCRIPT",
+          "truthy": true
+        }
+      ]
+    },
+    {
+      "key": "DYNPROJ_ENABLE_ACTOR_HIT_SCRIPT",
+      "label": "Enable script: Actor Hit",
+      "group": "Dynamic Projectiles",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
+      "key": "DYNPROJ_ENABLE_TILE_ENTER_SCRIPT",
+      "label": "Enable script: Tile Enter",
+      "group": "Dynamic Projectiles",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
+      "key": "DYNPROJ_TILE_ENTER_SIZE",
+      "label": "Tile enter grid",
+      "group": "Dynamic Projectiles",
+      "type": "select",
+      "options": [
+        [
+          0,
+          "8x8 tiles"
+        ],
+        [
+          1,
+          "16x16 tiles"
+        ]
+      ],
+      "cType": "define",
+      "defaultValue": 0,
+      "indent": 1,
+      "conditions": [
+        {
+          "key": "DYNPROJ_ENABLE_TILE_ENTER_SCRIPT",
+          "truthy": true
+        }
+      ]
+    },
+    {
       "key": "DYNPROJ_ENABLE_ARC",
       "label": "Enable behaviour: Arc",
       "group": "Dynamic Projectiles",

@@ -154,14 +154,14 @@ void vm_assign_dynamic_actor_event_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
     UBYTE slot = *(uint8_t *)VM_REF_TO_PTR(FN_ARG2);
     // Slots the callback gates compiled out are ignored rather than written
     // past the end of the table (10 is the "any tile collision" alias).
-#ifdef DYNAMIC_ACTOR_ENABLE_TILE_EVENTS
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS
     if ((slot >= DYNAMIC_ACTOR_CALLBACK_SIZE) && (slot != 10)) return;
 #else
     if (slot >= DYNAMIC_ACTOR_CALLBACK_SIZE) return;
 #endif
     UBYTE *bank = VM_REF_TO_PTR(FN_ARG1);
     UBYTE **ptr = VM_REF_TO_PTR(FN_ARG0);
-#ifdef DYNAMIC_ACTOR_ENABLE_TILE_EVENTS
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS
     if (slot == 10){ //Any collision
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_TOP].script_bank = *bank;
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_TOP].script_addr = *ptr;
@@ -182,12 +182,12 @@ void vm_assign_dynamic_actor_event_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
 void vm_clear_dynamic_actor_event_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
     UBYTE slot = *(uint8_t *)VM_REF_TO_PTR(FN_ARG0);
-#ifdef DYNAMIC_ACTOR_ENABLE_TILE_EVENTS
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS
     if ((slot >= DYNAMIC_ACTOR_CALLBACK_SIZE) && (slot != 10)) return;
 #else
     if (slot >= DYNAMIC_ACTOR_CALLBACK_SIZE) return;
 #endif
-#ifdef DYNAMIC_ACTOR_ENABLE_TILE_EVENTS
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS
     if (slot == 10){ //Any collision
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_TOP].script_bank = 0;
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_TOP].script_addr = NULL;

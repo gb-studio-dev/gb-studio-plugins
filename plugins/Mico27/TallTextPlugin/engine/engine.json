@@ -38,9 +38,18 @@
       "defaultValue": 0
     },
     {
+      "key": "TTX_CACHE_ENABLED",
+      "label": "Enable character tile cache",
+      "description": "When enabled, rendered tile pairs are tracked in an LRU cache so a character that was already drawn reuses its pair instead of consuming a new one. Disable it to compile the cache out: every character is then rendered into the next tile pair of the reserved range, cycling round-robin. That reclaims all of the cache WRAM (3 bytes per entry) and skips the lookup, but each character is re-uploaded on every use and the reserved range must be large enough for all characters visible at once (two tiles each), otherwise tiles still on screen get overwritten.",
+      "group": "Tall Text",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
       "key": "TTX_CACHE_MAX",
       "label": "Character cache capacity (entries)",
-      "description": "Maximum number of characters the tile-pair LRU cache can track. Each entry costs 3 bytes of WRAM and, when in use, two consecutive VRAM tiles from the reserved range. The usable entry count at runtime is the smaller of this value and (reserved tile range / 2). Lower it to reclaim WRAM, raise it only alongside a larger reserved tile range.",
+      "description": "Maximum number of characters the tile-pair LRU cache can track. Each entry costs 3 bytes of WRAM and, when in use, two consecutive VRAM tiles from the reserved range. The usable entry count at runtime is the smaller of this value and (reserved tile range / 2). Lower it to reclaim WRAM, raise it only alongside a larger reserved tile range. Ignored when the character tile cache is disabled: the whole reserved range is then used.",
       "group": "Tall Text",
       "type": "slider",
       "cType": "define",

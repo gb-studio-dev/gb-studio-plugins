@@ -5,7 +5,7 @@
   "description": "Custom projectile behaviours (arc, boomerang, sine, orbit, hookshot, anchor and script-driven) with per-projectile gravity, bounce, tile collision, infinite lifetime, pause/hide controls and on-removal scripts. Port of the CustomProjectile plugin updated for GB Studio 4.3.*.",
   "license": "MIT",
   "url": "https://github.com/fredrikofstad/GBStudioPlugins",
-  "version": "4.3.1",
+  "version": "4.3.2",
   "gbsVersion": ">=4.3.0",
   "filename": "DynamicProjectilePlugin",
   "order": -3,

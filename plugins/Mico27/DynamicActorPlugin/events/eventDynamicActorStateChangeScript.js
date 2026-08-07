@@ -55,12 +55,12 @@ export const compile = (input, helpers) => {
   // time rather than silently attaching a script to a slot that does not exist.
   const slotRequires = {
     0: ["DYNAMIC_ACTOR_ENABLE_STATE_CHANGE_EVENT", "Events: Actor state changed"],
-    1: ["DYNAMIC_ACTOR_ENABLE_TILE_EVENTS", "Events: Tile collision / tile enter"],
-    2: ["DYNAMIC_ACTOR_ENABLE_TILE_EVENTS", "Events: Tile collision / tile enter"],
-    3: ["DYNAMIC_ACTOR_ENABLE_TILE_EVENTS", "Events: Tile collision / tile enter"],
-    4: ["DYNAMIC_ACTOR_ENABLE_TILE_EVENTS", "Events: Tile collision / tile enter"],
-    5: ["DYNAMIC_ACTOR_ENABLE_TILE_EVENTS", "Events: Tile collision / tile enter"],
-    10: ["DYNAMIC_ACTOR_ENABLE_TILE_EVENTS", "Events: Tile collision / tile enter"],
+    1: ["DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS", "Events: Tile collision"],
+    2: ["DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS", "Events: Tile collision"],
+    3: ["DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS", "Events: Tile collision"],
+    4: ["DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS", "Events: Tile collision"],
+    5: ["DYNAMIC_ACTOR_ENABLE_TILE_ENTER_EVENT", "Events: Tile enter"],
+    10: ["DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS", "Events: Tile collision"],
     6: ["DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS", "Events: Actor activated / deactivated"],
     7: ["DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS", "Events: Actor activated / deactivated"],
   };
