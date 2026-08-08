@@ -1,0 +1,74 @@
+Index: src/core/ui.c
+===================================================================
+--- src/core/ui.c
++++ src/core/ui.c
+@@ -1,9 +1,20 @@
++// ---------------------------------------------------------------------------
++// STOCK ENGINE FILE, overridden by this plugin for ONE reason: the
++// "HWT_REPLACE_STOCK_UI" engine setting.
++//
++// With that setting off this file is byte-for-byte the engine's own ui.c and
++// behaves identically. With it on, the stock text renderer is compiled out and
++// the plugin supplies ui_draw_text_buffer_char() in its place.
++//
++// Regenerate rather than hand-edit when the GB Studio engine changes.
++// ---------------------------------------------------------------------------
+ // must be in the same bank with ui_a.s
+ #pragma bank 1
+ 
+ #include <string.h>
+ 
++#include "data/states_defines.h"   // for HWT_REPLACE_STOCK_UI
+ #include "system.h"
+ #include "ui.h"
+ #include "game_time.h"
+ #include "data/data_bootstrap.h"
+@@ -223,8 +234,11 @@
+ UWORD ui_print_make_mask_lr(UBYTE width, UBYTE ofs) OLDCALL;
+ UWORD ui_print_make_mask_rl(UBYTE width, UBYTE ofs) OLDCALL;
+ void ui_swap_tiles(void);
+ 
++#ifndef HWT_REPLACE_STOCK_UI
++// The VWF glyph rasteriser. Only ui_draw_text_buffer_char below calls it,
++// so it goes when that goes.
+ UBYTE ui_print_render(const unsigned char ch) {
+     UBYTE letter = (vwf_current_font_desc.attr & FONT_RECODE) ? ReadBankedUBYTE(vwf_current_font_desc.recode_table + (ch & vwf_current_font_desc.mask), vwf_current_font_bank) : ch;
+     const UBYTE * bitmap = vwf_current_font_desc.bitmaps + letter * 16u;
+     if (vwf_current_font_desc.attr & FONT_VWF) {
+@@ -272,8 +286,9 @@
+         vwf_current_offset = 0u;
+         return TRUE;
+     }
+ }
++#endif // HWT_REPLACE_STOCK_UI
+ 
+ inline void ui_set_tile(UBYTE * addr, UBYTE tile, UBYTE bank) {
+ #ifdef CGB
+     if (_is_CGB) {
+@@ -286,8 +301,14 @@
+ #endif
+     set_vram_byte(addr, tile);
+ }
+ 
++#ifndef HWT_REPLACE_STOCK_UI
++// Stock per-character text renderer. With the plugin's setting on, the
++// plugin's engine source defines this symbol instead, and every caller --
++// ui_update(), and through it Display Dialogue, Display Text and
++// ui_run_menu() -- lands on the plugin's renderer without changing a
++// single call site.
+ UBYTE ui_draw_text_buffer_char(void) BANKED {
+     static UBYTE current_font_idx, current_text_bkg_fill, current_vwf_direction, current_text_ff_joypad, current_text_draw_speed;
+ 
+     if (ui_text_ptr == 0) {
+@@ -435,8 +456,11 @@
+         }
+         ui_text_ptr++;
+     }
+ }
++#else
++UBYTE ui_draw_text_buffer_char(void) BANKED;   // supplied by the plugin
++#endif // HWT_REPLACE_STOCK_UI
+ 
+ void ui_update(void) BANKED {
+     UBYTE flag = FALSE;
+ 

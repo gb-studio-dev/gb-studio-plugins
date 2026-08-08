@@ -541,3 +541,15 @@ void hwt_set_tile_range(SCRIPT_CTX * THIS) OLDCALL BANKED {
     hwt_tile_placement  = *(UBYTE *)VM_REF_TO_PTR(FN_ARG0);
     hwt_cache_reset();
 }
+
+// ---- stock UI replacement -------------------------------------------------
+// With HWT_REPLACE_STOCK_UI set, the plugin's ui.c override leaves
+// ui_draw_text_buffer_char undefined, and this claims the symbol. Everything
+// in the stock engine that drew text -- ui_update(), and through it Display
+// Dialogue, Display Text and ui_run_menu() -- lands here instead, so stock
+// events render with this plugin and the stock renderer costs no ROM.
+#ifdef HWT_REPLACE_STOCK_UI
+UBYTE ui_draw_text_buffer_char(void) BANKED {
+    return hwt_draw_text_buffer_char();
+}
+#endif // HWT_REPLACE_STOCK_UI

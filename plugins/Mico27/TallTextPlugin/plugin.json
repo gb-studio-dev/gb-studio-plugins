@@ -2,11 +2,221 @@
   "type": "enginePlugin",
   "name": "Tall Text Plugin",
   "author": "Mico27",
-  "version": "4.3.1",
+  "version": "4.3.2",
   "gbsVersion": ">=4.3.0",
   "description": "16px-tall text: each character is two vertically stacked tiles streamed to VRAM, with an LRU tile-pair cache.",
   "url": "https://github.com/Mico27/gbs-TallTextPlugin",
   "engineAltRules": [
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/GlyphTextPlugin",
+          "Mico27/HalfWidthTextPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_G_H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "ScreenScrollPlugin",
+          "GlyphTextPlugin",
+          "HalfWidthTextPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_G_H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/GlyphTextPlugin",
+          "Mico27/HalfWidthTextPlugin"
+        ]
+      },
+      "use": "Cont_G_H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "GlyphTextPlugin",
+          "HalfWidthTextPlugin"
+        ]
+      },
+      "use": "Cont_G_H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/GlyphTextPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_G"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "ScreenScrollPlugin",
+          "GlyphTextPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_G"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/HalfWidthTextPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "ScreenScrollPlugin",
+          "HalfWidthTextPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS_H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/GlyphTextPlugin",
+          "Mico27/HalfWidthTextPlugin"
+        ]
+      },
+      "use": "ScreenS_G_H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "GlyphTextPlugin",
+          "HalfWidthTextPlugin"
+        ]
+      },
+      "use": "ScreenS_G_H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/GlyphTextPlugin"
+        ]
+      },
+      "use": "Cont_G"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "GlyphTextPlugin"
+        ]
+      },
+      "use": "Cont_G"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/HalfWidthTextPlugin"
+        ]
+      },
+      "use": "Cont_H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "HalfWidthTextPlugin"
+        ]
+      },
+      "use": "Cont_H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/ScreenScrollPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "ScreenScrollPlugin"
+        ]
+      },
+      "use": "Cont_ScreenS"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/GlyphTextPlugin",
+          "Mico27/HalfWidthTextPlugin"
+        ]
+      },
+      "use": "G_H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "GlyphTextPlugin",
+          "HalfWidthTextPlugin"
+        ]
+      },
+      "use": "G_H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/GlyphTextPlugin"
+        ]
+      },
+      "use": "ScreenS_G"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "GlyphTextPlugin"
+        ]
+      },
+      "use": "ScreenS_G"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/HalfWidthTextPlugin"
+        ]
+      },
+      "use": "ScreenS_H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "HalfWidthTextPlugin"
+        ]
+      },
+      "use": "ScreenS_H"
+    },
     {
       "when": {
         "additionalPlugins": [
@@ -22,6 +232,38 @@
         ]
       },
       "use": "Cont"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/GlyphTextPlugin"
+        ]
+      },
+      "use": "G"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "GlyphTextPlugin"
+        ]
+      },
+      "use": "G"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/HalfWidthTextPlugin"
+        ]
+      },
+      "use": "H"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "HalfWidthTextPlugin"
+        ]
+      },
+      "use": "H"
     },
     {
       "when": {
