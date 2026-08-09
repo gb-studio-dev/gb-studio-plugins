@@ -70,7 +70,7 @@
       "key": "HWT_REPLACE_STOCK_UI",
       "label": "Replace stock text rendering",
       "description": "Compile GB Studio's own text renderer out of the ROM and point everything that used it at this plugin instead. The stock Display Dialogue, Display Text and Menu events then draw in 4px-wide text, without being replaced by this plugin's own events. Two things follow. Tiles 204-255, which the stock renderer used as its scratch buffer, are free: they can be added to this plugin's reserved tile range with nothing left to collide with. Menus are unaffected: this plugin's lines are one map row tall, like stock text, so the stock menu cursor already lines up.",
-      "group": "Half Width Text",
+      "group": "Half-Width Text",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 0
