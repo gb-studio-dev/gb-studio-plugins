@@ -2,7 +2,7 @@
   "type": "enginePlugin",
   "name": "Glyph Text Plugin",
   "author": "Mico27",
-  "version": "4.3.2",
+  "version": "4.3.3",
   "gbsVersion": ">=4.3.0",
   "description": "plugin that renders 16×16 text — every character is a 2×2 quad of tiles streamed into VRAM as it is printed. Built for scripts that need large character sets and full-square glyphs. (ex: Chinese, Japanese kanji, Korean)",
   "url": "https://github.com/Mico27/gbs-GlyphTextPlugin",

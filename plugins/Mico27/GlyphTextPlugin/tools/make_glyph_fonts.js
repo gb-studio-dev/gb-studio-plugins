@@ -71,11 +71,10 @@ Output:
                           engine setting, and register the table with the
                           Set Width Table event.
   --space-width <n>       how far the pen moves for a space, in pixels (default
-                          4, range 1-16). Variable-width mode only, and only for
-                          the font set that owns glyph 0 -- the width table
-                          takes its whole ASCII block from that one set.
-                          A blank glyph has no ink to measure, so without this
-                          a space is guessed from the cell size.
+                          4, range 1-16). Variable-width mode only. A space has
+                          no ink to measure, so its advance is stated here and
+                          painted as the space cell's cull margin -- adjustable
+                          afterwards in an image editor like any other glyph.
   --no-font               keep your own font PNG; only rewrite <name>.json
   --wizard                ask for anything that was not given on the command line
   --help
@@ -755,6 +754,13 @@ const run = (opts) => {
   }
   if (opts.bold) embolden(glyphs);
 
+  if (opts.spaceWidthGiven && !opts.vwf) {
+    console.warn(
+      "warning: --space-width does nothing without --vwf. Fixed-width rendering\n" +
+      "         advances every character by its cell, spaces included."
+    );
+  }
+
   const missing = wide.filter((cp) => !glyphs.has(cp));
   if (missing.length) {
     console.warn(
@@ -842,9 +848,14 @@ const run = (opts) => {
         drawGlyph(pixels, fontW, x0 + pad, y0, g, Math.min(g.w, asciiCells), cellH);
       }
       if (opts.vwf) {
-        const adv = g
-          ? Math.max(1, Math.min(asciiCells, advanceOf(g, asciiCells)))
-          : Math.max(1, opts.spaceWidth);
+        // The space is stated, not measured. It has a glyph like any other
+        // character -- just a blank one -- so measuring it would fall back to a
+        // guess from the cell size and --space-width would never be consulted.
+        // A character the font does not cover is treated the same way.
+        const adv =
+          cp === 0x20 || !g
+            ? Math.max(1, Math.min(asciiCells, opts.spaceWidth))
+            : Math.max(1, Math.min(asciiCells, advanceOf(g, asciiCells)));
         if (adv < asciiCells) drawCull(pixels, fontW, x0, y0, adv, asciiCells, cellH);
       }
     });
