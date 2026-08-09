@@ -85,55 +85,20 @@
       "max": 128
     },
     {
-      "key": "GTX_SHEET_MAX",
-      "label": "Glyph sheet slots",
-      "description": "How many glyph sheets (tileset assets holding the wide character bitmaps) can be registered at the same time through the Set Glyph Sheet event. Each slot costs 7 bytes of WRAM and one more iteration of the sheet lookup on a cache miss. One sheet holds up to 256 characters and must fit in a single ROM bank, so raise this when your script needs more characters than that.",
+      "key": "GTX_GROUP_MAX",
+      "label": "Font group slots",
+      "description": "How many main fonts can carry a group of extended fonts at the same time. A group is attached to one main font, so switching font mid-text switches its extended fonts too -- this is how many such fonts a scene can use before one has to be re-registered. Each slot costs 4 bytes of WRAM.",
       "group": "Glyph Text",
       "type": "slider",
       "cType": "define",
       "defaultValue": 4,
       "min": 1,
-      "max": 16
-    },
-    {
-      "key": "GTX_SHEET_COLS",
-      "label": "Glyph sheet columns",
-      "description": "How many characters make up one row of a glyph sheet image. Must match the sheets you generate: tools/make_glyph_sheets.js emits 16 columns (256px wide images). Only powers of two are offered, because the tile lookup relies on the compiler turning the division into a shift.",
-      "group": "Glyph Text",
-      "type": "select",
-      "options": [
-        [
-          1,
-          "1 (16px wide sheets)"
-        ],
-        [
-          2,
-          "2 (32px)"
-        ],
-        [
-          4,
-          "4 (64px)"
-        ],
-        [
-          8,
-          "8 (128px)"
-        ],
-        [
-          16,
-          "16 (256px)"
-        ],
-        [
-          32,
-          "32 (512px)"
-        ]
-      ],
-      "cType": "define",
-      "defaultValue": 16
+      "max": 8
     },
     {
       "key": "GTX_LEAD_MIN",
       "label": "Wide character lead byte",
-      "description": "Lowest byte value that starts a two-byte wide character code. Bytes below it are drawn as single-byte characters from the current font asset's 16x16 grid. The default 128 matches the encoding tools/make_glyph_sheets.js writes into the font mapping (lead 0x80 + glyph >> 7, trail 0x80 + glyph & 0x7F); only change it if you build your own encoding.",
+      "description": "Lowest byte value that starts a two-byte wide character code. Bytes below it are drawn as single-byte characters from the current font asset's 16x16 grid. The default 128 matches the encoding tools/make_glyph_fonts.js writes into the font mapping (lead 0x80 + glyph >> 7, trail 0x80 + glyph & 0x7F); only change it if you build your own encoding.",
       "group": "Glyph Text",
       "type": "slider",
       "cType": "define",

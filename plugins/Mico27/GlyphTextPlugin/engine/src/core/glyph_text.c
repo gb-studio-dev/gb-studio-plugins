@@ -33,7 +33,7 @@
 // .json (GB Studio maps a source string to a byte sequence at compile time):
 // glyph index g is written as lead 0x80 + (g >> 7), trail 0x80 + (g & 0x7F),
 // so g spans 0-16383 and neither byte can ever collide with a control code.
-// tools/make_glyph_sheets.js generates the sheets and that mapping together.
+// tools/make_glyph_fonts.js generates the fonts and that mapping together.
 //
 // Rendered quads are allocated from the reserved VRAM range through an LRU
 // cache keyed by character code (same proven structure as the TallTextPlugin
@@ -82,19 +82,6 @@ UBYTE gtx_current_text_speed;
 #define GTX_CACHE_MAX 32
 #endif
 
-// how many glyph sheets can be registered at once (GTX_SHEET_MAX engine field),
-// 6 bytes of WRAM each
-#ifndef GTX_SHEET_MAX
-#define GTX_SHEET_MAX 4
-#endif
-
-// glyphs per row in a sheet image (GTX_SHEET_COLS engine field). MUST be a
-// power of two: the tile offset arithmetic below relies on the compiler turning
-// the divide and multiply into shifts. tools/make_glyph_sheets.js emits 16.
-#ifndef GTX_SHEET_COLS
-#define GTX_SHEET_COLS 16
-#endif
-
 // first byte value that starts a two-byte (wide) character code
 #ifndef GTX_LEAD_MIN
 #define GTX_LEAD_MIN 0x80
@@ -123,7 +110,6 @@ UBYTE gtx_current_text_speed;
 #else
 #define GTX_TILES_PER_ENTRY 4u
 #endif
-#define GTX_SHEET_ROW_BYTES (32u * GTX_SHEET_COLS)   // one image tile row of a sheet
 
 // GTX_CACHE_ENABLED engine field (Settings -> Glyph Text): unchecking it
 // compiles the LRU bookkeeping out entirely. Characters are then rendered into
@@ -151,16 +137,48 @@ UBYTE gtx_current_text_speed;
 // back to bank 0 when not running on CGB hardware)
 static UBYTE gtx_placement_eff;
 
-// a registered glyph sheet: a GB Studio tileset asset covering the contiguous
-// wide-glyph index range [first, first + count)
-typedef struct gtx_sheet_t {
-    const UBYTE * ptr;   // tileset_t: UWORD n_tiles then the 2bpp tile data
-    UBYTE bank;
-    UWORD first;
-    UWORD count;
-} gtx_sheet_t;
+// Extended font groups.
+//
+// A group BELONGS TO a main font, so switching the main font mid-text -- with
+// a \002 token, or the Set Font event -- switches the extended fonts with it.
+// Each group is a table generated at compile time by the Assign Extended Fonts
+// event and linked as an ordinary banked asset:
+//
+//   byte 0        the main font this group belongs to
+//   byte 1        number of extended fonts in it
+//   then, per font:  UBYTE font index, UWORD first glyph, UWORD glyph count
+//
+// Every font index is an index into the engine's own ui_fonts[], so an extended
+// font is reached exactly like the main one.
+#define GTX_GROUP_ENTRY 5u
+#define GTX_GROUP_HEADER 2u
 
-static gtx_sheet_t gtx_sheets[GTX_SHEET_MAX];
+// how many main fonts can carry a group at once (GTX_GROUP_MAX engine field),
+// 4 bytes of WRAM each
+#ifndef GTX_GROUP_MAX
+#define GTX_GROUP_MAX 4
+#endif
+
+typedef struct gtx_group_t {
+    const UBYTE * ptr;
+    UBYTE bank;
+    UBYTE main;      // index into ui_fonts[] of the font this group serves
+} gtx_group_t;
+
+static gtx_group_t gtx_groups[GTX_GROUP_MAX];
+static UBYTE gtx_group_count = 0;
+
+// which main font the renderer is drawing with; kept in step with the \002
+// font tokens inside the text, so it is what selects the group below
+static UBYTE gtx_font_idx = 0;
+
+// The extended font currently loaded, cached so a run of characters from the
+// same font costs one descriptor read rather than one per character.
+static font_desc_t gtx_ext_desc;
+static UBYTE gtx_ext_bank;
+static UBYTE gtx_ext_slot = 0xFFu;   // which entry of gtx_ext_group it holds
+static UWORD gtx_ext_first;          // first glyph code that font covers
+static const gtx_group_t * gtx_ext_group = 0;   // the group it was taken from
 
 // bank-0-only: cache entry i owns the four VRAM tiles starting at
 // (gtx_first_tile + 4*i); alternate placement maps entries 2k/2k+1 onto the
@@ -257,39 +275,91 @@ static void gtx_load_font_glyph(UBYTE tile, UBYTE ch) {
 #endif
 }
 
-// upload the four quarters of a wide character from the glyph sheet covering it.
-// a sheet image is GTX_SHEET_COLS glyphs wide, so glyph k within the sheet sits
-// at image tile (4 * GTX_SHEET_COLS * (k / GTX_SHEET_COLS) + 2 * (k % GTX_SHEET_COLS));
-// its top two tiles are adjacent, and the bottom two are one image tile row on.
-static const gtx_sheet_t * gtx_find_sheet(UWORD code) {
+// Resolve a wide code to a glyph in one of the current main font’s extended
+// fonts, and read its four quarters out of that font.
+// Make `code`'s extended font the loaded one. Returns TRUE when some font in
+// the group covers it, leaving the glyph's index within that font in *out.
+// the group belonging to the main font in use, or NULL if it has none
+static const gtx_group_t * gtx_active_group(void) {
     UBYTE i;
-    for (i = 0; i != GTX_SHEET_MAX; i++) {
-        const gtx_sheet_t * sheet = &gtx_sheets[i];
-        if ((sheet->ptr) && (code >= sheet->first) && ((code - sheet->first) < sheet->count)) {
-            return sheet;
-        }
+    for (i = 0; i != gtx_group_count; i++) {
+        if (gtx_groups[i].main == gtx_font_idx) return &gtx_groups[i];
     }
     return 0;
 }
 
-// address of the top-left tile of glyph `code` inside its sheet
-static const UBYTE * gtx_sheet_cell(const gtx_sheet_t * sheet, UWORD code) {
-    UWORD k = code - sheet->first;
-    UWORD pos = ((k / GTX_SHEET_COLS) * (4u * GTX_SHEET_COLS)) + ((k % GTX_SHEET_COLS) << 1);
-    // + 2 skips the tileset_t n_tiles field
-    return sheet->ptr + 2u + (pos << 4);
+static UBYTE gtx_use_ext_font(UWORD code, UWORD * out) {
+    const gtx_group_t * g = gtx_active_group();
+    const UBYTE * e;
+    UBYTE n, i;
+    if (g == 0) return FALSE;
+
+    // already loaded? the common case, a run of text in one font. The group has
+    // to match too, or a font switch would keep drawing the old font's glyphs.
+    if ((gtx_ext_slot != 0xFFu) && (gtx_ext_group == g) && (code >= gtx_ext_first)) {
+        UWORD k = code - gtx_ext_first;
+        e = g->ptr + GTX_GROUP_HEADER + ((UWORD)gtx_ext_slot * GTX_GROUP_ENTRY);
+        if (k < ReadBankedUWORD(e + 3u, g->bank)) { *out = k; return TRUE; }
+    }
+
+    n = ReadBankedUBYTE(g->ptr + 1u, g->bank);
+    e = g->ptr + GTX_GROUP_HEADER;
+    for (i = 0; i != n; i++) {
+        UWORD first = ReadBankedUWORD(e + 1u, g->bank);
+        if (code >= first) {
+            UWORD k = code - first;
+            if (k < ReadBankedUWORD(e + 3u, g->bank)) {
+                UBYTE idx = ReadBankedUBYTE(e, g->bank);
+                const far_ptr_t * font = ui_fonts + idx;
+                gtx_ext_bank = font->bank;
+                MemcpyBanked(&gtx_ext_desc, font->ptr, sizeof(font_desc_t), gtx_ext_bank);
+                gtx_ext_slot = i;
+                gtx_ext_first = first;
+                gtx_ext_group = g;
+                *out = k;
+                return TRUE;
+            }
+        }
+        e += GTX_GROUP_ENTRY;
+    }
+    return FALSE;
+}
+
+// Position of a glyph's top-left tile in an extended font's recode table.
+// Extended fonts are 16 glyphs per image row of 16x16 cells, so glyph k sits at
+// image tile (4*16*(k/16) + 2*(k%16)); the +32 is the font compiler's leading
+// run of blanks, present because these images are under 16 tile rows tall.
+#define GTX_EXT_COLS 16u
+static UWORD gtx_ext_tile_pos(UWORD k) {
+    return 32u + ((k / GTX_EXT_COLS) * (4u * GTX_EXT_COLS)) + ((k % GTX_EXT_COLS) << 1);
 }
 
 #ifndef GTX_VWF_ENABLED
+// straight into VRAM, one deduplicated font tile at a time
+static void gtx_load_ext_tile(UBYTE tile, UWORD idx) {
+    UBYTE q = ReadBankedUBYTE(gtx_ext_desc.recode_table + idx, gtx_ext_bank);
+    SetBankedBkgData(tile, 1, gtx_ext_desc.bitmaps + ((UWORD)q << 4), gtx_ext_bank);
+}
+#else
+// into WRAM instead: variable width has to shift the pixels before they land
+static void gtx_ext_fetch_tile(UBYTE * dest, UWORD idx) {
+    UBYTE q = ReadBankedUBYTE(gtx_ext_desc.recode_table + idx, gtx_ext_bank);
+    MemcpyBanked(dest, gtx_ext_desc.bitmaps + ((UWORD)q << 4), 16, gtx_ext_bank);
+}
+#endif
+
+#ifndef GTX_VWF_ENABLED
 static void gtx_load_sheet_glyph(UBYTE tile, UWORD code) {
-    const gtx_sheet_t * sheet = gtx_find_sheet(code);
-    if (sheet) {
-        const UBYTE * src = gtx_sheet_cell(sheet, code);
-        SetBankedBkgData(tile, 2, src, sheet->bank);
-        SetBankedBkgData(tile + 2u, 2, src + GTX_SHEET_ROW_BYTES, sheet->bank);
+    UWORD k;
+    if (gtx_use_ext_font(code, &k)) {
+        UWORD pos = gtx_ext_tile_pos(k);
+        gtx_load_ext_tile(tile, pos);
+        gtx_load_ext_tile(tile + 1u, pos + 1u);
+        gtx_load_ext_tile(tile + 2u, pos + (GTX_EXT_COLS << 1));
+        gtx_load_ext_tile(tile + 3u, pos + (GTX_EXT_COLS << 1) + 1u);
         return;
     }
-    // no sheet covers this code: leave a blank square rather than stale pixels
+    // no extended font covers this code: leave a blank square, not stale pixels
     set_bkg_data(tile, GTX_TILES_PER_CHAR, gtx_blank);
 }
 #endif
@@ -406,30 +476,45 @@ static UBYTE gtx_vwf_ofs;          // pen position inside column 0, 0-7
 static UWORD gtx_vwf_mask[16];     // the glyph being placed, bit 15 = its pixel 0
 static UBYTE gtx_vwf_cell[64];     // one sheet cell fetched out of ROM
 
-// widths table: a tileset asset used as a plain byte array.
-// [0..95]  = advance of ASCII 0x20-0x7F in the font asset
-// [96 + g] = advance of wide glyph g
-static const UBYTE * gtx_widths_ptr = 0;
-static UBYTE gtx_widths_bank;
-
-#define GTX_WIDTH_ASCII_MAX 96u
+// Advances come from the font assets themselves. GB Studio's font compiler
+// trims every 8x8 tile against transparency and records what is left in the
+// font's widths[], indexed by the same deduplicated tile index the recode table
+// yields -- so painting bright green (G > 249) to the right of a glyph is what
+// sets its advance. A font with no green anywhere is not variable width and its
+// widths pointer is NULL, which reads back as a full tile.
+//
+// The trim is per TILE, so a 16px glyph's advance is its two top tiles added
+// together: a glyph inked to 11px leaves the left tile full at 8 and the right
+// trimmed to 3.
+static UBYTE gtx_tile_width(const font_desc_t * desc, UBYTE bank, UWORD idx) {
+    UBYTE q;
+    if (desc->widths == 0) return 8u;   // not a variable width font
+    q = ReadBankedUBYTE(desc->recode_table + idx, bank);
+    return ReadBankedUBYTE(desc->widths + q, bank);
+}
 
 static UBYTE gtx_char_width(UWORD key) {
-    UWORD idx;
-    UBYTE w;
     if (key & GTX_KEY_NARROW) {
+        // single-byte characters come from the main font, on the 8x16 grid the
+        // variable width renderer always uses for them
         UBYTE ch = (UBYTE)key;
+        UBYTE n, w;
+        UWORD idx;
         if (ch < 0x20u) return 0;
-        idx = ch - 0x20u;
-        if (idx >= GTX_WIDTH_ASCII_MAX) return 8u;
-    } else {
-        idx = GTX_WIDTH_ASCII_MAX + key;
+        n = ch - 0x20u;
+        idx = 32u + (((UWORD)(n & 0xF0u)) << 1) + (n & 0x0Fu);
+        w = gtx_tile_width(&vwf_current_font_desc, vwf_current_font_bank, idx);
+        return w ? w : 4u;              // a fully trimmed cell is a space
     }
-    if (gtx_widths_ptr == 0) return (key & GTX_KEY_NARROW) ? 8u : 16u;
-    // + 2 skips the tileset_t n_tiles field
-    w = ReadBankedUBYTE(gtx_widths_ptr + 2u + idx, gtx_widths_bank);
-    if (w == 0) return (key & GTX_KEY_NARROW) ? 4u : 16u;   // unmeasured, or a space
-    return w;
+    {
+        UWORD k, pos;
+        UBYTE w;
+        if (!gtx_use_ext_font(key, &k)) return 16u;
+        pos = gtx_ext_tile_pos(k);
+        w = gtx_tile_width(&gtx_ext_desc, gtx_ext_bank, pos) +
+            gtx_tile_width(&gtx_ext_desc, gtx_ext_bank, pos + 1u);
+        return w ? w : 16u;
+    }
 }
 
 // one row of a 2bpp tile pair -> a 1bpp ink mask
@@ -437,15 +522,17 @@ static UBYTE gtx_char_width(UWORD key) {
 
 // fetch a wide glyph out of its sheet into gtx_vwf_mask
 static void gtx_vwf_load_sheet(UWORD code) {
-    const gtx_sheet_t * sheet = gtx_find_sheet(code);
+    UWORD k, pos;
     UBYTE y;
     memset(gtx_vwf_mask, 0, sizeof(gtx_vwf_mask));
-    if (sheet == 0) return;
+    if (!gtx_use_ext_font(code, &k)) return;
+    pos = gtx_ext_tile_pos(k);
     {
-        const UBYTE * src = gtx_sheet_cell(sheet, code);
-        // top-left and top-right tiles are adjacent, the bottom pair one image row on
-        MemcpyBanked(gtx_vwf_cell, src, 32, sheet->bank);
-        MemcpyBanked(gtx_vwf_cell + 32, src + GTX_SHEET_ROW_BYTES, 32, sheet->bank);
+        // the four quarters are separate deduplicated tiles in the font
+        gtx_ext_fetch_tile(gtx_vwf_cell, pos);
+        gtx_ext_fetch_tile(gtx_vwf_cell + 16, pos + 1u);
+        gtx_ext_fetch_tile(gtx_vwf_cell + 32, pos + (GTX_EXT_COLS << 1));
+        gtx_ext_fetch_tile(gtx_vwf_cell + 48, pos + (GTX_EXT_COLS << 1) + 1u);
     }
     for (y = 0; y != 8; y++) {
         gtx_vwf_mask[y] = ((UWORD)GTX_ROW_INK(gtx_vwf_cell, y) << 8) |
@@ -567,13 +654,13 @@ static void gtx_emit_char(UWORD key) {
 // every text line is two tilemap rows tall and every character two cells wide.
 // returns TRUE when a printable character was consumed (for sound/speed).
 UBYTE gtx_draw_text_buffer_char(void) BANKED {
-    static UBYTE current_font_idx, current_text_ff_joypad, current_text_draw_speed;
+    static UBYTE current_text_ff_joypad, current_text_draw_speed;
 
     if (gtx_text_ptr == 0) {
         // set the delay mask
         gtx_current_text_speed = ui_time_masks[text_draw_speed];
         // save font and speed global properties
-        current_font_idx        = vwf_current_font_idx;
+        gtx_font_idx        = vwf_current_font_idx;
         current_text_ff_joypad  = text_ff_joypad;
         current_text_draw_speed = text_draw_speed;
         if (!gtx_initialized) gtx_cache_reset();
@@ -593,7 +680,7 @@ UBYTE gtx_draw_text_buffer_char(void) BANKED {
                 gtx_text_ptr = 0;
                 gtx_text_drawn = TRUE;
                 // restore font and speed global properties
-                if (vwf_current_font_idx != current_font_idx) {
+                if (vwf_current_font_idx != gtx_font_idx) {
                     const far_ptr_t * font = ui_fonts + vwf_current_font_idx;
                     MemcpyBanked(&vwf_current_font_desc, font->ptr, sizeof(font_desc_t), vwf_current_font_bank = font->bank);
                 }
@@ -608,8 +695,8 @@ UBYTE gtx_draw_text_buffer_char(void) BANKED {
                 break;
             case 0x02: {
                 // set current font (temporary within this text, like stock)
-                current_font_idx = *(++gtx_text_ptr) - 1u;
-                const far_ptr_t * font = ui_fonts + current_font_idx;
+                gtx_font_idx = *(++gtx_text_ptr) - 1u;
+                const far_ptr_t * font = ui_fonts + gtx_font_idx;
                 MemcpyBanked(&vwf_current_font_desc, font->ptr, sizeof(font_desc_t), vwf_current_font_bank = font->bank);
                 // no cache invalidation: narrow entries are keyed by font index,
                 // so the glyphs already on screen keep their quads
@@ -706,7 +793,7 @@ UBYTE gtx_draw_text_buffer_char(void) BANKED {
                     UBYTE trail = *gtx_text_ptr++;
                     gtx_emit_char((((UWORD)(ch - GTX_LEAD_MIN)) << 7) | (trail & 0x7Fu));
                 } else {
-                    gtx_emit_char(GTX_KEY_FOR_NARROW(current_font_idx, ch));
+                    gtx_emit_char(GTX_KEY_FOR_NARROW(gtx_font_idx, ch));
                 }
                 return TRUE;
             }
@@ -814,32 +901,35 @@ void gtx_set_tile_range(SCRIPT_CTX * THIS) OLDCALL BANKED {
     gtx_cache_reset();
 }
 
-// register (or, with a null pointer, clear) one glyph sheet slot.
-// the glyph count is taken from the tileset's own n_tiles field, so a sheet
-// always covers exactly the glyphs its image holds.
-// point the renderer at the table of glyph advances (variable-width mode only).
-// a null pointer clears it and every character falls back to its full cell.
-void gtx_set_width_table(SCRIPT_CTX * THIS) OLDCALL BANKED {
+// Point the renderer at the extended font group of the main font in use. The
+// table is generated by the Assign Extended Fonts event; a null pointer clears
+// it and every wide character draws blank.
+void gtx_set_font_group(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
-#ifdef GTX_VWF_ENABLED
-    gtx_widths_ptr  = (const UBYTE *)(*(UWORD *)VM_REF_TO_PTR(FN_ARG1));
-    gtx_widths_bank = *(UBYTE *)VM_REF_TO_PTR(FN_ARG0);
-#endif
-}
-
-void gtx_set_glyph_sheet(SCRIPT_CTX * THIS) OLDCALL BANKED {
-    (void)THIS;
-    UBYTE slot        = *(UBYTE *)VM_REF_TO_PTR(FN_ARG3);
-    const UBYTE * ptr = (const UBYTE *)(*(UWORD *)VM_REF_TO_PTR(FN_ARG2));
-    UBYTE bank        = *(UBYTE *)VM_REF_TO_PTR(FN_ARG1);
-    UWORD first       = *(UWORD *)VM_REF_TO_PTR(FN_ARG0);
-    gtx_sheet_t * sheet;
-    if (slot >= GTX_SHEET_MAX) return;
-    sheet = &gtx_sheets[slot];
-    sheet->ptr = ptr;
-    sheet->bank = bank;
-    sheet->first = first;
-    sheet->count = (ptr) ? (ReadBankedUWORD(ptr, bank) / GTX_TILES_PER_CHAR) : 0u;
+    const UBYTE * ptr = (const UBYTE *)(*(UWORD *)VM_REF_TO_PTR(FN_ARG1));
+    UBYTE bank        = *(UBYTE *)VM_REF_TO_PTR(FN_ARG0);
+    UBYTE main, i;
+    if (ptr == 0) {                 // clearing: forget every group
+        gtx_group_count = 0;
+        gtx_ext_slot = 0xFFu;
+        gtx_ext_group = 0;
+        gtx_cache_reset();
+        return;
+    }
+    main = ReadBankedUBYTE(ptr, bank);
+    // re-registering a main font replaces its group rather than adding a second
+    for (i = 0; i != gtx_group_count; i++) {
+        if (gtx_groups[i].main == main) break;
+    }
+    if (i == gtx_group_count) {
+        if (gtx_group_count == GTX_GROUP_MAX) return;   // no slot left
+        gtx_group_count++;
+    }
+    gtx_groups[i].ptr = ptr;
+    gtx_groups[i].bank = bank;
+    gtx_groups[i].main = main;
+    gtx_ext_slot = 0xFFu;           // whatever was loaded may belong to the old group
+    gtx_ext_group = 0;
     gtx_cache_reset();
 }
 

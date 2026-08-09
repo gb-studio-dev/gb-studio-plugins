@@ -11,7 +11,7 @@
 // which is what pixel fonts want; otherwise the glyphs are rasterised through
 // GDI+ (Windows) using the font file itself, installed or not.
 //
-// Generated from GlyphTextPlugin's make_glyph_sheets.js by
+// Generated from GlyphTextPlugin's make_glyph_fonts.js by
 // .maintenance/gen_text_plugin_font_tool.js -- edit that, not this.
 // ---------------------------------------------------------------------------
 const fs = require("fs");
@@ -109,9 +109,17 @@ const validate = (opts) => {
 
 const RENDER_MARGIN = 8;
 
+const PALETTE = [
+  [7, 24, 33],      // 0 Dark   -- ink
+  [48, 104, 80],    // 1 Mid
+  [134, 192, 108],  // 2 Light
+  [224, 248, 207],  // 3 White  -- paper
+  [255, 0, 255],    // 4 magenta -- transparent, the cull colour
+];
+
 const INK = 0;
 
-const PAPER = 240;
+const PAPER = 3;
 
 const detectProject = () => {
   const guess = path.resolve(__dirname, "..", "..", "..");
@@ -342,7 +350,7 @@ const writePng = (file, width, height, pixels) => {
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 8;    // bit depth
-  ihdr[9] = 0;    // colour type: greyscale
+  ihdr[9] = 3;    // colour type: indexed, so the palette travels with the file
   const raw = Buffer.alloc((width + 1) * height);
   for (let y = 0; y < height; y++) {
     raw[y * (width + 1)] = 0;   // filter: none
@@ -354,6 +362,7 @@ const writePng = (file, width, height, pixels) => {
     Buffer.concat([
       Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
       chunk("IHDR", ihdr),
+      chunk("PLTE", Buffer.from(PALETTE.flat())),
       chunk("IDAT", zlib.deflateSync(raw, { level: 9 })),
       chunk("IEND", Buffer.alloc(0)),
     ])

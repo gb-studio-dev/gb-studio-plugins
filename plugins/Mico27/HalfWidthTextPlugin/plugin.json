@@ -5,7 +5,7 @@
   "url": "https://github.com/Mico27/gbs-HalfWidthTextPlugin",
   "description": "Draws 4px-wide text (two characters per tile) using the Pokemon TCG technique: character pairs are composed into tiles on the fly and cached in VRAM with an LRU list, so repeated pairs reuse the same tile.",
   "license": "MIT",
-  "version": "4.3.3",
+  "version": "4.3.4",
   "gbsVersion": ">=4.3.0",
   "engineAltRules": [
     {

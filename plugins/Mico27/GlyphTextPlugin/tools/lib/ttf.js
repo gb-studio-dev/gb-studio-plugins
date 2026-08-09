@@ -9,7 +9,7 @@
 //     builds have an empty `glyf` table -- and GDI+/DirectWrite refuse to render
 //     them, so this is the only way to get at them.
 //
-//   * OUTLINE fonts have to be rasterised; make_glyph_sheets.js hands those to
+//   * OUTLINE fonts have to be rasterised; make_glyph_fonts.js hands those to
 //     GDI+ instead (see renderWithGdiPlus).
 //
 // Only what the generator needs is parsed: cmap formats 4/6/12, EBLC index

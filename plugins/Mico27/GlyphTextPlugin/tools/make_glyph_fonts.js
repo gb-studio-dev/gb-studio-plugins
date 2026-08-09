@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 //
-// make_glyph_sheets.js -- build the assets the GlyphTextPlugin needs from a
+// make_glyph_fonts.js -- build the assets the GlyphTextPlugin needs from a
 // font and a list of characters:
 //
 //   * one or more GLYPH SHEETS (GB Studio tileset assets) holding the 16x16
@@ -9,7 +9,7 @@
 //     as the plugin's two-byte codes, and whose image supplies the single-byte
 //     (ASCII) glyphs.
 //
-// Run it with no arguments (or through "Make Glyph Sheets.bat") for a guided
+// Run it with no arguments (or through "Make Glyph Fonts.bat") for a guided
 // prompt; everything is available as a flag as well -- see HELP below.
 //
 // No dependencies: PNGs are written with node's own zlib, and .ttf/.otf files
@@ -28,7 +28,7 @@ const { openFont } = require("./lib/ttf");
 // ---------------------------------------------------------------- arguments
 
 const HELP = `
-Usage: node make_glyph_sheets.js [options]
+Usage: node make_glyph_fonts.js [options]
 
 Glyph source (one required):
   --font <file>           a .ttf/.otf/.ttc file. Embedded bitmap strikes are
@@ -59,10 +59,6 @@ Output:
   --offset-y <n>          nudge rasterised glyphs vertically, likewise
   --no-fit                do not measure and shift the glyphs to fit their cell;
                           take whatever the rasteriser puts at the origin
-  --cols <n>              glyphs per sheet row, power of two (default: 16)
-  --per-sheet <n>         glyphs per sheet, multiple of cols (default: 192)
-  --first-glyph <n>       pin the first glyph index instead of allocating one
-  --first-slot <n>        pin the first sheet slot instead of allocating one
   --full-width-ascii      ASCII font uses 16x16 cells instead of 8x16
                           (match the "Half-width single-byte characters"
                           engine setting: on -> 8x16, off -> 16x16)
@@ -88,8 +84,6 @@ Output:
 const parseArgs = (argv) => {
   const opts = {
     name: "cjk",
-    cols: 16,
-    perSheet: 192,
     size: 16,
     offsetY: 0,
     spaceWidth: 4,
@@ -118,10 +112,6 @@ const parseArgs = (argv) => {
       case "--offset-y": opts.offsetY = parseInt(next(), 10); break;
       case "--offset-x": opts.offsetX = parseInt(next(), 10); break;
       case "--no-fit": opts.noFit = true; break;
-      case "--cols": opts.cols = parseInt(next(), 10); break;
-      case "--per-sheet": opts.perSheet = parseInt(next(), 10); break;
-      case "--first-glyph": opts.firstGlyph = parseInt(next(), 10); break;
-      case "--first-slot": opts.firstSlot = parseInt(next(), 10); break;
       case "--font-name": opts.fontName = next(); break;
       case "--full-width-ascii": opts.fullWidthAscii = true; break;
       case "--bold": opts.bold = true; break;
@@ -150,12 +140,6 @@ const validate = (opts) => {
     throw new Error("a character source is required (--project, --chars or --text)");
   }
   if (!opts.out) opts.out = opts.project ?? ".";
-  if (!Number.isInteger(opts.cols) || opts.cols < 1 || (opts.cols & (opts.cols - 1)) !== 0) {
-    throw new Error("--cols must be a power of two");
-  }
-  if (!Number.isInteger(opts.perSheet) || opts.perSheet % opts.cols !== 0) {
-    throw new Error("--per-sheet must be a multiple of --cols");
-  }
   // 0 is not expressible: the engine reads a 0 in the width table as "no entry"
   // and falls back to its own default, so it would not give a zero-width space
   if (!Number.isInteger(opts.spaceWidth) || opts.spaceWidth < 1 || opts.spaceWidth > 16) {
@@ -440,93 +424,12 @@ const chunk = (type, data) => {
   return out;
 };
 
-// ------------------------------------------------------- font set bookkeeping
+// ------------------------------------------------------------- asset plumbing
 //
-// A project can hold several font sets side by side -- a normal one and, say, a
-// bold or a decorative alternate that text switches to with a font token. Wide
-// glyph indices and sheet slots are GLOBAL to the plugin, so two sets must not
-// overlap in either. Each set therefore leaves a small manifest next to its
-// font, and a new set is placed after everything already registered.
-//
-// GB Studio only ever looks for "<image name>.json" beside a font PNG, so a
-// "<name>.glyphs.json" with no matching image is invisible to it.
-
-const manifestFile = (fontDir, name) => path.join(fontDir, `${name}.glyphs.json`);
-
-const readSets = (fontDir) => {
-  const sets = [];
-  if (!fs.existsSync(fontDir)) return sets;
-  for (const f of fs.readdirSync(fontDir)) {
-    if (!f.endsWith(".glyphs.json")) continue;
-    try {
-      const m = JSON.parse(fs.readFileSync(path.join(fontDir, f), "utf8"));
-      if (m && typeof m.name === "string" && Number.isInteger(m.firstGlyph)) sets.push(m);
-    } catch { /* ignore a manifest we cannot read */ }
-  }
-  return sets;
-};
-
-const overlaps = (aFrom, aLen, bFrom, bLen) => aFrom < bFrom + bLen && bFrom < aFrom + aLen;
-
-// where this run's glyphs and slots go: an explicit flag wins, then this set's
-// own previous placement (so regenerating in place never shifts the others),
-// otherwise the space after every other set
-const placeSet = (opts, others, self) => {
-  const after = (key, len) => others.reduce((m, s) => Math.max(m, s[key] + s[len]), 0);
-  return {
-    firstGlyph: opts.firstGlyph ?? self?.firstGlyph ?? after("firstGlyph", "glyphCount"),
-    firstSlot: opts.firstSlot ?? self?.firstSlot ?? others.reduce(
-      (m, s) => Math.max(m, s.firstSlot + s.sheets.length), 0
-    ),
-  };
-};
-
-const checkCollisions = (name, placement, glyphCount, sheetCount, others) => {
-  for (const s of others) {
-    if (overlaps(placement.firstGlyph, glyphCount, s.firstGlyph, s.glyphCount)) {
-      throw new Error(
-        `glyph indices ${placement.firstGlyph}-${placement.firstGlyph + glyphCount - 1} ` +
-        `of "${name}" overlap "${s.name}" (${s.firstGlyph}-${s.firstGlyph + s.glyphCount - 1}).\n` +
-        `       Regenerate "${s.name}" too, or pass --first-glyph to place this set by hand.`
-      );
-    }
-    if (overlaps(placement.firstSlot, sheetCount, s.firstSlot, s.sheets.length)) {
-      throw new Error(
-        `sheet slots ${placement.firstSlot}-${placement.firstSlot + sheetCount - 1} ` +
-        `of "${name}" overlap "${s.name}".\n` +
-        `       Pass --first-slot to place this set by hand.`
-      );
-    }
-  }
-};
-
-// Encode arbitrary bytes as a tileset image. GB Studio turns each 8-pixel row
-// into two bytes -- bit 0 of every pixel, then bit 1 -- so choosing pixel values
-// 0-3 writes any byte pair we like, and the tileset arrives in ROM as a plain
-// array the engine can index. That is how the width table travels.
-const BYTE_TO_GREY = [255, 170, 100, 0];
-
-const writeByteTileset = (file, bytes) => {
-  const tiles = Math.max(1, Math.ceil(bytes.length / 16));
-  const padded = Buffer.alloc(tiles * 16);
-  Buffer.from(bytes).copy(padded);
-  // one tile per image row keeps tile order identical to byte order
-  const width = 8;
-  const height = tiles * 8;
-  const pixels = Buffer.alloc(width * height);
-  for (let t = 0; t < tiles; t++) {
-    for (let row = 0; row < 8; row++) {
-      const b0 = padded[t * 16 + row * 2];
-      const b1 = padded[t * 16 + row * 2 + 1];
-      for (let x = 0; x < 8; x++) {
-        const v = ((b0 >> (7 - x)) & 1) | (((b1 >> (7 - x)) & 1) << 1);
-        pixels[(t * 8 + row) * width + x] = BYTE_TO_GREY[v];
-      }
-    }
-  }
-  writePng(file, width, height, pixels);
-  return { tiles, bytes: tiles * 16 };
-};
+// A project can hold several main fonts side by side -- a normal one and, say,
+// a bold alternate that text switches to with a font token. Each carries its
+// own group of extended fonts and numbers its glyph codes from zero, so two
+// main fonts can never collide and there is nothing to allocate between them.
 
 // GB Studio's sidecar for an asset. Regenerating a sheet usually changes its
 // size, so these are rewritten too -- but the id/name/symbol of an existing one
@@ -565,7 +468,7 @@ const writePng = (file, width, height, pixels) => {
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 8;    // bit depth
-  ihdr[9] = 0;    // colour type: greyscale
+  ihdr[9] = 3;    // colour type: indexed, so the palette travels with the file
   const raw = Buffer.alloc((width + 1) * height);
   for (let y = 0; y < height; y++) {
     raw[y * (width + 1)] = 0;   // filter: none
@@ -577,18 +480,36 @@ const writePng = (file, width, height, pixels) => {
     Buffer.concat([
       Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
       chunk("IHDR", ihdr),
+      chunk("PLTE", Buffer.from(PALETTE.flat())),
       chunk("IDAT", zlib.deflateSync(raw, { level: 9 })),
       chunk("IEND", Buffer.alloc(0)),
     ])
   );
 };
 
-// GB Studio reads tile and font images through the green channel:
-//   tilesets: <65 -> colour 3 (ink), >=205 -> colour 0
-//   fonts:    >249 -> TRANSPARENT (triggers glyph trimming!), 240 -> plain white
-// so both sheets and fonts use 240 for the background, never pure white.
+// GB Studio's own font palette, matching the assets it ships (gbs-var.png):
+// the DMG four-shade ramp plus magenta for transparency. The font compiler
+// classifies a pixel by its GREEN channel --
+//
+//   g > 249, or r and b both > 249  ->  TRANSPARENT   (trimmed; sets the width)
+//   g <  65                         ->  Dark          (ink)
+//   g < 130                         ->  Mid
+//   g < 205                         ->  Light
+//   otherwise                       ->  White         (paper)
+//
+// Writing an indexed PNG with these exact colours means the images open in an
+// editor looking like every other GB Studio font, and the cull colour is
+// unmistakable -- plain white would sit one step away from paper and could be
+// nudged into transparency by accident.
+const PALETTE = [
+  [7, 24, 33],      // 0 Dark   -- ink
+  [48, 104, 80],    // 1 Mid
+  [134, 192, 108],  // 2 Light
+  [224, 248, 207],  // 3 White  -- paper
+  [255, 0, 255],    // 4 magenta -- transparent, the cull colour
+];
 const INK = 0;
-const PAPER = 240;
+const PAPER = 3;
 
 // A glyph cell is always 2x2 tiles, whatever size the font is drawn at: that is
 // the shape the renderer reads, and tiles cannot be subdivided. A 12px font just
@@ -653,7 +574,7 @@ const ask = async (rl, question, fallback) => {
 const runWizard = async (opts) => {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   try {
-    console.log("\n  Glyph Text Plugin - glyph sheet generator");
+    console.log("\n  Glyph Text Plugin - font generator");
     console.log("  ----------------------------------------");
     console.log("  Tip: you can drag a file from Explorer into this window.\n");
 
@@ -776,6 +697,27 @@ const collectGlyphs = (opts, wide, ascii, asciiCells) => {
   return glyphs;
 };
 
+// Each extended font holds this many full-square glyphs. A font asset's recode
+// table stores one byte per image tile, so it addresses at most 256
+// deduplicated tiles, and a 16x16 glyph is four of them. 16 glyphs per row over
+// 4 rows keeps the image under 16 tile rows tall, which is what makes the font
+// compiler prefix its table with the 32 blanks the renderer indexes past.
+const GLYPHS_PER_FONT = 64;
+const GLYPH_COLS = 16;
+
+// GB Studio's font compiler treats bright green (G > 249) as transparent and
+// trims it off the right of every 8x8 tile, recording what is left as that
+// tile's width. Painting the cull region is therefore the whole of variable
+// width support -- no separate width table, and the artist can adjust spacing
+// by editing the green in the PNG.
+const CULL = 4;   // magenta: what the font compiler trims away
+
+const drawCull = (pixels, imgW, x0, y0, from, cellW, cellH) => {
+  for (let y = 0; y < cellH; y++) {
+    for (let x = from; x < cellW; x++) pixels[(y0 + y) * imgW + x0 + x] = CULL;
+  }
+};
+
 const run = (opts) => {
   validate(opts);
 
@@ -793,7 +735,8 @@ const run = (opts) => {
   if (!wide.length) throw new Error("no wide characters found in the input");
 
   const cellH = CELL_H;
-  // the VWF renderer always reads single-byte characters from an 8x16 grid
+  // the variable width renderer always reads single-byte characters from an
+  // 8x16 grid, whatever the half-width setting says
   const asciiCells = (opts.fullWidthAscii && !opts.vwf) ? CELL_W : CELL_W >> 1;
   const ascii = [];
   for (let c = 0x20; c <= 0x7f; c++) ascii.push(c);
@@ -820,98 +763,71 @@ const run = (opts) => {
     );
   }
 
-  // --- where this font set sits among the ones already in the project
   const outRoot = path.resolve(opts.out);
   const fontDir = path.join(outRoot, "assets", "fonts");
-  const allSets = readSets(fontDir);
-  const otherSets = allSets.filter((s) => s.name !== opts.name);
-  const selfSet = allSets.find((s) => s.name === opts.name);
-  const placement = placeSet(opts, otherSets, selfSet);
-  if (otherSets.length) {
-    console.log(
-      `${otherSets.length} other font set(s) in this project: ` +
-      otherSets.map((s) => `"${s.name}" glyphs ${s.firstGlyph}-${s.firstGlyph + s.glyphCount - 1}`).join(", ")
-    );
-  }
+  fs.mkdirSync(fontDir, { recursive: true });
 
-  // --space-width only reaches the ROM through the width table, and the table
-  // takes its ASCII block from the set that owns glyph 0. Say so rather than
-  // writing a manifest value that nothing will ever read.
-  if (opts.spaceWidthGiven && !opts.vwf) {
-    console.warn(
-      "warning: --space-width does nothing without --vwf. Fixed-width rendering\n" +
-      "         advances every character by its cell, spaces included."
-    );
-  } else if (opts.spaceWidthGiven && placement.firstGlyph !== 0) {
-    const primary = otherSets.find((s) => s.firstGlyph === 0);
-    console.warn(
-      `warning: --space-width is ignored for "${opts.name}": the width table takes its\n` +
-      `         whole ASCII block from the set that owns glyph 0` +
-      (primary ? ` ("${primary.name}")` : "") + ". Set it there instead."
-    );
-  }
-
-  // --- glyph sheets
-  const sheetW = opts.cols * CELL_W;
-  const sheets = [];
-  // two-byte code: lead 0x80 + (g >> 7), trail 0x80 + (g & 0x7F)
+  // --- extended fonts: the wide characters, 64 to a font
+  // Glyph codes are numbered per main font now, so they always start at 0 and
+  // two main fonts in one project cannot collide -- there is nothing to
+  // allocate and no manifest to keep.
+  const extFonts = [];
   const mapping = {};
-  // a sheet covers every cell of its image, including the blank ones padding
-  // its last row -- the plugin derives the count from the tileset's tile count.
-  // so the next sheet has to start past the whole grid, not past the characters.
-  let nextFirst = placement.firstGlyph;
-  for (let start = 0; start < wide.length; start += opts.perSheet) {
-    const slice = wide.slice(start, start + opts.perSheet);
-    const rows = Math.ceil(slice.length / opts.cols);
-    const pixels = Buffer.alloc(sheetW * rows * cellH, PAPER);
+  const imgW = GLYPH_COLS * CELL_W;
+
+  for (let start = 0; start < wide.length; start += GLYPHS_PER_FONT) {
+    const slice = wide.slice(start, start + GLYPHS_PER_FONT);
+    const rows = Math.ceil(slice.length / GLYPH_COLS);
+    const imgH = rows * cellH;
+    const pixels = Buffer.alloc(imgW * imgH, PAPER);
+
     slice.forEach((cp, i) => {
+      const x0 = (i % GLYPH_COLS) * CELL_W;
+      const y0 = Math.floor(i / GLYPH_COLS) * cellH;
       const g = glyphs.get(cp);
       if (g) {
-        // VWF measures the advance from the left edge, so glyphs must not be
-        // centred in their cell there; fixed-width rendering looks better if they are
+        // never centre under VWF: the advance is measured from the left edge,
+        // and leading transparency would shift the glyph rather than pad it
         const pad = (!opts.vwf && g.w < CELL_W) ? (CELL_W - g.w) >> 1 : 0;
-        drawGlyph(
-          pixels, sheetW,
-          (i % opts.cols) * CELL_W + pad, Math.floor(i / opts.cols) * cellH,
-          g, Math.min(g.w, CELL_W), cellH
-        );
+        drawGlyph(pixels, imgW, x0 + pad, y0, g, Math.min(g.w, CELL_W), cellH);
+        if (opts.vwf) {
+          const adv = Math.max(1, Math.min(CELL_W, advanceOf(g, CELL_W, opts.size)));
+          if (adv < CELL_W) drawCull(pixels, imgW, x0, y0, adv, CELL_W, cellH);
+        }
+      } else if (opts.vwf) {
+        // no glyph: cull the whole cell so it advances as a narrow blank
+        drawCull(pixels, imgW, x0, y0, 1, CELL_W, cellH);
       }
-      const code = nextFirst + i;
+      const code = start + i;
       mapping[String.fromCodePoint(cp)] = [0x80 + (code >> 7), 0x80 + (code & 0x7f)];
     });
-    const index = sheets.length;
-    const name = `${opts.name}_${index}`;
-    const file = path.join(outRoot, "assets", "tilesets", `${name}.png`);
-    const imageHeight = rows * cellH;
-    writePng(file, sheetW, imageHeight, pixels);
+
+    const index = extFonts.length;
+    const name = `${opts.name}_ext${index}`;
+    const file = path.join(fontDir, `${name}.png`);
+    writePng(file, imgW, imgH, pixels);
     writeResource(file, {
-      _resourceType: "tileset",
+      _resourceType: "font",
       name,
-      symbol: `tileset_${name}`,
-      width: sheetW >> 3,
-      height: imageHeight >> 3,
-      imageWidth: sheetW,
-      imageHeight,
+      symbol: `font_${name.replace(/[^a-z0-9]+/gi, "_").toLowerCase()}`,
+      width: imgW,
+      height: imgH,
       filename: `${name}.png`,
     });
-    sheets.push({
-      index,
-      slot: placement.firstSlot + index,
-      tileset: name,
-      file,
-      count: slice.length,
-      firstGlyph: nextFirst,
-      cells: rows * opts.cols,
-      rows,
-    });
-    nextFirst += rows * opts.cols;
+    extFonts.push({ index, name, file, count: slice.length, first: start });
   }
-  if (nextFirst > 16384) throw new Error("glyph indices past 16383 cannot be encoded");
 
-  const glyphCount = nextFirst - placement.firstGlyph;
-  checkCollisions(opts.name, placement, glyphCount, sheets.length, otherSets);
+  if (extFonts.length > 16) {
+    throw new Error(
+      `${wide.length} characters need ${extFonts.length} extended fonts, and the ` +
+      `Assign Extended Fonts event takes at most 16. Split the script across more ` +
+      `than one main font.`
+    );
+  }
 
-  // --- font asset: ASCII image + the mapping that encodes the wide characters
+  // --- main font: the ASCII image, and the mapping that encodes the wide codes
+  let fontId = null;
+  let fontLabel = opts.fontName || opts.name;
   if (opts.writeFont) {
     const cols = 16;
     const fontW = cols * asciiCells;
@@ -919,28 +835,30 @@ const run = (opts) => {
     const pixels = Buffer.alloc(fontW * fontH, PAPER);
     ascii.forEach((cp, i) => {
       const g = glyphs.get(cp);
-      if (!g) return;
-      const pad = (!opts.vwf && g.w < asciiCells) ? (asciiCells - g.w) >> 1 : 0;
-      drawGlyph(
-        pixels, fontW,
-        (i % cols) * asciiCells + pad, Math.floor(i / cols) * cellH,
-        g, Math.min(g.w, asciiCells), cellH
-      );
+      const x0 = (i % cols) * asciiCells;
+      const y0 = Math.floor(i / cols) * cellH;
+      if (g) {
+        const pad = (!opts.vwf && g.w < asciiCells) ? (asciiCells - g.w) >> 1 : 0;
+        drawGlyph(pixels, fontW, x0 + pad, y0, g, Math.min(g.w, asciiCells), cellH);
+      }
+      if (opts.vwf) {
+        const adv = g
+          ? Math.max(1, Math.min(asciiCells, advanceOf(g, asciiCells)))
+          : Math.max(1, opts.spaceWidth);
+        if (adv < asciiCells) drawCull(pixels, fontW, x0, y0, adv, asciiCells, cellH);
+      }
     });
-    const fontPng = path.join(fontDir, `${opts.name}.png`);
-    writePng(fontPng, fontW, fontH, pixels);
-    writeResource(fontPng, {
+    const file = path.join(fontDir, `${opts.name}.png`);
+    writePng(file, fontW, fontH, pixels);
+    writeResource(file, {
       _resourceType: "font",
-      name: opts.fontName ?? opts.name,
+      name: fontLabel,
       symbol: `font_${opts.name.replace(/[^a-z0-9]+/gi, "_").toLowerCase()}`,
       width: fontW,
       height: fontH,
       filename: `${opts.name}.png`,
-    }, opts.fontName);
+    });
   }
-  // the font's own id, so the report can show how to switch to it mid-text
-  let fontId = null;
-  let fontLabel = opts.fontName ?? opts.name;
   try {
     const res = JSON.parse(fs.readFileSync(path.join(fontDir, `${opts.name}.png.gbsres`), "utf8"));
     fontId = res.id;
@@ -955,138 +873,35 @@ const run = (opts) => {
   // REPLACED, not merged: this run renumbered every glyph, so a leftover entry
   // from a previous run would quietly point at some other character's bitmap.
   json.mapping = mapping;
-  fs.mkdirSync(fontDir, { recursive: true });
   fs.writeFileSync(jsonFile, JSON.stringify(json, null, 2) + "\n", "utf8");
-
-  // record where this set landed, so another font added later goes after it
-  fs.writeFileSync(
-    manifestFile(fontDir, opts.name),
-    JSON.stringify(
-      {
-        name: opts.name,
-        fontName: fontLabel,
-        firstGlyph: placement.firstGlyph,
-        glyphCount,
-        characters: wide.length,
-        firstSlot: placement.firstSlot,
-        sheets: sheets.map((s) => ({
-          slot: s.slot, tileset: s.tileset, firstGlyph: s.firstGlyph, cells: s.cells,
-        })),
-        // advances, so a width table can be rebuilt from every set at once
-        asciiWidths: ascii.map((cp) => {
-          // a space has no ink to measure, so its advance is stated outright
-          // (--space-width) instead of being guessed from the cell
-          if (cp === 0x20) return opts.spaceWidth;
-          const g = glyphs.get(cp);
-          // no design-size clamp for single-byte glyphs: a proportional Latin
-          // letter is often wider than half the em and must keep its spacing pixel
-          return g ? advanceOf(g, asciiCells) : 0;
-        }),
-        glyphWidths: wide.map((cp) => {
-          const g = glyphs.get(cp);
-          return g ? advanceOf(g, CELL_W, opts.size) : 0;
-        }),
-      },
-      null,
-      2
-    ) + "\n",
-    "utf8"
-  );
-
-  // --- width table: one per project, shared by every set, indexed
-  //     [0..95] = ASCII 0x20-0x7F, [96 + g] = wide glyph g
-  let widthTable = null;
-  if (opts.vwf) {
-    const all = readSets(fontDir);
-    let highest = 0;
-    for (const set of all) highest = Math.max(highest, set.firstGlyph + (set.glyphWidths?.length ?? 0));
-    const bytes = Buffer.alloc(GTX_ASCII_SLOTS + highest);
-    // ASCII comes from the set that owns glyph 0 -- the project's main font
-    const primary = all.find((set) => set.firstGlyph === 0) ?? all[0];
-    (primary?.asciiWidths ?? []).forEach((w, i) => { if (i < GTX_ASCII_SLOTS) bytes[i] = w; });
-    for (const set of all) {
-      (set.glyphWidths ?? []).forEach((w, i) => { bytes[GTX_ASCII_SLOTS + set.firstGlyph + i] = w; });
-    }
-    const name = `${opts.name}_widths`;
-    const file = path.join(outRoot, "assets", "tilesets", `${name}.png`);
-    const written = writeByteTileset(file, bytes);
-    writeResource(file, {
-      _resourceType: "tileset",
-      name,
-      symbol: `tileset_${name}`,
-      width: 1,
-      height: written.tiles,
-      imageWidth: 8,
-      imageHeight: written.tiles * 8,
-      filename: `${name}.png`,
-    });
-    // what the table actually says, which is the primary set's value even when
-    // this run passed its own --space-width
-    widthTable = { file, name, bytes: written.bytes, covered: highest, spaceWidth: bytes[0] };
-  }
 
   // --- report
   const rel = (p) => path.relative(outRoot, p).replace(/\\/g, "/");
   console.log("");
-  console.log(`${wide.length} wide characters -> ${sheets.length} sheet(s)`);
-  for (const s of sheets) {
-    console.log(
-      `  ${rel(s.file)}  ${s.count} glyphs ` +
-      `(${s.count * 4} tiles, ${s.count * 64} bytes of ROM)`
-    );
+  console.log(`${wide.length} wide characters -> ${extFonts.length} extended font(s)`);
+  for (const f of extFonts) {
+    console.log(`  ${rel(f.file)}  ${f.count} glyphs (codes ${f.first}-${f.first + f.count - 1})`);
   }
-  if (opts.writeFont) console.log(`  ${rel(path.join(fontDir, opts.name + ".png"))}  ASCII font`);
+  if (opts.writeFont) console.log(`  ${rel(path.join(fontDir, opts.name + ".png"))}  main font (ASCII)`);
   console.log(`  ${rel(jsonFile)}  character mapping`);
-  if (widthTable) {
-    console.log(
-      `  ${rel(widthTable.file)}  width table (${widthTable.covered} glyphs, ` +
-      `${widthTable.bytes} bytes, space ${widthTable.spaceWidth}px)`
-    );
-  }
-  console.log(
-    `  glyph indices ${placement.firstGlyph}-${placement.firstGlyph + glyphCount - 1}, ` +
-    `sheet slot${sheets.length > 1 ? "s" : ""} ` +
-    `${placement.firstSlot}${sheets.length > 1 ? `-${placement.firstSlot + sheets.length - 1}` : ""}`
-  );
   console.log("");
-
-  const isAlternate = otherSets.length > 0;
   console.log("Next steps in GB Studio:");
-  let step = 1;
-  if (isAlternate) {
-    console.log(`  ${step++}. "${fontLabel}" is an ALTERNATE font: leave Settings -> Default`);
-    console.log("     Font on your main one and switch to this one inside the text");
-    if (fontId) console.log(`     with the font token  !F:${fontId}!`);
-    console.log("     (the font picker above the text box inserts it for you).");
-  } else {
-    console.log(`  ${step++}. Settings -> Default Font: "${fontLabel}"   <- required, the`);
-    console.log("     mapping is only applied to text compiled with the DEFAULT font.");
-  }
-  console.log(`  ${step++}. Add to the first scene's On Init:`);
-  sheets.forEach((s) => {
-    console.log(
-      `       Glyph Text: Set Glyph Sheet  slot ${s.slot}  ` +
-      `first glyph ${s.firstGlyph}  tileset "${s.tileset}"`
-    );
-  });
-  if (widthTable) {
-    console.log(`       Glyph Text: Set Width Table  tileset "${widthTable.name}"`);
-  }
-  console.log(`  ${step++}. Add Glyph Text: Reset Tile Cache to every scene's On Init.`);
-  console.log(`  ${step++}. Settings -> Glyph Text:`);
-  console.log(`       glyph sheet columns  = ${opts.cols}`);
-  console.log(`       glyph sheet slots   >= ${placement.firstSlot + sheets.length}`);
+  console.log(`  1. Settings -> Default Font: "${fontLabel}"   <- required, the`);
+  console.log("     mapping is only applied to text compiled with the DEFAULT font.");
+  console.log("  2. Add to the first scene's On Init:");
+  console.log(`       Glyph Text: Assign Extended Fonts   main font "${fontLabel}",`);
+  console.log(`       ${extFonts.length} extended font(s):`);
+  extFonts.forEach((f, i) => console.log(`         ${i + 1}. "${f.name}"`));
+  console.log("  3. Add Glyph Text: Reset Tile Cache to every scene's On Init.");
+  console.log("  4. Settings -> Glyph Text:");
   console.log(`       half-width single-byte characters = ${opts.fullWidthAscii ? "off" : "on"}`);
   if (opts.vwf) {
     console.log("       variable width glyphs (VWF)       = on");
     console.log("       ...and widen the reserved tile range: VWF spends a tile pair");
     console.log("       per screen column, about 72 tiles for a two-line dialogue.");
-  }
-  if (isAlternate) {
     console.log("");
-    console.log("     Every font set needs its own sheet slots, and they all share the");
-    console.log("     one tile cache -- widen the reserved tile range if two fonts are");
-    console.log("     on screen at once.");
+    console.log("     Advances come from the green cull margins in the font images.");
+    console.log("     Repaint the green to respace a character; no table to rebuild.");
   }
 };
 
