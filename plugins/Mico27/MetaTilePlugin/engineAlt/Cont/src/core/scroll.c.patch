@@ -2,7 +2,18 @@ Index: src/core/scroll.c
 ===================================================================
 --- src/core/scroll.c
 +++ src/core/scroll.c
-@@ -12,8 +12,9 @@
+@@ -1,6 +1,10 @@
+ #pragma bank 255
+ 
++// engineAlt-replaces: set_bkg_submap_banked, source_width -- this variant renders through a
++// shifted background, so every row and column is written to VRAM directly by load_tile_row/load_tile_col
++// rather than handed to set_bkg_submap. MetaTilePlugin's banked wrapper has no caller here.
++
+ #include "scroll.h"
+ 
+ #include <string.h>
+ 
+@@ -12,8 +16,9 @@
  #include "math.h"
  #include "fade_manager.h"
  #include "parallax.h"
@@ -12,7 +23,7 @@ Index: src/core/scroll.c
  #include "data/game_globals.h"
  #include "vm.h"
  #include "macro.h"
-@@ -194,9 +195,9 @@
+@@ -194,9 +199,9 @@
              // Queue top row
              UBYTE x = new_col - SCREEN_PAD_LEFT;
              UBYTE y = (scene_LCD_type == LCD_parallax) ? port->start_tile : (new_row - SCREEN_PAD_TOP);
@@ -23,7 +34,7 @@ Index: src/core/scroll.c
              // If row differs by more than 1 render entire screen
              scroll_render_rows(draw_scroll_x, draw_scroll_y, ((scene_LCD_type == LCD_parallax) ? port->start_tile : -SCREEN_PAD_TOP), SCREEN_TILE_REFRES_H);
              return TRUE;
-@@ -281,8 +282,14 @@
+@@ -281,8 +286,14 @@
      pending_h_i = (scene_LCD_type == LCD_parallax) ? MIN(SCREEN_TILE_REFRES_H, image_tile_height - y) : SCREEN_TILE_REFRES_H;
      scroll_load_pending_col();
  }
@@ -38,7 +49,7 @@ Index: src/core/scroll.c
      _save_bank = CURRENT_BANK;
      SWITCH_ROM(bank);
      UWORD y_offset = (y * (UWORD)source_width);
-@@ -293,8 +300,9 @@
+@@ -293,8 +304,9 @@
      }
      SWITCH_ROM(_save_bank);
  }
@@ -48,7 +59,7 @@ Index: src/core/scroll.c
      _save_bank = CURRENT_BANK;
      SWITCH_ROM(bank);
      UWORD tile_offset = (y * (UINT16)source_width) + x;
-@@ -306,22 +314,227 @@
+@@ -306,22 +318,227 @@
      }
      SWITCH_ROM(_save_bank);
  }
@@ -278,7 +289,7 @@ Index: src/core/scroll.c
      // Used for continuous scene row rendering to adjust for different scene sizes and offsets
      bkg_address_offset = ((UWORD)get_bkg_xy_addr((x + bkg_offset_x), (y + bkg_offset_y))) - 0x9800;
      continuous_scene_t* continuous_scene;
-@@ -335,104 +548,76 @@
+@@ -335,104 +552,76 @@
          if (y > SCREEN_OOB_TOP) {
              if (top_x_offset > 0){
                  continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -404,7 +415,7 @@ Index: src/core/scroll.c
              }
          }
          width -= section_width;
-@@ -443,36 +628,32 @@
+@@ -443,36 +632,32 @@
          section_width = MIN(width, (image_tile_width - x));
          if (y > SCREEN_OOB_TOP) {
              continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -452,7 +463,7 @@ Index: src/core/scroll.c
          }
          width -= section_width;
          x += section_width;
-@@ -481,104 +662,76 @@
+@@ -481,104 +666,76 @@
      if (y > SCREEN_OOB_TOP) {
          if (top_x_offset + continuous_scenes[DIRECTION_TOP].tile_width > image_tile_width){
              continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -578,7 +589,7 @@ Index: src/core/scroll.c
          }
      }
  }
-@@ -597,104 +750,76 @@
+@@ -597,104 +754,76 @@
          if (x > SCREEN_OOB_LEFT) {
              if (top_x_offset > 0){
                  continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -704,7 +715,7 @@ Index: src/core/scroll.c
              }
          }
          height -= section_height;
-@@ -705,35 +830,31 @@
+@@ -705,35 +834,31 @@
          section_height = MIN(height, (image_tile_height - y));
          if (x > SCREEN_OOB_LEFT) {
              continuous_scene = &continuous_scenes[DIRECTION_LEFT];
@@ -751,7 +762,7 @@ Index: src/core/scroll.c
          }
          height -= section_height;
          y += section_height;
-@@ -742,112 +863,233 @@
+@@ -742,112 +867,233 @@
      if (x > SCREEN_OOB_LEFT) {
          if (bottom_x_offset > 0){
              continuous_scene = &continuous_scenes[DIRECTION_BOTTOM];
@@ -1034,7 +1045,7 @@ Index: src/core/scroll.c
      // Used for continuous scene row rendering to adjust for different scene sizes and offsets
      bkg_address_offset = ((UWORD)get_bkg_xy_addr((x + bkg_offset_x), (y + bkg_offset_y))) - 0x9800;
      continuous_scene_t* continuous_scene;
-@@ -861,104 +1103,76 @@
+@@ -861,104 +1107,76 @@
          if (y > SCREEN_OOB_TOP) {
              if (top_x_offset > 0){
                  continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -1160,7 +1171,7 @@ Index: src/core/scroll.c
              }
          }
          width -= section_width;
-@@ -969,36 +1183,32 @@
+@@ -969,36 +1187,32 @@
          section_width = MIN(width, (image_tile_width - x));
          if (y > SCREEN_OOB_TOP) {
              continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -1208,7 +1219,7 @@ Index: src/core/scroll.c
          }
          width -= section_width;
          x += section_width;
-@@ -1007,104 +1217,76 @@
+@@ -1007,104 +1221,76 @@
      if (y > SCREEN_OOB_TOP) {
          if (top_x_offset + continuous_scenes[DIRECTION_TOP].tile_width > image_tile_width){
              continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -1334,7 +1345,7 @@ Index: src/core/scroll.c
          }
      }
  }
-@@ -1123,104 +1305,76 @@
+@@ -1123,104 +1309,76 @@
          if (x > SCREEN_OOB_LEFT) {
              if (top_x_offset > 0){
                  continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -1460,7 +1471,7 @@ Index: src/core/scroll.c
              }
          }
          height -= section_height;
-@@ -1231,35 +1385,31 @@
+@@ -1231,35 +1389,31 @@
          section_height = MIN(height, (image_tile_height - y));
          if (x > SCREEN_OOB_LEFT) {
              continuous_scene = &continuous_scenes[DIRECTION_LEFT];
@@ -1507,7 +1518,7 @@ Index: src/core/scroll.c
          }
          height -= section_height;
          y += section_height;
-@@ -1268,104 +1418,76 @@
+@@ -1268,104 +1422,76 @@
      if (x > SCREEN_OOB_LEFT) {
          if (bottom_x_offset > 0){
              continuous_scene = &continuous_scenes[DIRECTION_BOTTOM];

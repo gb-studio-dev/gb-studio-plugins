@@ -1,0 +1,122 @@
+Index: src/states/shmup.c
+===================================================================
+--- src/states/shmup.c
++++ src/states/shmup.c
+@@ -12,8 +12,9 @@
+ #include "game_time.h"
+ #include "input.h"
+ #include "trigger.h"
+ #include "vm.h"
++#include "collision_ex.h"
+ #include "meta_tiles.h"
+ 
+ // Feature Flags --------------------------------------------------------------
+ // Optional feature flags, set in 'state_defines.h'
+@@ -98,8 +99,9 @@
+ 
+ // End of Function Definitions ------------------------------------------------
+ 
+ void shmup_init(void) BANKED {
++    COLLISION_EX_INIT();
+     camera_offset_x = 0;
+     camera_offset_y = 0;
+     camera_deadzone_x = 0;
+     camera_deadzone_y = 0;
+@@ -147,8 +149,9 @@
+     });
+ }
+ 
+ void shmup_update(void) BANKED {
++    COLLISION_EX_UPDATE();
+ 
+     actor_t *hit_actor;
+     UBYTE tile_start, tile_end;
+     direction_e new_dir = DIR_NONE;
+@@ -264,9 +267,9 @@
+             tile_start = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
+             tile_end   = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
+             if (angle > ANGLE_90DEG && angle < ANGLE_270DEG) { // Moving down
+                 UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
+-                tile = tile_col_test_range_x(COLLISION_TOP, tile_y, tile_start, tile_end);
++                tile = COLLISION_EX_HIT(tile_col_test_range_x(PLAYER_TILE_COL(COLLISION_TOP), tile_y, tile_start, tile_end), COLLISION_EX_DIR_DOWN);
+                 if (tile) {
+                     PLAYER.pos.y = TILE_TO_SUBPX(tile_y) - EXCLUSIVE_OFFSET(PLAYER.bounds.bottom);
+ #ifdef ENABLE_DOWN_COLLISION_METATILE
+                     on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
+@@ -275,9 +278,9 @@
+ #endif
+                 }
+             } else { // Moving up
+                 UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
+-                tile = tile_col_test_range_x(COLLISION_BOTTOM, tile_y, tile_start, tile_end);
++                tile = COLLISION_EX_HIT(tile_col_test_range_x(PLAYER_TILE_COL(COLLISION_BOTTOM), tile_y, tile_start, tile_end), COLLISION_EX_DIR_UP);
+                 if (tile) {
+                     PLAYER.pos.y = TILE_TO_SUBPX(tile_y + 1) - PLAYER.bounds.top;
+ #ifdef ENABLE_UP_COLLISION_METATILE
+                     on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
+@@ -293,9 +296,9 @@
+             tile_start = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
+             tile_end   = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
+             if (angle > ANGLE_0DEG && angle < ANGLE_180DEG) { // Moving right
+                 UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
+-                tile = tile_col_test_range_y(COLLISION_LEFT, tile_x, tile_start, tile_end);
++                tile = COLLISION_EX_HIT(tile_col_test_range_y(PLAYER_TILE_COL(COLLISION_LEFT), tile_x, tile_start, tile_end), COLLISION_EX_DIR_RIGHT);
+                 if (tile) {
+                     PLAYER.pos.x = TILE_TO_SUBPX(tile_x) - EXCLUSIVE_OFFSET(PLAYER.bounds.right);
+ #ifdef ENABLE_RIGHT_COLLISION_METATILE
+                     on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
+@@ -304,9 +307,9 @@
+ #endif
+                 }
+             } else { // Moving left
+                 UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
+-                tile = tile_col_test_range_y(COLLISION_RIGHT, tile_x, tile_start, tile_end);
++                tile = COLLISION_EX_HIT(tile_col_test_range_y(PLAYER_TILE_COL(COLLISION_RIGHT), tile_x, tile_start, tile_end), COLLISION_EX_DIR_LEFT);
+                 if (tile) {
+                     PLAYER.pos.x = TILE_TO_SUBPX(tile_x + 1) - PLAYER.bounds.left;
+ #ifdef ENABLE_LEFT_COLLISION_METATILE
+                     on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
+@@ -386,9 +389,9 @@
+             tile_start = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
+             tile_end   = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
+             if (shooter_direction == DIR_RIGHT) {
+                 UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
+-                tile = tile_col_test_range_y(COLLISION_LEFT, tile_x, tile_start, tile_end);
++                tile = COLLISION_EX_HIT(tile_col_test_range_y(PLAYER_TILE_COL(COLLISION_LEFT), tile_x, tile_start, tile_end), COLLISION_EX_DIR_RIGHT);
+                 IF_FREE_MOVEMENT({
+                     if (tile) {
+                         PLAYER.pos.x = TILE_TO_SUBPX(tile_x) - EXCLUSIVE_OFFSET(PLAYER.bounds.right);
+                     }
+@@ -401,9 +404,9 @@
+                 }
+ #endif
+             } else { // DIR_LEFT
+                 UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
+-                tile = tile_col_test_range_y(COLLISION_RIGHT, tile_x, tile_start, tile_end);
++                tile = COLLISION_EX_HIT(tile_col_test_range_y(PLAYER_TILE_COL(COLLISION_RIGHT), tile_x, tile_start, tile_end), COLLISION_EX_DIR_LEFT);
+                 IF_FREE_MOVEMENT({
+                     if (tile) {
+                         PLAYER.pos.x = TILE_TO_SUBPX(tile_x + 1) - PLAYER.bounds.left;
+                     }
+@@ -420,9 +423,9 @@
+             tile_start = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
+             tile_end   = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
+             if (shooter_direction == DIR_DOWN) {
+                 UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
+-                tile = tile_col_test_range_x(COLLISION_TOP, tile_y, tile_start, tile_end);
++                tile = COLLISION_EX_HIT(tile_col_test_range_x(PLAYER_TILE_COL(COLLISION_TOP), tile_y, tile_start, tile_end), COLLISION_EX_DIR_DOWN);
+                 IF_FREE_MOVEMENT({
+                     if (tile) {
+                         PLAYER.pos.y = TILE_TO_SUBPX(tile_y) - EXCLUSIVE_OFFSET(PLAYER.bounds.bottom);
+                     }
+@@ -435,9 +438,9 @@
+                 }
+ #endif
+             } else { // DIR_UP
+                 UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
+-                tile = tile_col_test_range_x(COLLISION_BOTTOM, tile_y, tile_start, tile_end);
++                tile = COLLISION_EX_HIT(tile_col_test_range_x(PLAYER_TILE_COL(COLLISION_BOTTOM), tile_y, tile_start, tile_end), COLLISION_EX_DIR_UP);
+                 IF_FREE_MOVEMENT({
+                     if (tile) {
+                         PLAYER.pos.y = TILE_TO_SUBPX(tile_y + 1) - PLAYER.bounds.top;
+                     }

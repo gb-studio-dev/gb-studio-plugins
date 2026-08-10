@@ -2,22 +2,14 @@ Index: include/collision.h
 ===================================================================
 --- include/collision.h
 +++ include/collision.h
-@@ -14,26 +14,46 @@
- #define COLLISION_RIGHT 0x8
- #define COLLISION_ALL 0xF
- #define TILE_PROP_LADDER 0x10
+@@ -23,8 +23,34 @@
+ #define DIRECTION_TOP_RIGHT_FLAG 0x20
+ #define DIRECTION_BOTTOM_RIGHT_FLAG 0x40
+ #define DIRECTION_BOTTOM_LEFT_FLAG 0x80
  
--#define DIRECTION_TOP_FLAG 0x01
--#define DIRECTION_RIGHT_FLAG 0x02
--#define DIRECTION_BOTTOM_FLAG 0x04
--#define DIRECTION_LEFT_FLAG 0x08
--#define DIRECTION_TOP_LEFT_FLAG 0x10
--#define DIRECTION_TOP_RIGHT_FLAG 0x20
--#define DIRECTION_BOTTOM_RIGHT_FLAG 0x40
--#define DIRECTION_BOTTOM_LEFT_FLAG 0x80
 +#define METATILE_SIZE_8     0
 +#define METATILE_SIZE_16    1
- 
++
 +#if METATILE_SIZE == METATILE_SIZE_16
 +
 +#define METATILE_X_OFFSET(x) (x >> 1)
@@ -45,20 +37,21 @@ Index: include/collision.h
  extern unsigned char *collision_ptr;
  extern UBYTE image_tile_width;
  extern UBYTE image_tile_height;
- 
- extern UBYTE tile_hit_x;
+@@ -33,8 +59,13 @@
  extern UBYTE tile_hit_y;
  
--extern UBYTE continuous_scene_enabled;
+ extern UBYTE continuous_scene_enabled;
+ 
 +extern uint8_t __at(SRAM_COLLISION_DATA_PTR) sram_collision_data[COLLISION_DATA_SIZE];
 +extern uint8_t __at(SRAM_MAP_DATA_PTR) sram_map_data[MAX_MAP_DATA_SIZE];
 +extern UBYTE metatile_collision_bank;
 +extern UBYTE image_tile_width_bit;
- 
++
  /**
   * Check if point is within positioned bounding box.
   *
-@@ -74,10 +94,19 @@
+  * @param bb Pointer to bounding box
+@@ -74,10 +105,19 @@
   * @param ty Top tile
   * @return Tile value, 0 if no collisions, COLLISION_ALL if out of bounds
   */

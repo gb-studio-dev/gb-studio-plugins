@@ -22,55 +22,63 @@ Index: src/states/adventure.c
  
  static void handle_dir_input(void) {
      WORD target_x = 0;
-@@ -658,8 +658,11 @@
+@@ -658,8 +658,13 @@
                              }
                          }
                      }
                  }
 +#ifdef ENABLE_ADV_RIGHT_COLLISION_METATILE
 +                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
++            } else {
++                reset_collision_cache(DIR_RIGHT);
 +#endif
              }
          } else if (delta.x < 0) {
              UBYTE tile_x = SUBPX_TO_TILE(new_x + PLAYER.bounds.left);
              UBYTE tile = tile_col_test_range_y(COLLISION_RIGHT, tile_x, tile_start, tile_end);
-@@ -686,8 +689,11 @@
+@@ -686,8 +691,13 @@
                              }
                          }
                      }
                  }
 +#ifdef ENABLE_ADV_LEFT_COLLISION_METATILE
 +                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
++            } else {
++                reset_collision_cache(DIR_LEFT);
 +#endif
              }
          }
  
      finally_update_x:
-@@ -733,8 +739,11 @@
+@@ -733,8 +743,13 @@
                              }
                          }
                      }
                  }
 +#ifdef ENABLE_ADV_DOWN_COLLISION_METATILE
 +                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
++            } else {
++                reset_collision_cache(DIR_DOWN);
 +#endif
              }
          } else if (delta.y < 0) {
              UBYTE tile_y = SUBPX_TO_TILE(new_y + PLAYER.bounds.top);
              UBYTE tile = tile_col_test_range_x(COLLISION_BOTTOM, tile_y, tile_start, tile_end);
-@@ -761,8 +770,11 @@
+@@ -761,8 +776,13 @@
                              }
                          }
                      }
                  }
 +#ifdef ENABLE_ADV_UP_COLLISION_METATILE
 +                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
++            } else {
++                reset_collision_cache(DIR_UP);
 +#endif
              }
          }
  
      finally_update_y:
-@@ -836,8 +848,11 @@
+@@ -836,8 +856,11 @@
  
      if (mask & COL_CHECK_TRIGGERS)
      {

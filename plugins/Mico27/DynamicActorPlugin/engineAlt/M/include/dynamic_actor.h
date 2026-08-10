@@ -179,28 +179,6 @@ extern UBYTE dynamic_actor_event_tile_idx;
 extern UBYTE dynamic_actor_event_tile_x;
 extern UBYTE dynamic_actor_event_tile_y;
 
-// Engine field. XOR'd into every tile collision mask the scene type code tests
-// for the PLAYER, the same way behavior_def_t.xor_tile_collision works for a
-// dynamic actor: XOR a COLLISION_* bit out to walk through that side, or XOR a
-// tile property bit in to make it solid. 0 = stock collision. Lives here (not
-// in a state file) because every scene type reads it.
-// Declared even when the feature is compiled out: GB Studio emits the engine
-// field's initialiser (a .globl plus a memory set) from the engine.json entry
-// regardless, so the symbol has to exist or the link fails.
-extern UBYTE player_xor_tile_collision;
-
-// Wrap of every tile collision mask tested for the player. With
-// DYNAMIC_ACTOR_ENABLE_XOR_TILE_COLLISION off it expands to the plain mask, so
-// each of the ~34 test sites in the scene type code compiles exactly as it did
-// before the feature existed - no load, no XOR, no ROM, nothing per frame. The
-// plugin's own actor-side equivalent (DYNAMIC_ACTOR_TILE_COL) is in
-// dynamic_actor.c, where its cached value lives.
-#ifdef DYNAMIC_ACTOR_ENABLE_XOR_TILE_COLLISION
-#define PLAYER_TILE_COL(mask) ((mask) ^ player_xor_tile_collision)
-#else
-#define PLAYER_TILE_COL(mask) (mask)
-#endif
-
 extern behavior_def_t behavior_defs[DYNAMIC_ACTOR_MAX_BEHAVIORS + 1];
 
 #ifdef DYNAMIC_ACTOR_ENABLE_PARENT

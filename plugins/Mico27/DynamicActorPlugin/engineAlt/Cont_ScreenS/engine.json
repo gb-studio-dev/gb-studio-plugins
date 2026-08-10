@@ -40,7 +40,7 @@
         {
           "key": "DYNAMIC_ACTOR_ENABLE_XOR_TILE_COLLISION",
           "label": "Enable tile collision mask XOR",
-          "description": "Compile the per-behavior 'Tile collision mask XOR' and the 'Player tile collision mask XOR' engine field, which let a behavior (or the player) ignore a collision direction or treat an extra tile property bit as solid. Unchecked, every tile collision test in the plugin and in the scene type code compiles exactly as it did without the feature - no mask load, no XOR, nothing per actor per frame - and the two fields are ignored.",
+          "description": "Compile the per-behavior 'Tile collision mask XOR' of Define Actor Behavior, which lets a behavior ignore a collision direction or treat an extra tile property bit as solid. Unchecked, every tile collision test in the plugin compiles exactly as it did without the feature - no mask load, no XOR, nothing per actor per frame - and the field is ignored. The player's own equivalent lives in CollisionExPlugin.",
           "group": "Dynamic actor",
           "type": "checkbox",
           "cType": "define",
@@ -306,15 +306,6 @@
           "defaultValue": 1
         },
         {
-          "key": "DYNAMIC_ACTOR_ENABLE_VM_GET_TILE_COLLISION",
-          "label": "Tools: Get tile collision",
-          "description": "Compile the 'Get Tile Collision' event, which reads the collision value of a scene tile into a variable. Uncheck to save ROM if unused.",
-          "group": "Dynamic actor",
-          "type": "checkbox",
-          "cType": "define",
-          "defaultValue": 1
-        },
-        {
           "key": "DYNAMIC_ACTOR_ENABLE_VM_GET_ACTOR_COLLISION",
           "label": "Tools: Get actor at point",
           "description": "Compile the 'Get Actor Collision' event, which returns the index of the collidable actor overlapping a pixel position (-1 when none). Uncheck to save ROM if unused.",
@@ -436,23 +427,6 @@
           "cType": "UBYTE",
           "defaultValue": 0,
           "runtimeOnly": true
-        },
-        {
-          "key": "player_xor_tile_collision",
-          "label": "Player tile collision mask XOR",
-          "description": "Advanced. XOR'd into every collision mask the scene type code tests against a tile for the player, so 0 means stock collision. Tile bits: 1 top, 2 bottom, 4 left, 8 right; then the 16-112 value space (16 ladder, 32-112 the six slopes) and 128, which no engine code reads. A property bit (16 and up) is only ever added to the test, so 16 makes ladder tiles solid. A direction bit is removed from the test that owns it and added to the other three. An empty tile is never solid whatever the value. Change it at runtime with Engine Field Update for temporary effects like a phasing dash or swimming over water tiles. The per-behavior equivalent is the 'Tile collision mask XOR' field of Define Actor Behavior.",
-          "group": "Dynamic actor",
-          "type": "number",
-          "cType": "UBYTE",
-          "min": 0,
-          "max": 255,
-          "defaultValue": 0,
-          "conditions": [
-            {
-              "key": "DYNAMIC_ACTOR_ENABLE_XOR_TILE_COLLISION",
-              "truthy": true
-            }
-          ]
         }
     ],
     "sceneTypes": [

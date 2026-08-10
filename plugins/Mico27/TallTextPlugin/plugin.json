@@ -2,10 +2,14 @@
   "type": "enginePlugin",
   "name": "Tall Text Plugin",
   "author": "Mico27",
-  "version": "4.3.4",
+  "version": "4.3.5",
   "gbsVersion": ">=4.3.0",
   "description": "16px-tall text: each character is two vertically stacked tiles streamed to VRAM, with an LRU tile-pair cache.",
   "url": "https://github.com/Mico27/gbs-TallTextPlugin",
+  "mutuallyExclusive": [
+    "GlyphTextPlugin",
+    "HalfWidthTextPlugin"
+  ],
   "engineAltRules": [
     {
       "when": {

@@ -5,7 +5,7 @@
   "url": "https://github.com/Mico27/gbs-EditActorActiveIndexPlugin",
   "description": "Allows editing the order of the actors in the active actors list used for rendering/OAM order. This plugins allow sorting actor depending on their vertical position and enable flickering for when more than 10 sprite tile are on a given scanline or then the 40 sprite tile on-screen limit is exceeded.",
   "license": "MIT",
-  "version": "4.3.5",
+  "version": "4.3.8",
   "gbsVersion": ">=4.3.0",
   "order": -1,
   "engineAltRules": [
@@ -94,26 +94,6 @@
     {
       "when": {
         "additionalPlugins": [
-          "Mico27/ContinuousScenePlugin",
-          "Mico27/SpritesheetChangeBufferPlugin",
-          "Mico27/DynamicActorPlugin"
-        ]
-      },
-      "use": "Cont_Spr_DynamicA"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ContinuousScenePlugin",
-          "SpritesheetChangeBufferPlugin",
-          "DynamicActorPlugin"
-        ]
-      },
-      "use": "Cont_Spr_DynamicA"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
           "Mico27/ScreenScrollPlugin",
           "Mico27/DynamicActorPlugin",
           "Mico27/SpritesheetChangeBufferPlugin"
@@ -130,26 +110,6 @@
         ]
       },
       "use": "ScreenS_DynamicA_Spr"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/ScreenScrollPlugin",
-          "Mico27/SpritesheetChangeBufferPlugin",
-          "Mico27/DynamicActorPlugin"
-        ]
-      },
-      "use": "ScreenS_Spr_DynamicA"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ScreenScrollPlugin",
-          "SpritesheetChangeBufferPlugin",
-          "DynamicActorPlugin"
-        ]
-      },
-      "use": "ScreenS_Spr_DynamicA"
     },
     {
       "when": {
@@ -258,24 +218,6 @@
         ]
       },
       "use": "ScreenS_Spr"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/SpritesheetChangeBufferPlugin",
-          "Mico27/DynamicActorPlugin"
-        ]
-      },
-      "use": "Spr_DynamicA"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "SpritesheetChangeBufferPlugin",
-          "DynamicActorPlugin"
-        ]
-      },
-      "use": "Spr_DynamicA"
     },
     {
       "when": {

@@ -50,11 +50,6 @@ UBYTE dynamic_actor_event_tile_idx;
 UBYTE dynamic_actor_event_tile_x;
 UBYTE dynamic_actor_event_tile_y;
 
-// XOR'd into every tile collision mask the scene type code tests for the player.
-// Not reset per scene - it is an engine field, so GB Studio initialises it to the
-// configured value at engine init and scripts change it from there.
-UBYTE player_xor_tile_collision;
-
 // End of Engine Fields -------------------------------------------------------
 
 script_event_t dynamic_actor_events[DYNAMIC_ACTOR_CALLBACK_SIZE];

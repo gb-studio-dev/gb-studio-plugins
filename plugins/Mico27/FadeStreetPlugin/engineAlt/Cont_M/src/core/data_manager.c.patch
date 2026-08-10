@@ -2,6 +2,13 @@ Index: src/core/data_manager.c
 ===================================================================
 --- src/core/data_manager.c
 +++ src/core/data_manager.c
+@@ -1,5 +1,5 @@
+-﻿#pragma bank 255
++#pragma bank 255
+ 
+ #include <string.h>
+ 
+ #include "system.h"
 @@ -165,37 +165,14 @@
  }
  
@@ -55,13 +62,3 @@ Index: src/core/data_manager.c
      memcpy(&parallax_rows, &scn.parallax_rows, sizeof(parallax_rows));
      if (scn.parallax_rows[0].next_y == 0) {
          scene_LCD_type = (scene_type == SCENE_TYPE_LOGO) ? LCD_fullscreen : LCD_simple;
-@@ -349,9 +323,8 @@
-         MemcpyBanked(&triggers, scn.triggers.ptr, sizeof(trigger_t) * triggers_len, scn.triggers.bank);
-     }
- 
-     metatile_reset();
--    scene_transition_reset();
-     scroll_reset();
-     scroll_offset_x = 0;
-     scroll_offset_y = 0;
-     trigger_reset();

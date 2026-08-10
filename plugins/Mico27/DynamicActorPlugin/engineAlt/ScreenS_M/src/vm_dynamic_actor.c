@@ -307,18 +307,6 @@ void vm_get_actor_parent(SCRIPT_CTX * THIS) OLDCALL BANKED {
 }
 #endif
 
-#ifdef DYNAMIC_ACTOR_ENABLE_VM_GET_TILE_COLLISION
-void vm_get_tile_collision(SCRIPT_CTX * THIS) OLDCALL BANKED {
-    (void)THIS;
-    uint8_t tile_x = *(uint8_t *)VM_REF_TO_PTR(FN_ARG0);
-    uint8_t tile_y = *(uint8_t *)VM_REF_TO_PTR(FN_ARG1);
-    int16_t idx = *(int16_t*)VM_REF_TO_PTR(FN_ARG2);
-    int16_t * A;
-    if (idx < 0) A = THIS->stack_ptr + idx - 3; else A = script_memory + idx;
-    *A = tile_at(tile_x, tile_y);
-}
-#endif
-
 #ifdef DYNAMIC_ACTOR_ENABLE_VM_GET_ACTOR_COLLISION
 void vm_get_actor_collision(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
