@@ -23,6 +23,11 @@
 
 extern behavior_def_t behavior_defs[DYNAMIC_ACTOR_MAX_BEHAVIORS + 1];
 
+// vm.h only names the first eight stack arguments.
+#ifndef FN_ARG8
+#define FN_ARG8 -9
+#endif
+
 #ifdef DYNAMIC_ACTOR_ENABLE_HIT_ACTORS
 // On collision, run every overlapping collidable actor's onHit script - the same
 // script the engine fires when the player touches that actor, but driven by this
@@ -110,6 +115,12 @@ void vm_define_actor_behavior(SCRIPT_CTX * THIS) OLDCALL BANKED {
     def->gravity      = *(uint8_t *)VM_REF_TO_PTR(FN_ARG3);
     def->max_fall_vel = *(uint8_t *)VM_REF_TO_PTR(FN_ARG4);
     def->bounce       = *(uint8_t *)VM_REF_TO_PTR(FN_ARG5);
+#ifdef DYNAMIC_ACTOR_ENABLE_XOR_TILE_COLLISION
+    // Pushed first by the event so FN_ARG0..7 keep their meaning. The event
+    // pushes it whether or not the feature is compiled in - the argument count
+    // has to match the VM_POP the event emits, so only the read is gated.
+    def->xor_tile_collision = *(uint8_t *)VM_REF_TO_PTR(FN_ARG8);
+#endif
 #ifdef DYNAMIC_ACTOR_ENABLE_PARENT
     if (CHK_FLAG(def->flags, BHV_PLATFORM)) {
         dynamic_actor_mark_parenting_used();

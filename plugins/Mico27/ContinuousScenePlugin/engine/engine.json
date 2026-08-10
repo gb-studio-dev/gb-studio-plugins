@@ -58,16 +58,6 @@
         "runtimeOnly": true
         },
         {
-        "key": "player_collision_group",
-        "sceneType": "TOPDOWN",
-        "label": "Player extra collision group",
-        "description": "Additional tile collision flags OR'd into every player movement check",
-        "group": "GAMETYPE_TOP_DOWN",
-        "type": "number",
-        "cType": "UBYTE",
-        "defaultValue": 0
-        },
-        {
         "key": "fill_tile_id",
         "label": "Out of bounds tile Id",
         "description": "Tile index used to fill out-of-bounds areas during scene scrolling",

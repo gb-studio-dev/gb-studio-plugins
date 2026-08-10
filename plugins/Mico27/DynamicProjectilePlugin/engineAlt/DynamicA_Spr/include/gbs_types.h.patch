@@ -31,7 +31,7 @@ Index: include/gbs_types.h
      upoint16_t prev_pos;
  #endif
  #endif
-@@ -148,33 +151,64 @@
+@@ -148,33 +151,70 @@
      far_ptr_t tileset;              // far pointer to sprite tileset
      far_ptr_t cgb_tileset;          // far pointer to additional CGB tileset (may be NULL)
  } spritesheet_t;
@@ -64,7 +64,13 @@ Index: include/gbs_types.h
      uint8_t collision_group;
      uint8_t collision_mask;
 +    // --- Dynamic Projectile Plugin behaviour ---
-+    uint8_t bounce;
++    // XOR'd into every tile collision mask this definition tests, so a
++    // projectile can ignore a collision direction or treat an extra tile
++    // property bit as solid (0 = stock collision). Only read when
++    // DYNPROJ_ENABLE_XOR_TILE_COLLISION is on. The CHAIN behaviour never tests
++    // tiles at all, so it borrows this byte for its link catch-up speed - the
++    // same trick it already plays with `collision`.
++    uint8_t xor_tile_collision;
 +    int8_t  amplitude;        // sine / orbit wave
  } projectile_def_t;
  
@@ -102,7 +108,7 @@ Index: include/gbs_types.h
  
  #define FONT_RECODE     1
  #define FONT_VWF        2
-@@ -222,6 +256,4 @@
+@@ -222,6 +262,4 @@
      palette_entry_t cgb_palette[];
  } palette_t;
  

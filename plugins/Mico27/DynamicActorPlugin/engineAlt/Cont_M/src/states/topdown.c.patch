@@ -12,7 +12,7 @@ Index: src/states/topdown.c
  #include "continuous_scene.h"
  
  #ifndef INPUT_TOPDOWN_INTERACT
-@@ -35,11 +36,14 @@
+@@ -34,11 +35,14 @@
      } else {
          PLAYER.pos.x = SUBPX_SNAP_TILE(PLAYER.pos.x);
          PLAYER.pos.y = SUBPX_SNAP_TILE(PLAYER.pos.y);
@@ -27,3 +27,47 @@ Index: src/states/topdown.c
      UBYTE tile_start, tile_end;
      direction_e new_dir = DIR_NONE;
      static UWORD max_pos = 0;
+@@ -74,9 +78,9 @@
+             // Check for collisions to left of player
+             tile_start = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
+             tile_end   = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
+             UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
+-            if (tile_col_test_range_y(COLLISION_RIGHT, tile_x - 1, tile_start, tile_end)) {
++            if (tile_col_test_range_y(PLAYER_TILE_COL(COLLISION_RIGHT), tile_x - 1, tile_start, tile_end)) {
+                 player_moving = FALSE;
+ #ifdef ENABLE_TOPDOWN_LEFT_COLLISION_METATILE
+                 on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
+ #endif
+@@ -88,9 +92,9 @@
+             // Check for collisions to right of player
+             tile_start = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
+             tile_end   = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
+             UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
+-            if (tile_col_test_range_y(COLLISION_LEFT, tile_x + 1, tile_start, tile_end)) {
++            if (tile_col_test_range_y(PLAYER_TILE_COL(COLLISION_LEFT), tile_x + 1, tile_start, tile_end)) {
+                 player_moving = FALSE;
+ #ifdef ENABLE_TOPDOWN_RIGHT_COLLISION_METATILE
+                 on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
+ #endif
+@@ -102,9 +106,9 @@
+             // Check for collisions below player
+             tile_start = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
+             tile_end   = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
+             UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
+-            if (tile_col_test_range_x(COLLISION_BOTTOM, tile_y - 1, tile_start, tile_end)) {
++            if (tile_col_test_range_x(PLAYER_TILE_COL(COLLISION_BOTTOM), tile_y - 1, tile_start, tile_end)) {
+                 player_moving = FALSE;
+ #ifdef ENABLE_TOPDOWN_UP_COLLISION_METATILE
+                 on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
+ #endif
+@@ -116,9 +120,9 @@
+             // Check for collisions below player
+             tile_start = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
+             tile_end   = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
+             UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
+-            if (tile_col_test_range_x(COLLISION_TOP, tile_y + 1, tile_start, tile_end)) {
++            if (tile_col_test_range_x(PLAYER_TILE_COL(COLLISION_TOP), tile_y + 1, tile_start, tile_end)) {
+                 player_moving = FALSE;
+ #ifdef ENABLE_TOPDOWN_DOWN_COLLISION_METATILE
+                 on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
+ #endif

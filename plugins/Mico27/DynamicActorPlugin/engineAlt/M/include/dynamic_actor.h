@@ -162,9 +162,15 @@ typedef struct behavior_def_t {
     BYTE max_fall_vel;  // max downward velocity in subpixels/frame
     UBYTE bounce;        // energy kept on bounce, 0..255 (255 = perfect reflect)
     UBYTE event_flags;   // BHV_EVENT_* trigger permissions
-    UBYTE reserved;      // pads the slot to 8 bytes so behavior_defs indexing
-                         // compiles to a shift instead of a multiply; free for
-                         // a future field
+    UBYTE xor_tile_collision; // XOR'd into every tile collision mask this
+                         // behavior tests, so a behavior can ignore a collision
+                         // direction (XOR the COLLISION_* bit out) or treat an
+                         // extra tile property bit as solid (XOR it in).
+                         // 0 = stock collision. Only read when
+                         // DYNAMIC_ACTOR_ENABLE_XOR_TILE_COLLISION is on; the
+                         // byte itself stays either way, since it is the padding
+                         // that keeps the slot at 8 bytes so behavior_defs
+                         // indexing compiles to a shift instead of a multiply.
 } behavior_def_t;
 
 extern script_event_t dynamic_actor_events[DYNAMIC_ACTOR_CALLBACK_SIZE];
@@ -172,6 +178,28 @@ extern UBYTE dynamic_actor_event_actor_idx;
 extern UBYTE dynamic_actor_event_tile_idx;
 extern UBYTE dynamic_actor_event_tile_x;
 extern UBYTE dynamic_actor_event_tile_y;
+
+// Engine field. XOR'd into every tile collision mask the scene type code tests
+// for the PLAYER, the same way behavior_def_t.xor_tile_collision works for a
+// dynamic actor: XOR a COLLISION_* bit out to walk through that side, or XOR a
+// tile property bit in to make it solid. 0 = stock collision. Lives here (not
+// in a state file) because every scene type reads it.
+// Declared even when the feature is compiled out: GB Studio emits the engine
+// field's initialiser (a .globl plus a memory set) from the engine.json entry
+// regardless, so the symbol has to exist or the link fails.
+extern UBYTE player_xor_tile_collision;
+
+// Wrap of every tile collision mask tested for the player. With
+// DYNAMIC_ACTOR_ENABLE_XOR_TILE_COLLISION off it expands to the plain mask, so
+// each of the ~34 test sites in the scene type code compiles exactly as it did
+// before the feature existed - no load, no XOR, no ROM, nothing per frame. The
+// plugin's own actor-side equivalent (DYNAMIC_ACTOR_TILE_COL) is in
+// dynamic_actor.c, where its cached value lives.
+#ifdef DYNAMIC_ACTOR_ENABLE_XOR_TILE_COLLISION
+#define PLAYER_TILE_COL(mask) ((mask) ^ player_xor_tile_collision)
+#else
+#define PLAYER_TILE_COL(mask) (mask)
+#endif
 
 extern behavior_def_t behavior_defs[DYNAMIC_ACTOR_MAX_BEHAVIORS + 1];
 

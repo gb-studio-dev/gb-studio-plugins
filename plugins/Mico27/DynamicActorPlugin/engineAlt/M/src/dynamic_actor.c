@@ -50,10 +50,33 @@ UBYTE dynamic_actor_event_tile_idx;
 UBYTE dynamic_actor_event_tile_x;
 UBYTE dynamic_actor_event_tile_y;
 
+// XOR'd into every tile collision mask the scene type code tests for the player.
+// Not reset per scene - it is an engine field, so GB Studio initialises it to the
+// configured value at engine init and scripts change it from there.
+UBYTE player_xor_tile_collision;
+
 // End of Engine Fields -------------------------------------------------------
 
 script_event_t dynamic_actor_events[DYNAMIC_ACTOR_CALLBACK_SIZE];
 static actor_t *dynamic_actor_current_actor;
+
+// xor_tile_collision of the behavior driving the actor currently being moved,
+// cached here so the collision helpers don't reload it from the behavior def at
+// every test site. Kept in step with dynamic_actor_current_actor by
+// DYNAMIC_ACTOR_LOAD_TILE_COL_XOR.
+//
+// With the feature off, DYNAMIC_ACTOR_TILE_COL passes the mask straight through
+// and the load expands to nothing (its argument is never evaluated), so the ~27
+// collision test sites below compile exactly as they did before the feature
+// existed and the physics loop pays nothing per actor per frame.
+#ifdef DYNAMIC_ACTOR_ENABLE_XOR_TILE_COLLISION
+static UBYTE dynamic_actor_xor_tile_collision;
+#define DYNAMIC_ACTOR_TILE_COL(mask) ((mask) ^ dynamic_actor_xor_tile_collision)
+#define DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(value) (dynamic_actor_xor_tile_collision = (value))
+#else
+#define DYNAMIC_ACTOR_TILE_COL(mask) (mask)
+#define DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(value) ((void)0)
+#endif
 
 #ifdef DYNAMIC_ACTOR_ENABLE_PARENT
 UBYTE dynamic_actor_parenting_used;
@@ -271,7 +294,7 @@ static UWORD check_vertical_collision_point(UWORD start_x, UWORD start_y, UBYTE 
     if (down) {
 #ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
         UBYTE tile = tile_at(col_tx, col_ty);
-        if (tile & COLLISION_TOP) {
+        if (tile & DYNAMIC_ACTOR_TILE_COL(COLLISION_TOP)) {
             start_y = TILE_TO_SUBPX(col_ty) - 1;
             col_ty = SUBPX_TO_TILE(start_y);
             tile = tile_at(col_tx, col_ty);
@@ -309,14 +332,14 @@ static UWORD check_vertical_collision_point(UWORD start_x, UWORD start_y, UBYTE 
         }
         return start_y;
 #else
-        if (tile_at(col_tx, col_ty) & COLLISION_TOP) {
+        if (tile_at(col_tx, col_ty) & DYNAMIC_ACTOR_TILE_COL(COLLISION_TOP)) {
             dynamic_actor_execute_tile_collision_bottom(dynamic_actor_current_actor, col_tx, col_ty);
             return TILE_TO_SUBPX(col_ty) - 1;
         }
         return start_y;
 #endif
     }
-    if (tile_at(col_tx, col_ty) & COLLISION_BOTTOM) {
+    if (tile_at(col_tx, col_ty) & DYNAMIC_ACTOR_TILE_COL(COLLISION_BOTTOM)) {
         dynamic_actor_execute_tile_collision_top(dynamic_actor_current_actor, col_tx, col_ty);
         return TILE_TO_SUBPX(col_ty + 1);
     }
@@ -330,7 +353,7 @@ static UWORD check_horizontal_collision_point(UWORD start_x, UWORD start_y, UBYT
     col_tx = SUBPX_TO_TILE(start_x);
     if (right) {
 
-        if (tile_at(col_tx, col_ty) & COLLISION_LEFT) {
+        if (tile_at(col_tx, col_ty) & DYNAMIC_ACTOR_TILE_COL(COLLISION_LEFT)) {
 #ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
             if (IS_ON_SLOPE(tile_at(col_tx - 1, col_ty))){
                 return start_x;
@@ -342,7 +365,7 @@ static UWORD check_horizontal_collision_point(UWORD start_x, UWORD start_y, UBYT
         return start_x;
     }
 
-    if (tile_at(col_tx, col_ty) & COLLISION_RIGHT) {
+    if (tile_at(col_tx, col_ty) & DYNAMIC_ACTOR_TILE_COL(COLLISION_RIGHT)) {
 #ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
             if (IS_ON_SLOPE(tile_at(col_tx + 1, col_ty))){
                 return start_x;
@@ -360,7 +383,7 @@ static UWORD check_pit_point(UWORD start_x, UWORD start_y, UBYTE right) {
     col_ty = SUBPX_TO_TILE(start_y);
     col_tx = SUBPX_TO_TILE(start_x);
     if (right) {
-        if (tile_at(col_tx, col_ty) & COLLISION_LEFT) {
+        if (tile_at(col_tx, col_ty) & DYNAMIC_ACTOR_TILE_COL(COLLISION_LEFT)) {
 #ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
             if (IS_ON_SLOPE(tile_at(col_tx - 1, col_ty))){
                 return start_x;
@@ -369,12 +392,12 @@ static UWORD check_pit_point(UWORD start_x, UWORD start_y, UBYTE right) {
             dynamic_actor_execute_tile_collision_right(dynamic_actor_current_actor, col_tx, col_ty);
             return TILE_TO_SUBPX(col_tx) - 1;
         }
-        if (!(tile_at(col_tx, col_ty + 1) & (COLLISION_TOP | COLLISION_SLOPE_ANY))) {
+        if (!(tile_at(col_tx, col_ty + 1) & DYNAMIC_ACTOR_TILE_COL(COLLISION_TOP | COLLISION_SLOPE_ANY))) {
             return TILE_TO_SUBPX(col_tx) - 1;
         }
         return start_x;
     }
-    if (tile_at(col_tx, col_ty) & COLLISION_RIGHT) {
+    if (tile_at(col_tx, col_ty) & DYNAMIC_ACTOR_TILE_COL(COLLISION_RIGHT)) {
 #ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
             if (IS_ON_SLOPE(tile_at(col_tx + 1, col_ty))){
                 return start_x;
@@ -383,7 +406,7 @@ static UWORD check_pit_point(UWORD start_x, UWORD start_y, UBYTE right) {
         dynamic_actor_execute_tile_collision_left(dynamic_actor_current_actor, col_tx, col_ty);
         return TILE_TO_SUBPX(col_tx + 1);
     }
-    if (!(tile_at(col_tx, col_ty + 1) & (COLLISION_TOP | COLLISION_SLOPE_ANY))) {
+    if (!(tile_at(col_tx, col_ty + 1) & DYNAMIC_ACTOR_TILE_COL(COLLISION_TOP | COLLISION_SLOPE_ANY))) {
         return TILE_TO_SUBPX(col_tx + 1);
     }
     return start_x;
@@ -398,7 +421,7 @@ static UWORD check_collision_slope(UWORD start_x, UWORD start_y, rect16_t *bound
     col_ty = SUBPX_TO_TILE(start_y + bounds->bottom);
     col_tx = SUBPX_TO_TILE(start_x);
     UBYTE tile = tile_at(col_tx, col_ty);
-    if (tile & COLLISION_TOP) {
+    if (tile & DYNAMIC_ACTOR_TILE_COL(COLLISION_TOP)) {
         start_y = (TILE_TO_SUBPX(col_ty) - (bounds->bottom + 1));
         col_ty = SUBPX_TO_TILE(start_y + (bounds->bottom - 1));
         tile = tile_at(col_tx, col_ty);
@@ -455,12 +478,12 @@ static UWORD check_vertical_collision_triangle(UWORD start_x, UWORD start_y, rec
 #else
         col_ty = SUBPX_TO_TILE(start_y + bounds->bottom);
         col_tx = SUBPX_TO_TILE(start_x + bounds->left);
-        if (tile_at(col_tx, col_ty) & COLLISION_TOP) {
+        if (tile_at(col_tx, col_ty) & DYNAMIC_ACTOR_TILE_COL(COLLISION_TOP)) {
             dynamic_actor_execute_tile_collision_bottom(dynamic_actor_current_actor, col_tx, col_ty);
             return TILE_TO_SUBPX(col_ty) - (bounds->bottom + 1);
         }
         col_tx = SUBPX_TO_TILE(start_x + bounds->right);
-        if (tile_at(col_tx, col_ty) & COLLISION_TOP) {
+        if (tile_at(col_tx, col_ty) & DYNAMIC_ACTOR_TILE_COL(COLLISION_TOP)) {
             dynamic_actor_execute_tile_collision_bottom(dynamic_actor_current_actor, col_tx, col_ty);
             return TILE_TO_SUBPX(col_ty) - (bounds->bottom + 1);
         }
@@ -469,7 +492,7 @@ static UWORD check_vertical_collision_triangle(UWORD start_x, UWORD start_y, rec
     }
     col_ty = SUBPX_TO_TILE(start_y + bounds->top);
     col_tx = SUBPX_TO_TILE(start_x + bounds->left + ((bounds->right - bounds->left) >> 1));
-    if (tile_at(col_tx, col_ty) & COLLISION_BOTTOM) {
+    if (tile_at(col_tx, col_ty) & DYNAMIC_ACTOR_TILE_COL(COLLISION_BOTTOM)) {
         dynamic_actor_execute_tile_collision_top(dynamic_actor_current_actor, col_tx, col_ty);
         return TILE_TO_SUBPX(col_ty + 1) - bounds->top;
     }
@@ -482,7 +505,7 @@ static UWORD check_horizontal_collision_triangle(UWORD start_x, UWORD start_y, r
     if (right) {
         col_tx = SUBPX_TO_TILE(start_x + bounds->right);
         col_ty = SUBPX_TO_TILE(start_y + bounds->bottom);
-        if (tile_at(col_tx, col_ty) & COLLISION_LEFT) {
+        if (tile_at(col_tx, col_ty) & DYNAMIC_ACTOR_TILE_COL(COLLISION_LEFT)) {
 #ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
             if (IS_ON_SLOPE(tile_at(col_tx - 1, col_ty))){
                 return start_x;
@@ -495,7 +518,7 @@ static UWORD check_horizontal_collision_triangle(UWORD start_x, UWORD start_y, r
     }
     col_tx = SUBPX_TO_TILE(start_x + bounds->left);
     col_ty = SUBPX_TO_TILE(start_y + bounds->bottom);
-    if (tile_at(col_tx, col_ty) & COLLISION_RIGHT) {
+    if (tile_at(col_tx, col_ty) & DYNAMIC_ACTOR_TILE_COL(COLLISION_RIGHT)) {
 #ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
             if (IS_ON_SLOPE(tile_at(col_tx + 1, col_ty))){
                 return start_x;
@@ -513,7 +536,7 @@ static UWORD check_pit_triangle(UWORD start_x, UWORD start_y, rect16_t *bounds, 
     if (right) {
         col_tx = SUBPX_TO_TILE(start_x + bounds->right);
         col_ty = SUBPX_TO_TILE(start_y + bounds->bottom);
-        if (tile_at(col_tx, col_ty) & COLLISION_LEFT) {
+        if (tile_at(col_tx, col_ty) & DYNAMIC_ACTOR_TILE_COL(COLLISION_LEFT)) {
 #ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
             if (IS_ON_SLOPE(tile_at(col_tx - 1, col_ty))){
                 return start_x;
@@ -522,7 +545,7 @@ static UWORD check_pit_triangle(UWORD start_x, UWORD start_y, rect16_t *bounds, 
             dynamic_actor_execute_tile_collision_right(dynamic_actor_current_actor, col_tx, col_ty);
             return TILE_TO_SUBPX(col_tx) - (bounds->right + 1);
         }
-        if (!(tile_at(col_tx, col_ty + 1) & (COLLISION_TOP | COLLISION_SLOPE_ANY))) {
+        if (!(tile_at(col_tx, col_ty + 1) & DYNAMIC_ACTOR_TILE_COL(COLLISION_TOP | COLLISION_SLOPE_ANY))) {
             dynamic_actor_execute_tile_collision_bottom(dynamic_actor_current_actor, col_tx, col_ty + 1);
             return TILE_TO_SUBPX(col_tx) - (bounds->right + 1);
         }
@@ -530,7 +553,7 @@ static UWORD check_pit_triangle(UWORD start_x, UWORD start_y, rect16_t *bounds, 
     }
     col_tx = SUBPX_TO_TILE(start_x + bounds->left);
     col_ty = SUBPX_TO_TILE(start_y + bounds->bottom);
-    if (tile_at(col_tx, col_ty) & COLLISION_RIGHT) {
+    if (tile_at(col_tx, col_ty) & DYNAMIC_ACTOR_TILE_COL(COLLISION_RIGHT)) {
 #ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
             if (IS_ON_SLOPE(tile_at(col_tx + 1, col_ty))){
                 return start_x;
@@ -539,7 +562,7 @@ static UWORD check_pit_triangle(UWORD start_x, UWORD start_y, rect16_t *bounds, 
         dynamic_actor_execute_tile_collision_left(dynamic_actor_current_actor, col_tx, col_ty);
         return TILE_TO_SUBPX(col_tx + 1) - bounds->left;
     }
-    if (!(tile_at(col_tx, col_ty + 1) & (COLLISION_TOP | COLLISION_SLOPE_ANY))) {
+    if (!(tile_at(col_tx, col_ty + 1) & DYNAMIC_ACTOR_TILE_COL(COLLISION_TOP | COLLISION_SLOPE_ANY))) {
         dynamic_actor_execute_tile_collision_bottom(dynamic_actor_current_actor, col_tx, col_ty + 1);
         return TILE_TO_SUBPX(col_tx + 1)  - bounds->left;
     }
@@ -564,14 +587,14 @@ static UWORD check_vertical_collision_bbox(UWORD start_x, UWORD start_y, rect16_
         }
 #endif
         col_ty = SUBPX_TO_TILE(start_y + bounds->bottom);
-        if (tile_col_test_range_x(COLLISION_TOP, col_ty, tile_x_start, tile_x_end)){
+        if (tile_col_test_range_x(DYNAMIC_ACTOR_TILE_COL(COLLISION_TOP), col_ty, tile_x_start, tile_x_end)){
             dynamic_actor_execute_tile_collision_top(dynamic_actor_current_actor, tile_x_start, col_ty);
             return TILE_TO_SUBPX(col_ty) - (bounds->bottom + 1);
         }
         return start_y;
     }
     col_ty = SUBPX_TO_TILE(start_y + bounds->top);
-    if (tile_col_test_range_x(COLLISION_BOTTOM, col_ty, tile_x_start, tile_x_end)){
+    if (tile_col_test_range_x(DYNAMIC_ACTOR_TILE_COL(COLLISION_BOTTOM), col_ty, tile_x_start, tile_x_end)){
         dynamic_actor_execute_tile_collision_bottom(dynamic_actor_current_actor, tile_x_start, col_ty);
         return TILE_TO_SUBPX(col_ty + 1) - bounds->top;
     }
@@ -585,7 +608,7 @@ static UWORD check_horizontal_collision_bbox(UWORD start_x, UWORD start_y, rect1
     UBYTE tile_y_end = SUBPX_TO_TILE(start_y + bounds->top);
     if (right) {
         col_tx = SUBPX_TO_TILE(start_x + bounds->right);
-        if (tile_col_test_range_y(COLLISION_LEFT, col_tx, tile_y_start, tile_y_end)) {
+        if (tile_col_test_range_y(DYNAMIC_ACTOR_TILE_COL(COLLISION_LEFT), col_tx, tile_y_start, tile_y_end)) {
 #ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
             if (IS_ON_SLOPE(tile_at(col_tx - 1, tile_y_start))){
                 return start_x;
@@ -597,7 +620,7 @@ static UWORD check_horizontal_collision_bbox(UWORD start_x, UWORD start_y, rect1
         return start_x;
     }
     col_tx = SUBPX_TO_TILE(start_x + bounds->left);
-    if (tile_col_test_range_y(COLLISION_RIGHT, col_tx, tile_y_start, tile_y_end)) {
+    if (tile_col_test_range_y(DYNAMIC_ACTOR_TILE_COL(COLLISION_RIGHT), col_tx, tile_y_start, tile_y_end)) {
 #ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
             if (IS_ON_SLOPE(tile_at(col_tx + 1, tile_y_start))){
                 return start_x;
@@ -616,7 +639,7 @@ static UWORD check_pit_bbox(UWORD start_x, UWORD start_y, rect16_t *bounds, UBYT
     UBYTE tile_y_end = SUBPX_TO_TILE(start_y + bounds->top);
     if (right) {
         col_tx = SUBPX_TO_TILE(start_x + bounds->right);
-        if (tile_col_test_range_y(COLLISION_LEFT, col_tx, tile_y_start, tile_y_end)) {
+        if (tile_col_test_range_y(DYNAMIC_ACTOR_TILE_COL(COLLISION_LEFT), col_tx, tile_y_start, tile_y_end)) {
 #ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
             if (IS_ON_SLOPE(tile_at(col_tx - 1, tile_y_start))){
                 return start_x;
@@ -625,14 +648,14 @@ static UWORD check_pit_bbox(UWORD start_x, UWORD start_y, rect16_t *bounds, UBYT
             dynamic_actor_execute_tile_collision_right(dynamic_actor_current_actor, col_tx, tile_y_start);
             return TILE_TO_SUBPX(col_tx) - (bounds->right + 1);
         }
-        if (!(tile_at(col_tx, tile_y_start + 1) & (COLLISION_TOP | COLLISION_SLOPE_ANY))) {
+        if (!(tile_at(col_tx, tile_y_start + 1) & DYNAMIC_ACTOR_TILE_COL(COLLISION_TOP | COLLISION_SLOPE_ANY))) {
             dynamic_actor_execute_tile_collision_bottom(dynamic_actor_current_actor, col_tx, tile_y_start + 1);
             return TILE_TO_SUBPX(col_tx) - (bounds->right + 1);
         }
         return start_x;
     }
     col_tx = SUBPX_TO_TILE(start_x + bounds->left);
-    if (tile_col_test_range_y(COLLISION_RIGHT, col_tx, tile_y_start, tile_y_end)) {
+    if (tile_col_test_range_y(DYNAMIC_ACTOR_TILE_COL(COLLISION_RIGHT), col_tx, tile_y_start, tile_y_end)) {
 #ifdef DYNAMIC_ACTOR_ENABLE_SLOPE_COLLISION
             if (IS_ON_SLOPE(tile_at(col_tx + 1, tile_y_start))){
                 return start_x;
@@ -641,7 +664,7 @@ static UWORD check_pit_bbox(UWORD start_x, UWORD start_y, rect16_t *bounds, UBYT
         dynamic_actor_execute_tile_collision_left(dynamic_actor_current_actor, col_tx, tile_y_start);
         return TILE_TO_SUBPX(col_tx + 1) - bounds->left;
     }
-    if (!(tile_at(col_tx, tile_y_start + 1) & (COLLISION_TOP | COLLISION_SLOPE_ANY))) {
+    if (!(tile_at(col_tx, tile_y_start + 1) & DYNAMIC_ACTOR_TILE_COL(COLLISION_TOP | COLLISION_SLOPE_ANY))) {
         dynamic_actor_execute_tile_collision_bottom(dynamic_actor_current_actor, col_tx, tile_y_start + 1);
         return TILE_TO_SUBPX(col_tx + 1)  - bounds->left;
     }
@@ -652,6 +675,7 @@ static UWORD check_pit_bbox(UWORD start_x, UWORD start_y, rect16_t *bounds, UBYT
 #endif
 
 #define ACTOR_COLLISION_TYPE(actor) (behavior_defs[(actor)->actor_behavior_id].collision_type)
+#define ACTOR_XOR_TILE_COLLISION(actor) (behavior_defs[(actor)->actor_behavior_id].xor_tile_collision)
 
 #ifdef DYNAMIC_ACTOR_ENABLE_MOVE_X
 static UWORD check_horizontal_collision_by_type(UWORD start_x, UWORD start_y, actor_t *actor, UBYTE right, UBYTE collision_type) {
@@ -761,8 +785,10 @@ static void dynamic_actor_apply_parent_delta(actor_t *actor) {
         chain_guard--;
     }
     // Set the current actor so the collision helpers fire this rider's tile
-    // collision events (they read dynamic_actor_current_actor).
+    // collision events (they read dynamic_actor_current_actor) and test tiles
+    // with this behavior's collision mask XOR.
     dynamic_actor_current_actor = actor;
+    DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(def->xor_tile_collision);
     if (parent_actor_delta_x && !(flags2 & BHV3_LOCK_POS_X)) {
         new_actor_x = actor->pos.x + parent_actor_delta_x;
 #ifdef DYNAMIC_ACTOR_ENABLE_MOVE_X
@@ -828,6 +854,7 @@ void dynamic_actor_update(void) BANKED {
         UBYTE flags2 = def->flags2;
         UBYTE event_flags = def->event_flags;
         dynamic_actor_current_actor = actor;
+        DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(def->xor_tile_collision);
 #ifdef DYNAMIC_ACTOR_ENABLE_TILE_ENTER_EVENT
         // Which cell of the tile enter grid the actor started this frame in.
         // Only tracked when something is listening for it.
@@ -1228,6 +1255,7 @@ void dynamic_actor_update(void) BANKED {
     }
 
     dynamic_actor_current_actor = NULL;
+    DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(0);
 
 #ifdef DYNAMIC_ACTOR_ENABLE_PARENT
     // End-of-frame pass, skipped entirely until parenting is first used:
@@ -1321,7 +1349,11 @@ void dynamic_actor_update(void) BANKED {
 
 UBYTE vm_wait_for_collision(void * THIS, UBYTE start, UWORD * stack_frame) OLDCALL BANKED {
     actor_t* actor = actors + stack_frame[0];
-    UBYTE collision_type = behavior_defs[actor->actor_behavior_id].collision_type;
+    behavior_def_t *def = &behavior_defs[actor->actor_behavior_id];
+    UBYTE collision_type = def->collision_type;
+    // Probe the tiles with the same mask XOR the behavior itself moves with,
+    // otherwise the wait would report a wall the actor is allowed to pass.
+    DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(def->xor_tile_collision);
     if (start){
         CLR_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
     } else {
@@ -1432,6 +1464,9 @@ UBYTE vm_actor_crawl_step(void * THIS, UBYTE start, UWORD * stack_frame) OLDCALL
     UBYTE side = (UBYTE)stack_frame[2];   // 0 = wall on right hand (clockwise around blocks), 1 = left hand
     UBYTE speed = actor->move_speed >> 1; // player max velocity is 128, so divide by 2 to get a speed that lands on cell boundaries
     UBYTE collision_type = ACTOR_COLLISION_TYPE(actor);
+    // The crawl steers through the same collision helpers as the behavior, so it
+    // needs the behavior's collision mask XOR loaded too.
+    DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(ACTOR_XOR_TILE_COLLISION(actor));
     UBYTE tile_x;
     UBYTE tile_y;
 
