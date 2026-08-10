@@ -2,7 +2,7 @@ Index: src/core/actor.c
 ===================================================================
 --- src/core/actor.c
 +++ src/core/actor.c
-@@ -231,12 +231,12 @@
+@@ -221,12 +221,12 @@
  
          if (!(window_hide_actors && (screen_x + 8 > WX_REG) && (screen_y - 8 > WY_REG))) {
              SWITCH_ROM(PLAYER.sprite.bank);
@@ -17,7 +17,7 @@ Index: src/core/actor.c
                  screen_x,
                  screen_y
              );
-@@ -269,12 +269,12 @@
+@@ -259,12 +259,12 @@
              continue;
          }
          SWITCH_ROM(actor->sprite.bank);

@@ -9,10 +9,10 @@ Index: src/core/actor.c
      emote_actor             = NULL;
 +
      memset(actors, 0, sizeof(actors));
+ }
  
-     // Cache each actor's own index in actors[]. The dynamic actor runtime holds
-     // pointers to actors but has to report their index; reading it back from the
-@@ -236,12 +237,12 @@
+ void player_init(void) BANKED {
+@@ -226,12 +227,12 @@
              continue;
          }
          SWITCH_ROM(actor->sprite.bank);

@@ -2,7 +2,7 @@ Index: src/core/actor.c
 ===================================================================
 --- src/core/actor.c
 +++ src/core/actor.c
-@@ -237,12 +237,12 @@
+@@ -227,12 +227,12 @@
              continue;
          }
          SWITCH_ROM(actor->sprite.bank);

@@ -11,6 +11,7 @@
 #include "data/states_defines.h"
 #include "collision.h"
 #include "events.h"
+#include "data_manager.h"
 #include "macro.h"
 #ifdef DYNAMIC_ACTOR_ENABLE_ACTOR_TRIGGERS
 #include "trigger.h"
@@ -237,17 +238,21 @@ void dynamic_actor_init(void) BANKED {
     player_prev_pos_z = PLAYER.pos_z;
 #endif
 #endif
+#endif
     UBYTE i;
-    for (i = 0; i != MAX_ACTORS; ++i) {
-        actors[i].actor_parent = NULL;
+    actor_t * actor = actors;
+    for (i = 0; i != actors_len; i++, actor++) {
+        actor->actor_index = i;
+#ifdef DYNAMIC_ACTOR_ENABLE_PARENT
+        actor->actor_parent = NULL;
 #ifdef DYNAMIC_ACTOR_USES_PREV_POS
-        actors[i].prev_pos = actors[i].pos;
+        actor->prev_pos = actor->pos;
 #ifdef DYNAMIC_ACTOR_ENABLE_MOVE_Z
-        actors[i].prev_pos_z = actors[i].pos_z;
+        actor->prev_pos_z = actor->pos_z;
+#endif
 #endif
 #endif
     }
-#endif
 }
 
 #ifdef DYNAMIC_ACTOR_ENABLE_PARENT

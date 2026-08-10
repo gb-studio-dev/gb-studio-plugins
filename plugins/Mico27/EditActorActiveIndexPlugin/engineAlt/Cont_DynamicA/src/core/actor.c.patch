@@ -43,10 +43,10 @@ Index: src/core/actor.c
      emote_actor             = NULL;
 +
      memset(actors, 0, sizeof(actors));
+ }
  
-     // Cache each actor's own index in actors[]. The dynamic actor runtime holds
-     // pointers to actors but has to report their index; reading it back from the
-@@ -96,9 +104,9 @@
+ void player_init(void) BANKED {
+@@ -86,9 +94,9 @@
  void actors_update(void) BANKED {
      actor_t *actor;
      static uint8_t screen_tile16_x, screen_tile16_y, screen_tile16_x_end, screen_tile16_y_end;
@@ -57,7 +57,7 @@ Index: src/core/actor.c
  
      // Convert scroll pos to 16px tile coordinates
      // allowing full range of scene to be represented in 7 bits
-@@ -108,9 +116,9 @@
+@@ -98,9 +106,9 @@
      screen_tile16_x_end = screen_tile16_x + ACTOR_BOUNDS_TILE16 + SCREEN_TILE16_W;
      screen_tile16_y = PX_TO_TILE16(draw_scroll_y) + TILE16_OFFSET;
      screen_tile16_y_end = screen_tile16_y + ACTOR_BOUNDS_TILE16 + SCREEN_TILE16_H;
@@ -68,7 +68,7 @@ Index: src/core/actor.c
      actor = actors_active_tail;
      while (actor) {
          actor_flags = actor->flags;
-@@ -128,9 +136,9 @@
+@@ -118,9 +126,9 @@
                  }
              }
          }
@@ -79,7 +79,7 @@ Index: src/core/actor.c
              continue;
          }
  
-@@ -246,8 +254,52 @@
+@@ -236,8 +244,52 @@
              screen_y
          );
      }
@@ -132,7 +132,7 @@ Index: src/core/actor.c
  }
  
  static void deactivate_actor_impl(actor_t *actor) {
-@@ -316,9 +368,9 @@
+@@ -306,9 +358,9 @@
              (actor_tile16_y < screen_tile16_y) ||
              // Actor top edge > screen bottom edge
              (actor_tile16_y > screen_tile16_y_end)

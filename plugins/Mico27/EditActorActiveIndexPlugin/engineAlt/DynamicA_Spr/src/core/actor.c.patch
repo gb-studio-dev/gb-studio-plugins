@@ -36,7 +36,7 @@ Index: src/core/actor.c
  static void deactivate_actor_impl(actor_t *actor);
  
  void actors_init(void) BANKED {
-@@ -96,9 +103,9 @@
+@@ -86,9 +93,9 @@
  void actors_update(void) BANKED {
      actor_t *actor;
      static uint8_t screen_tile16_x, screen_tile16_y, screen_tile16_x_end, screen_tile16_y_end;
@@ -47,7 +47,7 @@ Index: src/core/actor.c
  
      // Convert scroll pos to 16px tile coordinates
      // allowing full range of scene to be represented in 7 bits
-@@ -108,9 +115,9 @@
+@@ -98,9 +105,9 @@
      screen_tile16_x_end = screen_tile16_x + ACTOR_BOUNDS_TILE16 + SCREEN_TILE16_W;
      screen_tile16_y = PX_TO_TILE16(draw_scroll_y) + TILE16_OFFSET;
      screen_tile16_y_end = screen_tile16_y + ACTOR_BOUNDS_TILE16 + SCREEN_TILE16_H;
@@ -58,7 +58,7 @@ Index: src/core/actor.c
      actor = actors_active_tail;
      while (actor) {
          actor_flags = actor->flags;
-@@ -209,43 +216,10 @@
+@@ -199,43 +206,10 @@
  #else
      window_hide_actors = (!show_actors_on_overlay) && (WX_REG > DEVICE_WINDOW_PX_OFFSET_X);
  #endif
@@ -104,7 +104,7 @@ Index: src/core/actor.c
             continue;
          }
  
-@@ -279,8 +253,52 @@
+@@ -269,8 +243,52 @@
              screen_y
          );
      }
@@ -157,7 +157,7 @@ Index: src/core/actor.c
  }
  
  static void deactivate_actor_impl(actor_t *actor) {
-@@ -299,8 +317,11 @@
+@@ -289,8 +307,11 @@
      if (!CHK_FLAG(actor->flags, ACTOR_FLAG_ACTIVE)) return;
      if (actor == &PLAYER) return;
      CLR_FLAG(actor->flags, ACTOR_FLAG_ACTIVE);
@@ -169,7 +169,7 @@ Index: src/core/actor.c
      if ((actor->hscript_update & SCRIPT_TERMINATED) == 0) {
          script_terminate(actor->hscript_update);
      }
-@@ -480,17 +501,17 @@
+@@ -470,17 +491,17 @@
      upoint16_t offset;
      offset.x = PLAYER.pos.x;
      offset.y = PLAYER.pos.y;
@@ -189,7 +189,7 @@ Index: src/core/actor.c
              continue;
          }
          if ((actor->pos.x + actor->bounds.left)   > a_right)  { actor = actor->prev; continue; }
-@@ -503,17 +524,17 @@
+@@ -493,17 +514,17 @@
      return NULL;
  }
  
@@ -209,7 +209,7 @@ Index: src/core/actor.c
              continue;
          }
  
-@@ -528,9 +549,9 @@
+@@ -518,9 +539,9 @@
      return NULL;
  }
  
@@ -220,7 +220,7 @@ Index: src/core/actor.c
      const UWORD a_left   = offset->x + bb->left;
      const UWORD a_right  = offset->x + bb->right;
      const UWORD a_top    = offset->y + bb->top;
-@@ -553,9 +574,9 @@
+@@ -543,9 +564,9 @@
      return NULL;
  }
  
