@@ -56,9 +56,6 @@ UBYTE collided_metatile_y;
 UBYTE collided_metatile_dir;
 UBYTE collided_metatile_source;
 
-UBYTE metatile_collisionx_cache[4];
-UBYTE metatile_collisiony_cache[4];
-
 void metatile_reset(void) BANKED{
     metatile_bank = 0;
     metatile_ptr = NULL;
@@ -445,71 +442,62 @@ void on_player_metatile_collision(UBYTE tile_x, UBYTE tile_y, UBYTE direction) B
     if (!metatile_bank){
         return;
     }
-    if (metatile_collisionx_cache[direction] != tile_x || metatile_collisiony_cache[direction] != tile_y) {
-        metatile_collisionx_cache[direction] = tile_x;
-        metatile_collisiony_cache[direction] = tile_y;
-        switch(direction){
-            case DIR_DOWN:
-                metatile_event = metatile_events + METATILE_COLLISION_DOWN_EVENT;
-                if (metatile_event->script_addr){
-                    UBYTE tile_id = sram_map_data[METATILE_MAP_OFFSET(tile_x, tile_y)];
-                    if (tile_id >= MIN_DOWN_COLLISION_METATILE){
-                        collided_metatile_id = tile_id;
-                        collided_metatile_x = tile_x;
-                        collided_metatile_y = tile_y;
-                        collided_metatile_dir = DIR_DOWN;
-                        collided_metatile_source = 0;
-                        script_execute(metatile_event->script_bank, metatile_event->script_addr, 0, 0);
-                    }
+    switch(direction){
+        case DIR_DOWN:
+            metatile_event = metatile_events + METATILE_COLLISION_DOWN_EVENT;
+            if (metatile_event->script_addr && ((metatile_event->handle == 0) || ((metatile_event->handle & SCRIPT_TERMINATED) != 0))){
+                UBYTE tile_id = get_metatile_id_from_pos(tile_x, tile_y);
+                if (tile_id >= MIN_DOWN_COLLISION_METATILE){
+                    collided_metatile_id = tile_id;
+                    collided_metatile_x = tile_x;
+                    collided_metatile_y = tile_y;
+                    collided_metatile_dir = DIR_DOWN;
+                    collided_metatile_source = 0;
+                    script_execute(metatile_event->script_bank, metatile_event->script_addr, &metatile_event->handle, 0, 0);
                 }
-                break;
-            case DIR_RIGHT:
-                metatile_event = metatile_events + METATILE_COLLISION_RIGHT_EVENT;
-                if (metatile_event->script_addr){
-                    UBYTE tile_id = sram_map_data[METATILE_MAP_OFFSET(tile_x, tile_y)];
-                    if (tile_id >= MIN_RIGHT_COLLISION_METATILE){
-                        collided_metatile_id = tile_id;
-                        collided_metatile_x = tile_x;
-                        collided_metatile_y = tile_y;
-                        collided_metatile_dir = DIR_RIGHT;
-                        collided_metatile_source = 0;
-                        script_execute(metatile_event->script_bank, metatile_event->script_addr, 0, 0);
-                    }
+            }
+            break;
+        case DIR_RIGHT:
+            metatile_event = metatile_events + METATILE_COLLISION_RIGHT_EVENT;
+            if (metatile_event->script_addr && ((metatile_event->handle == 0) || ((metatile_event->handle & SCRIPT_TERMINATED) != 0))){
+                UBYTE tile_id = get_metatile_id_from_pos(tile_x, tile_y);
+                if (tile_id >= MIN_RIGHT_COLLISION_METATILE){
+                    collided_metatile_id = tile_id;
+                    collided_metatile_x = tile_x;
+                    collided_metatile_y = tile_y;
+                    collided_metatile_dir = DIR_RIGHT;
+                    collided_metatile_source = 0;
+                    script_execute(metatile_event->script_bank, metatile_event->script_addr, &metatile_event->handle, 0, 0);
                 }
-                break;
-            case DIR_UP:
-                metatile_event = metatile_events + METATILE_COLLISION_UP_EVENT;
-                if (metatile_event->script_addr){
-                    UBYTE tile_id = sram_map_data[METATILE_MAP_OFFSET(tile_x, tile_y)];
-                    if (tile_id >= MIN_UP_COLLISION_METATILE){
-                        collided_metatile_id = tile_id;
-                        collided_metatile_x = tile_x;
-                        collided_metatile_y = tile_y;
-                        collided_metatile_dir = DIR_UP;
-                        collided_metatile_source = 0;
-                        script_execute(metatile_event->script_bank, metatile_event->script_addr, 0, 0);
-                    }
+            }
+            break;
+        case DIR_UP:
+            metatile_event = metatile_events + METATILE_COLLISION_UP_EVENT;
+            if (metatile_event->script_addr && ((metatile_event->handle == 0) || ((metatile_event->handle & SCRIPT_TERMINATED) != 0))){
+                UBYTE tile_id = get_metatile_id_from_pos(tile_x, tile_y);
+                if (tile_id >= MIN_UP_COLLISION_METATILE){
+                    collided_metatile_id = tile_id;
+                    collided_metatile_x = tile_x;
+                    collided_metatile_y = tile_y;
+                    collided_metatile_dir = DIR_UP;
+                    collided_metatile_source = 0;
+                    script_execute(metatile_event->script_bank, metatile_event->script_addr, &metatile_event->handle, 0, 0);
                 }
-                break;
-            case DIR_LEFT:
-                metatile_event = metatile_events + METATILE_COLLISION_LEFT_EVENT;
-                if (metatile_event->script_addr){
-                    UBYTE tile_id = sram_map_data[METATILE_MAP_OFFSET(tile_x, tile_y)];
-                    if (tile_id >= MIN_LEFT_COLLISION_METATILE){
-                        collided_metatile_id = tile_id;
-                        collided_metatile_x = tile_x;
-                        collided_metatile_y = tile_y;
-                        collided_metatile_dir = DIR_LEFT;
-                        collided_metatile_source = 0;
-                        script_execute(metatile_event->script_bank, metatile_event->script_addr, 0, 0);
-                    }
+            }
+            break;
+        case DIR_LEFT:
+            metatile_event = metatile_events + METATILE_COLLISION_LEFT_EVENT;
+            if (metatile_event->script_addr && ((metatile_event->handle == 0) || ((metatile_event->handle & SCRIPT_TERMINATED) != 0))){
+                UBYTE tile_id = get_metatile_id_from_pos(tile_x, tile_y);
+                if (tile_id >= MIN_LEFT_COLLISION_METATILE){
+                    collided_metatile_id = tile_id;
+                    collided_metatile_x = tile_x;
+                    collided_metatile_y = tile_y;
+                    collided_metatile_dir = DIR_LEFT;
+                    collided_metatile_source = 0;
+                    script_execute(metatile_event->script_bank, metatile_event->script_addr, &metatile_event->handle, 0, 0);
                 }
-                break;
-        }
+            }
+            break;
     }
-}
-
-void reset_collision_cache(UBYTE direction) BANKED {
-    metatile_collisionx_cache[direction] = 0xFF;
-    metatile_collisiony_cache[direction] = 0xFF;
 }

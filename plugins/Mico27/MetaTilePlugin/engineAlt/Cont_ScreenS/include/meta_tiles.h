@@ -92,6 +92,5 @@ void replace_meta_tile(UBYTE x, UBYTE y, UBYTE tile_id, UBYTE commit) BANKED;
 void reset_meta_tile(UBYTE x, UBYTE y, UBYTE commit) BANKED;
 UBYTE metatile_overlap_at_intersection(rect16_t *bb, upoint16_t *offset) BANKED;
 void on_player_metatile_collision(UBYTE tile_x, UBYTE tile_y, UBYTE direction) BANKED;
-void reset_collision_cache(UBYTE direction) BANKED;
 
 #endif
