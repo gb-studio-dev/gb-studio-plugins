@@ -54,7 +54,7 @@ Index: src/states/topdown.c
          // Check input to set player movement
          if (INPUT_RECENT_LEFT) {
              player_moving = TRUE;
-@@ -184,23 +179,26 @@
+@@ -176,23 +171,26 @@
          point_translate_dir(&PLAYER.pos, PLAYER.dir, PLAYER.move_speed);
  
          // Clamp to grid

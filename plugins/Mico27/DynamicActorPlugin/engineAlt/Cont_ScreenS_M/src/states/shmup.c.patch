@@ -30,51 +30,7 @@ Index: src/states/shmup.c
      UBYTE tile_start, tile_end;
      direction_e new_dir = DIR_NONE;
      UBYTE angle;
-@@ -396,8 +399,10 @@
-                 })
- #ifdef ENABLE_SHMUP_RIGHT_COLLISION_METATILE
-                 if (tile) {
-                     on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
-+                } else {
-+                    reset_collision_cache(DIR_RIGHT);
-                 }
- #endif
-             } else { // DIR_LEFT
-                 UBYTE tile_x = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
-@@ -409,8 +414,10 @@
-                 })
- #ifdef ENABLE_SHMUP_LEFT_COLLISION_METATILE
-                 if (tile) {
-                     on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
-+                } else {
-+                    reset_collision_cache(DIR_LEFT);
-                 }
- #endif
-             }
-         } else {
-@@ -426,8 +433,10 @@
-                 })
- #ifdef ENABLE_SHMUP_DOWN_COLLISION_METATILE
-                 if (tile) {
-                     on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
-+                } else {
-+                    reset_collision_cache(DIR_DOWN);
-                 }
- #endif
-             } else { // DIR_UP
-                 UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
-@@ -439,8 +448,10 @@
-                 })
- #ifdef ENABLE_SHMUP_UP_COLLISION_METATILE
-                 if (tile) {
-                     on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
-+                } else {
-+                    reset_collision_cache(DIR_UP);
-                 }
- #endif
-             }
-         }
-@@ -489,12 +500,8 @@
+@@ -481,12 +484,8 @@
      }
  #endif
  

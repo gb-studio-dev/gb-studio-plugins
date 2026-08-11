@@ -27,7 +27,6 @@
 // one byte of WRAM.
 UBYTE player_xor_tile_collision;
 
-#ifdef COLLISION_EX_USES_TILE_EVENTS
 UBYTE entered_tile_value;
 UBYTE entered_tile_x;
 UBYTE entered_tile_y;
@@ -35,7 +34,6 @@ UBYTE collided_tile_value;
 UBYTE collided_tile_x;
 UBYTE collided_tile_y;
 UBYTE collided_tile_dir;
-#endif
 
 // End of Engine Fields -------------------------------------------------------
 

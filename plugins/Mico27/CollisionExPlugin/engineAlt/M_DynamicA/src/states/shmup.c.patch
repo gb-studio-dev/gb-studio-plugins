@@ -32,7 +32,7 @@ Index: src/states/shmup.c
      dynamic_actor_update();
  
      actor_t *hit_actor;
-@@ -268,9 +271,9 @@
+@@ -268,18 +271,18 @@
              tile_start = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
              tile_end   = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
              if (angle > ANGLE_90DEG && angle < ANGLE_270DEG) { // Moving down
@@ -43,7 +43,6 @@ Index: src/states/shmup.c
                      PLAYER.pos.y = TILE_TO_SUBPX(tile_y) - EXCLUSIVE_OFFSET(PLAYER.bounds.bottom);
  #ifdef ENABLE_DOWN_COLLISION_METATILE
                      on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
-@@ -279,9 +282,9 @@
  #endif
                  }
              } else { // Moving up
@@ -54,7 +53,7 @@ Index: src/states/shmup.c
                      PLAYER.pos.y = TILE_TO_SUBPX(tile_y + 1) - PLAYER.bounds.top;
  #ifdef ENABLE_UP_COLLISION_METATILE
                      on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
-@@ -297,9 +300,9 @@
+@@ -293,18 +296,18 @@
              tile_start = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
              tile_end   = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
              if (angle > ANGLE_0DEG && angle < ANGLE_180DEG) { // Moving right
@@ -65,7 +64,6 @@ Index: src/states/shmup.c
                      PLAYER.pos.x = TILE_TO_SUBPX(tile_x) - EXCLUSIVE_OFFSET(PLAYER.bounds.right);
  #ifdef ENABLE_RIGHT_COLLISION_METATILE
                      on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
-@@ -308,9 +311,9 @@
  #endif
                  }
              } else { // Moving left
@@ -76,7 +74,7 @@ Index: src/states/shmup.c
                      PLAYER.pos.x = TILE_TO_SUBPX(tile_x + 1) - PLAYER.bounds.left;
  #ifdef ENABLE_LEFT_COLLISION_METATILE
                      on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
-@@ -390,9 +393,9 @@
+@@ -382,9 +385,9 @@
              tile_start = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
              tile_end   = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
              if (shooter_direction == DIR_RIGHT) {
@@ -87,7 +85,7 @@ Index: src/states/shmup.c
                      if (tile) {
                          PLAYER.pos.x = TILE_TO_SUBPX(tile_x) - EXCLUSIVE_OFFSET(PLAYER.bounds.right);
                      }
-@@ -405,9 +408,9 @@
+@@ -395,9 +398,9 @@
                  }
  #endif
              } else { // DIR_LEFT
@@ -98,7 +96,7 @@ Index: src/states/shmup.c
                      if (tile) {
                          PLAYER.pos.x = TILE_TO_SUBPX(tile_x + 1) - PLAYER.bounds.left;
                      }
-@@ -424,9 +427,9 @@
+@@ -412,9 +415,9 @@
              tile_start = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
              tile_end   = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
              if (shooter_direction == DIR_DOWN) {
@@ -109,7 +107,7 @@ Index: src/states/shmup.c
                      if (tile) {
                          PLAYER.pos.y = TILE_TO_SUBPX(tile_y) - EXCLUSIVE_OFFSET(PLAYER.bounds.bottom);
                      }
-@@ -439,9 +442,9 @@
+@@ -425,9 +428,9 @@
                  }
  #endif
              } else { // DIR_UP

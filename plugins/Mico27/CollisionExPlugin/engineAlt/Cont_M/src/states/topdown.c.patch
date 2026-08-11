@@ -42,8 +42,8 @@ Index: src/states/topdown.c
                  player_moving = FALSE;
  #ifdef ENABLE_TOPDOWN_LEFT_COLLISION_METATILE
                  on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
-             } else {
-@@ -90,9 +93,9 @@
+ #endif
+@@ -88,9 +91,9 @@
              // Check for collisions to right of player
              tile_start = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
              tile_end   = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
@@ -53,8 +53,8 @@ Index: src/states/topdown.c
                  player_moving = FALSE;
  #ifdef ENABLE_TOPDOWN_RIGHT_COLLISION_METATILE
                  on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
-             } else {
-@@ -106,9 +109,9 @@
+ #endif
+@@ -102,9 +105,9 @@
              // Check for collisions below player
              tile_start = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
              tile_end   = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
@@ -64,8 +64,8 @@ Index: src/states/topdown.c
                  player_moving = FALSE;
  #ifdef ENABLE_TOPDOWN_UP_COLLISION_METATILE
                  on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_UP);
-             } else {
-@@ -122,9 +125,9 @@
+ #endif
+@@ -116,9 +119,9 @@
              // Check for collisions below player
              tile_start = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
              tile_end   = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
@@ -75,4 +75,4 @@ Index: src/states/topdown.c
                  player_moving = FALSE;
  #ifdef ENABLE_TOPDOWN_DOWN_COLLISION_METATILE
                  on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_DOWN);
-             } else {
+ #endif

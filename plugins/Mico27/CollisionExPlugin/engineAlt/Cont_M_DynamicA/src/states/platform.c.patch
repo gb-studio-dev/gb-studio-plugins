@@ -57,7 +57,7 @@ Index: src/states/platform.c
          if (tile)
          {
  #ifdef FEAT_PLATFORM_SLOPES
-@@ -1299,9 +1302,9 @@
+@@ -1295,9 +1298,9 @@
                      plat_slope_y = tile_hit_y;
                      plat_on_slope = tile;
                      plat_grounded = TRUE;
@@ -68,7 +68,7 @@ Index: src/states/platform.c
                          plat_vel_y = 0;
                          plat_vel_x = 0;
                          PLAYER.pos.x -= plat_delta_x;
-@@ -1331,9 +1334,9 @@
+@@ -1327,9 +1330,9 @@
  #endif
                  goto finally_update_y;
              }
@@ -79,7 +79,7 @@ Index: src/states/platform.c
  #ifdef FEAT_PLATFORM_DROP_THROUGH
                  // Only drop through platforms without a bottom collision
                  if (plat_drop_timer && !(tile & COLLISION_BOTTOM))
-@@ -1363,9 +1366,9 @@
+@@ -1357,9 +1360,9 @@
          else if (plat_delta_y < 0)
          {
              // Moving Upward
@@ -90,7 +90,7 @@ Index: src/states/platform.c
              if (tile)
              {
                  // Hit the ceiling
-@@ -2132,9 +2135,9 @@
+@@ -2124,9 +2127,9 @@
          // Check if grounded
          UWORD p_half_width = DIV_2(PLAYER.bounds.right - PLAYER.bounds.left);
          UBYTE tile_x_mid = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left + p_half_width);
@@ -101,7 +101,7 @@ Index: src/states/platform.c
          if (
              // Can dash from ground and is grounded (or coyote time)
              ((plat_dash_jump_from & DASH_FROM_GROUND) && plat_grounded)
-@@ -2187,9 +2190,9 @@
+@@ -2179,9 +2182,9 @@
  
          UBYTE tile_start = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
          UBYTE tile_end = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1;
@@ -112,7 +112,7 @@ Index: src/states/platform.c
          while (tile_start != tile_end)
          {
              UBYTE tile = tile_at(tile_x, tile_start);
-@@ -2234,9 +2237,9 @@
+@@ -2226,9 +2229,9 @@
              plat_vel_y = -plat_climb_vel;
          }
          // If reached the top of ladder and tile just below can be stood on then let go of ladder
@@ -123,7 +123,7 @@ Index: src/states/platform.c
              plat_next_state = GROUND_STATE;
              PLAYER.pos.y = TILE_TO_SUBPX(SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1) - PLAYER.bounds.bottom - 1;
              return;
-@@ -2257,9 +2260,9 @@
+@@ -2249,9 +2252,9 @@
          {
              plat_vel_y = plat_climb_vel;
          }
@@ -134,7 +134,7 @@ Index: src/states/platform.c
              plat_next_state = GROUND_STATE;
              PLAYER.pos.y = TILE_TO_SUBPX(tile_y) - PLAYER.bounds.bottom - 1;
              return;
-@@ -2286,9 +2289,9 @@
+@@ -2278,9 +2281,9 @@
  
          // If tile below player can be stood on then let go of ladder
          UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1;
@@ -145,7 +145,7 @@ Index: src/states/platform.c
              plat_vel_x = 0;
              plat_next_state = FALL_STATE;
              return;
-@@ -2311,9 +2314,9 @@
+@@ -2303,9 +2306,9 @@
                  plat_vel_x = -plat_climb_vel;
                  return;
              }
@@ -156,7 +156,7 @@ Index: src/states/platform.c
                  plat_next_state = LADDER_STATE; // If there is a wall, stay on the ladder.
                  return;
              }
-@@ -2327,9 +2330,9 @@
+@@ -2319,9 +2322,9 @@
  
          // If tile below player can be stood on then let go of ladder
          UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1;
@@ -167,7 +167,7 @@ Index: src/states/platform.c
              plat_vel_x = 0;
              plat_next_state = FALL_STATE;
              return;
-@@ -2353,9 +2356,9 @@
+@@ -2345,9 +2348,9 @@
                  plat_vel_x = plat_climb_vel;
                  return;
              }

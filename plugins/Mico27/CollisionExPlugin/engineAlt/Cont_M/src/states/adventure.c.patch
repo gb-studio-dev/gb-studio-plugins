@@ -43,7 +43,7 @@ Index: src/states/adventure.c
                  new_x = TILE_TO_SUBPX(tile_x) - EXCLUSIVE_OFFSET(PLAYER.bounds.right);
                  adv_vel_x = 0;
                  if (tile & COLLISION_SLOPE && delta.y == 0) {
-@@ -666,9 +669,9 @@
+@@ -664,9 +667,9 @@
  #endif
              }
          } else if (delta.x < 0) {
@@ -54,7 +54,7 @@ Index: src/states/adventure.c
                  new_x = TILE_TO_SUBPX(tile_x + 1) - PLAYER.bounds.left;
                  adv_vel_x = 0;
                  if (tile & COLLISION_SLOPE && delta.y == 0) {
-@@ -718,9 +721,9 @@
+@@ -714,9 +717,9 @@
          UBYTE tile_start = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left);
          UBYTE tile_end   = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.right);
          if (delta.y > 0) {
@@ -65,7 +65,7 @@ Index: src/states/adventure.c
                  new_y = TILE_TO_SUBPX(tile_y) - EXCLUSIVE_OFFSET(PLAYER.bounds.bottom);
                  adv_vel_y = 0;
                  if (tile & COLLISION_SLOPE && delta.x == 0) {
-@@ -751,9 +754,9 @@
+@@ -745,9 +748,9 @@
  #endif
              }
          } else if (delta.y < 0) {
@@ -76,7 +76,7 @@ Index: src/states/adventure.c
                  new_y = TILE_TO_SUBPX(tile_y + 1) - PLAYER.bounds.top;
                  adv_vel_y = 0;
                  if (tile & COLLISION_SLOPE && delta.x == 0) {
-@@ -977,17 +980,17 @@
+@@ -969,17 +972,17 @@
  
          UBYTE col = 0;
  

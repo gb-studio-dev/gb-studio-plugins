@@ -60,31 +60,7 @@ Index: src/states/platform.c
          if (tile)
          {
  #ifdef FEAT_PLATFORM_SLOPES
-@@ -1191,15 +1193,21 @@
- #if ENABLE_PLAT_HORIZONTAL_COLLISION_METATILE
-             if (moving_right){
- #ifdef ENABLE_PLAT_RIGHT_COLLISION_METATILE
-                 on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
-+#endif
-             } else {
-+#ifdef ENABLE_PLAT_LEFT_COLLISION_METATILE
-+                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
-+#endif
-+            }
-+        } else {
-+            if (moving_right){
-+#ifdef ENABLE_PLAT_RIGHT_COLLISION_METATILE
-                 reset_collision_cache(DIR_RIGHT);
- #endif
-             } else {
- #ifdef ENABLE_PLAT_LEFT_COLLISION_METATILE
--                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
--            } else {
-                 reset_collision_cache(DIR_LEFT);
- #endif
-             }
- #endif
-@@ -1296,9 +1304,9 @@
+@@ -1292,9 +1294,9 @@
                      plat_slope_y = tile_hit_y;
                      plat_on_slope = tile;
                      plat_grounded = TRUE;
@@ -95,7 +71,7 @@ Index: src/states/platform.c
                          plat_vel_y = 0;
                          plat_vel_x = 0;
                          PLAYER.pos.x -= plat_delta_x;
-@@ -1328,9 +1336,9 @@
+@@ -1324,9 +1326,9 @@
  #endif
                  goto finally_update_y;
              }
@@ -106,7 +82,7 @@ Index: src/states/platform.c
  #ifdef FEAT_PLATFORM_DROP_THROUGH
                  // Only drop through platforms without a bottom collision
                  if (plat_drop_timer && !(tile & COLLISION_BOTTOM))
-@@ -1360,9 +1368,9 @@
+@@ -1354,9 +1356,9 @@
          else if (plat_delta_y < 0)
          {
              // Moving Upward
@@ -117,7 +93,7 @@ Index: src/states/platform.c
              if (tile)
              {
                  // Hit the ceiling
-@@ -1493,13 +1501,8 @@
+@@ -1485,13 +1487,8 @@
              }
          }
      }
@@ -131,7 +107,7 @@ Index: src/states/platform.c
      {
          trigger_activate_at_intersection(&PLAYER.bounds, &PLAYER.pos, INPUT_PLATFORM_FORCE_TRIGGER);
  #ifdef ENABLE_PLAT_ENTER_METATILE
-@@ -2129,9 +2132,9 @@
+@@ -2121,9 +2118,9 @@
          // Check if grounded
          UWORD p_half_width = DIV_2(PLAYER.bounds.right - PLAYER.bounds.left);
          UBYTE tile_x_mid = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left + p_half_width);
@@ -142,7 +118,7 @@ Index: src/states/platform.c
          if (
              // Can dash from ground and is grounded (or coyote time)
              ((plat_dash_jump_from & DASH_FROM_GROUND) && plat_grounded)
-@@ -2184,9 +2187,9 @@
+@@ -2176,9 +2173,9 @@
  
          UBYTE tile_start = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
          UBYTE tile_end = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1;
@@ -153,7 +129,7 @@ Index: src/states/platform.c
          while (tile_start != tile_end)
          {
              UBYTE tile = tile_at(tile_x, tile_start);
-@@ -2231,9 +2234,9 @@
+@@ -2223,9 +2220,9 @@
              plat_vel_y = -plat_climb_vel;
          }
          // If reached the top of ladder and tile just below can be stood on then let go of ladder
@@ -164,7 +140,7 @@ Index: src/states/platform.c
              plat_next_state = GROUND_STATE;
              PLAYER.pos.y = TILE_TO_SUBPX(SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1) - PLAYER.bounds.bottom - 1;
              return;
-@@ -2254,9 +2257,9 @@
+@@ -2246,9 +2243,9 @@
          {
              plat_vel_y = plat_climb_vel;
          }
@@ -175,7 +151,7 @@ Index: src/states/platform.c
              plat_next_state = GROUND_STATE;
              PLAYER.pos.y = TILE_TO_SUBPX(tile_y) - PLAYER.bounds.bottom - 1;
              return;
-@@ -2283,9 +2286,9 @@
+@@ -2275,9 +2272,9 @@
  
          // If tile below player can be stood on then let go of ladder
          UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1;
@@ -186,7 +162,7 @@ Index: src/states/platform.c
              plat_vel_x = 0;
              plat_next_state = FALL_STATE;
              return;
-@@ -2308,9 +2311,9 @@
+@@ -2300,9 +2297,9 @@
                  plat_vel_x = -plat_climb_vel;
                  return;
              }
@@ -197,7 +173,7 @@ Index: src/states/platform.c
                  plat_next_state = LADDER_STATE; // If there is a wall, stay on the ladder.
                  return;
              }
-@@ -2324,9 +2327,9 @@
+@@ -2316,9 +2313,9 @@
  
          // If tile below player can be stood on then let go of ladder
          UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1;
@@ -208,7 +184,7 @@ Index: src/states/platform.c
              plat_vel_x = 0;
              plat_next_state = FALL_STATE;
              return;
-@@ -2350,9 +2353,9 @@
+@@ -2342,9 +2339,9 @@
                  plat_vel_x = plat_climb_vel;
                  return;
              }

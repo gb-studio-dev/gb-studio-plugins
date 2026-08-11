@@ -447,7 +447,7 @@ void on_player_metatile_collision(UBYTE tile_x, UBYTE tile_y, UBYTE direction) B
         case DIR_DOWN:
             metatile_event = metatile_events + METATILE_COLLISION_DOWN_EVENT;
             if (metatile_event->script_addr && ((metatile_event->handle == 0) || ((metatile_event->handle & SCRIPT_TERMINATED) != 0))){
-                UBYTE tile_id = get_metatile_id_from_pos(tile_x, tile_y);
+                UBYTE tile_id = sram_map_data[METATILE_MAP_OFFSET(tile_x, tile_y)];
                 if (tile_id >= MIN_DOWN_COLLISION_METATILE){
                     collided_metatile_id = tile_id;
                     collided_metatile_x = tile_x;
@@ -461,7 +461,7 @@ void on_player_metatile_collision(UBYTE tile_x, UBYTE tile_y, UBYTE direction) B
         case DIR_RIGHT:
             metatile_event = metatile_events + METATILE_COLLISION_RIGHT_EVENT;
             if (metatile_event->script_addr && ((metatile_event->handle == 0) || ((metatile_event->handle & SCRIPT_TERMINATED) != 0))){
-                UBYTE tile_id = get_metatile_id_from_pos(tile_x, tile_y);
+                UBYTE tile_id = sram_map_data[METATILE_MAP_OFFSET(tile_x, tile_y)];
                 if (tile_id >= MIN_RIGHT_COLLISION_METATILE){
                     collided_metatile_id = tile_id;
                     collided_metatile_x = tile_x;
@@ -475,7 +475,7 @@ void on_player_metatile_collision(UBYTE tile_x, UBYTE tile_y, UBYTE direction) B
         case DIR_UP:
             metatile_event = metatile_events + METATILE_COLLISION_UP_EVENT;
             if (metatile_event->script_addr && ((metatile_event->handle == 0) || ((metatile_event->handle & SCRIPT_TERMINATED) != 0))){
-                UBYTE tile_id = get_metatile_id_from_pos(tile_x, tile_y);
+                UBYTE tile_id = sram_map_data[METATILE_MAP_OFFSET(tile_x, tile_y)];
                 if (tile_id >= MIN_UP_COLLISION_METATILE){
                     collided_metatile_id = tile_id;
                     collided_metatile_x = tile_x;
@@ -489,7 +489,7 @@ void on_player_metatile_collision(UBYTE tile_x, UBYTE tile_y, UBYTE direction) B
         case DIR_LEFT:
             metatile_event = metatile_events + METATILE_COLLISION_LEFT_EVENT;
             if (metatile_event->script_addr && ((metatile_event->handle == 0) || ((metatile_event->handle & SCRIPT_TERMINATED) != 0))){
-                UBYTE tile_id = get_metatile_id_from_pos(tile_x, tile_y);
+                UBYTE tile_id = sram_map_data[METATILE_MAP_OFFSET(tile_x, tile_y)];
                 if (tile_id >= MIN_LEFT_COLLISION_METATILE){
                     collided_metatile_id = tile_id;
                     collided_metatile_x = tile_x;

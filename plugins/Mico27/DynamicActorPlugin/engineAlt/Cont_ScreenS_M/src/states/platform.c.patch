@@ -35,31 +35,7 @@ Index: src/states/platform.c
  
  static void player_set_jump_anim(void)
  {
-@@ -1191,15 +1193,21 @@
- #if ENABLE_PLAT_HORIZONTAL_COLLISION_METATILE
-             if (moving_right){
- #ifdef ENABLE_PLAT_RIGHT_COLLISION_METATILE
-                 on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_RIGHT);
-+#endif
-             } else {
-+#ifdef ENABLE_PLAT_LEFT_COLLISION_METATILE
-+                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
-+#endif
-+            }
-+        } else {
-+            if (moving_right){
-+#ifdef ENABLE_PLAT_RIGHT_COLLISION_METATILE
-                 reset_collision_cache(DIR_RIGHT);
- #endif
-             } else {
- #ifdef ENABLE_PLAT_LEFT_COLLISION_METATILE
--                on_player_metatile_collision(tile_hit_x, tile_hit_y, DIR_LEFT);
--            } else {
-                 reset_collision_cache(DIR_LEFT);
- #endif
-             }
- #endif
-@@ -1493,13 +1501,8 @@
+@@ -1485,13 +1487,8 @@
              }
          }
      }
