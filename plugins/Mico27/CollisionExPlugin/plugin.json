@@ -5,7 +5,7 @@
   "description": "Collision extras: a Player tile collision mask XOR engine field that changes which tile bits count as solid for the player in every scene type, a Get Tile Collision event, and paint swatches for every collision tile value each scene type leaves spare.",
   "license": "MIT",
   "url": "https://github.com/gb-studio-dev/gb-studio-plugins",
-  "version": "4.3.8",
+  "version": "4.3.9",
   "gbsVersion": ">=4.3.0",
   "filename": "CollisionExPlugin",
   "order": -5,

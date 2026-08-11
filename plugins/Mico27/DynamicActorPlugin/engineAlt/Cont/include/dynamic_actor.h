@@ -162,12 +162,12 @@ typedef struct behavior_def_t {
     BYTE max_fall_vel;  // max downward velocity in subpixels/frame
     UBYTE bounce;        // energy kept on bounce, 0..255 (255 = perfect reflect)
     UBYTE event_flags;   // BHV_EVENT_* trigger permissions
-    UBYTE xor_tile_collision; // XOR'd into every tile collision mask this
-                         // behavior tests, so a behavior can ignore a collision
-                         // direction (XOR the COLLISION_* bit out) or treat an
-                         // extra tile property bit as solid (XOR it in).
-                         // 0 = stock collision. Only read when
-                         // DYNAMIC_ACTOR_ENABLE_XOR_TILE_COLLISION is on; the
+    UBYTE override_tile_collision; // Replaces every tile collision mask this
+                         // behavior tests when non-zero, so a behavior can react
+                         // to a fixed set of tile bits regardless of which
+                         // direction it is testing (0 = stock collision, mask
+                         // tested as normal). Only read when
+                         // DYNAMIC_ACTOR_ENABLE_OVERRIDE_TILE_COLLISION is on; the
                          // byte itself stays either way, since it is the padding
                          // that keeps the slot at 8 bytes so behavior_defs
                          // indexing compiles to a shift instead of a multiply.

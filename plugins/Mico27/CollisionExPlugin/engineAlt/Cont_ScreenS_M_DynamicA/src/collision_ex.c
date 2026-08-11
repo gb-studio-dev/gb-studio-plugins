@@ -16,16 +16,16 @@
 
 // Engine Fields --------------------------------------------------------------
 
-// XOR'd into every tile collision mask the scene type code tests for the player.
-// Not reset per scene: it is an engine field, so GB Studio initialises it to the
-// configured value at engine init and scripts change it from there with Engine
-// Field Update.
+// Replaces every tile collision mask the scene type code tests for the player
+// when non-zero. Not reset per scene: it is an engine field, so GB Studio
+// initialises it to the configured value at engine init and scripts change it
+// from there with Engine Field Update.
 //
-// Declared whatever the COLLISION_EX_ENABLE_PLAYER_XOR setting says, because GB
+// Declared whatever the COLLISION_EX_ENABLE_PLAYER_OVERRIDE setting says, because GB
 // Studio emits the field's initialiser from engine.json either way. With the
 // setting off nothing reads it (PLAYER_TILE_COL is the identity) and it costs
 // one byte of WRAM.
-UBYTE player_xor_tile_collision;
+UBYTE player_override_tile_collision;
 
 UBYTE entered_tile_value;
 UBYTE entered_tile_x;

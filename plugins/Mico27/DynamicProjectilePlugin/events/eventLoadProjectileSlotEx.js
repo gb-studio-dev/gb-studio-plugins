@@ -32,31 +32,31 @@ const ACTOR_HIT_SCRIPT = 1 << 4;
 // Tile collision behaviour (projectile_def_t.collision, 2 bits). Bounce
 // reflects the velocity exactly and Stay drops it, so neither needs a rebound
 // strength - which is what freed the definition's old bounce byte to become the
-// collision mask XOR below.
+// tile collision override below.
 const COLLISION_NONE = "0";
 const COLLISION_REMOVE = "1";
 const COLLISION_BOUNCE = "2";
 const COLLISION_STAY = "3";
 
-// xorTileCollision is the definition byte shared by the collision mask XOR and
-// (for a chain, which never tests tiles) the link catch-up speed.
+// overrideTileCollision is the definition byte shared by the tile collision
+// override and (for a chain, which never tests tiles) the link catch-up speed.
 const PRESETS = {
-  bullet: { type: TYPE.default, collision: COLLISION_REMOVE, gravity: 0, xorTileCollision: 0, amplitude: 0, frequency: 0 },
-  lob: { type: TYPE.arc, collision: COLLISION_REMOVE, gravity: 6, xorTileCollision: 0, amplitude: 0, frequency: 0 },
-  grenade: { type: TYPE.default, collision: COLLISION_BOUNCE, gravity: 4, xorTileCollision: 0, amplitude: 0, frequency: 0 },
-  boomerang: { type: TYPE.boomerang, collision: COLLISION_NONE, gravity: 0, xorTileCollision: 0, amplitude: 0, frequency: 0 },
-  wave: { type: TYPE.sine, collision: COLLISION_REMOVE, gravity: 0, xorTileCollision: 0, amplitude: 30, frequency: 10 },
-  orbiter: { type: TYPE.orbit, collision: COLLISION_NONE, gravity: 0, xorTileCollision: 0, amplitude: 100, frequency: 16 },
-  grapple: { type: TYPE.hookshot, collision: COLLISION_REMOVE, gravity: 0, xorTileCollision: 0, amplitude: 0, frequency: 0 },
-  held: { type: TYPE.anchor, collision: COLLISION_NONE, gravity: 0, xorTileCollision: 0, amplitude: 0, frequency: 0 },
-  scripted: { type: TYPE.custom, collision: COLLISION_REMOVE, gravity: 0, xorTileCollision: 0, amplitude: 0, frequency: 0 },
+  bullet: { type: TYPE.default, collision: COLLISION_REMOVE, gravity: 0, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
+  lob: { type: TYPE.arc, collision: COLLISION_REMOVE, gravity: 6, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
+  grenade: { type: TYPE.default, collision: COLLISION_BOUNCE, gravity: 4, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
+  boomerang: { type: TYPE.boomerang, collision: COLLISION_NONE, gravity: 0, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
+  wave: { type: TYPE.sine, collision: COLLISION_REMOVE, gravity: 0, overrideTileCollision: 0, amplitude: 30, frequency: 10 },
+  orbiter: { type: TYPE.orbit, collision: COLLISION_NONE, gravity: 0, overrideTileCollision: 0, amplitude: 100, frequency: 16 },
+  grapple: { type: TYPE.hookshot, collision: COLLISION_REMOVE, gravity: 0, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
+  held: { type: TYPE.anchor, collision: COLLISION_NONE, gravity: 0, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
+  scripted: { type: TYPE.custom, collision: COLLISION_REMOVE, gravity: 0, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
   // A taut chain: six links spread evenly between the two actors.
-  tether: { type: TYPE.chain, collision: CHAIN_STRAIGHT, gravity: 0, xorTileCollision: 0, amplitude: 0, frequency: 6 },
+  tether: { type: TYPE.chain, collision: CHAIN_STRAIGHT, gravity: 0, overrideTileCollision: 0, amplitude: 0, frequency: 6 },
   // A chain that hangs and drags: 7 pixels of slack against a 2 pixel catch-up.
-  leash: { type: TYPE.chain, collision: CHAIN_LOOSE, gravity: 0, xorTileCollision: 2, amplitude: 7, frequency: 6 },
+  leash: { type: TYPE.chain, collision: CHAIN_LOOSE, gravity: 0, overrideTileCollision: 2, amplitude: 7, frequency: 6 },
   // Four tail sprites four samples apart, hopping under light gravity. Bounce is
   // all faces now, so it rebounds off walls as well as floors.
-  firetrail: { type: TYPE.trail, collision: COLLISION_BOUNCE, gravity: 3, xorTileCollision: 0, amplitude: 4, frequency: 4 },
+  firetrail: { type: TYPE.trail, collision: COLLISION_BOUNCE, gravity: 3, overrideTileCollision: 0, amplitude: 4, frequency: 4 },
 };
 
 const num = (value) => ({ type: "number", value });
@@ -365,10 +365,10 @@ const fields = [
     ),
   },
   {
-    key: "xorTileCollision",
-    label: "Tile Collision Mask XOR",
+    key: "overrideTileCollision",
+    label: "Tile Collision Override",
     description:
-      "Advanced. Requires the 'Enable tile collision mask XOR' engine setting; ignored (and rejected if set) without it. XOR'd into every collision mask this projectile tests against a tile, so 0 means stock collision. Tile bits: 1 top, 2 bottom, 4 left, 8 right; then the 16-112 value space (16 ladder, 32-112 the six slopes) and 128, which no engine code reads. A property bit (16 and up) is only ever added to the test, so 16 makes ladder tiles solid for this projectile alone - a grapple that only catches marked tiles. A direction bit is removed from the test that owns it and added to the other three. An empty tile is never solid whatever the value.",
+      "Advanced. Requires the 'Enable tile collision override' engine setting; ignored (and rejected if set) without it. Replaces the collision mask this projectile tests against a tile when non-zero, so 0 means stock collision (tested against the direction it is travelling, as normal). Tile bits: 1 top, 2 bottom, 4 left, 8 right; then the 16-112 value space (16 ladder, 32-112 the six slopes) and 128, which no engine code reads. A property bit (16 and up) makes tiles carrying it solid from every direction. A direction bit (1-8) makes the projectile react to only that one side, from whichever direction it approaches. An empty tile is never solid whatever the value.",
     type: "value",
     min: 0,
     max: 255,
@@ -454,7 +454,7 @@ const fields = [
     key: "bounce",
     label: "Catch-Up Speed",
     description:
-      "How fast a link closes the gap once it is past the slack, in pixels per update. 0 makes the chain rigid, closing it in one step. (A chain never tests tiles, so this shares the definition byte other behaviours use for their collision mask XOR.)",
+      "How fast a link closes the gap once it is past the slack, in pixels per update. 0 makes the chain rigid, closing it in one step. (A chain never tests tiles, so this shares the definition byte other behaviours use for their tile collision override.)",
     type: "value",
     min: 0,
     max: 32,
@@ -698,24 +698,24 @@ const compile = (input, helpers) => {
   // One definition byte, two meanings. A chain never reaches the tile tests, so
   // it borrows the byte for its link catch-up speed - the same trick it plays
   // with collision - and keeps its own field key. Everything else uses it as the
-  // tile collision mask XOR.
+  // tile collision override.
   const isChain = type === TYPE.chain;
-  const xorTileCollision = preset
-    ? { type: "number", value: preset.xorTileCollision }
+  const overrideTileCollision = preset
+    ? { type: "number", value: preset.overrideTileCollision }
     : isChain
     ? value(input.bounce, 2)
-    : value(input.xorTileCollision, 0);
+    : value(input.overrideTileCollision, 0);
   // A mask the engine was not compiled to read would silently do nothing, so it
   // is reported here instead. Only a constant can be checked; a variable is left
   // to the setting.
   if (
     !isChain &&
-    xorTileCollision.type === "number" &&
-    Number(xorTileCollision.value) !== 0 &&
-    !featureEnabled(helpers, "DYNPROJ_ENABLE_XOR_TILE_COLLISION")
+    overrideTileCollision.type === "number" &&
+    Number(overrideTileCollision.value) !== 0 &&
+    !featureEnabled(helpers, "DYNPROJ_ENABLE_OVERRIDE_TILE_COLLISION")
   ) {
     throw new Error(
-      `"Tile Collision Mask XOR" requires the "Enable tile collision mask XOR" engine setting to be enabled (Settings -> Engine -> Dynamic Projectiles), or set it back to 0.`
+      `"Tile Collision Override" requires the "Enable tile collision override" engine setting to be enabled (Settings -> Engine -> Dynamic Projectiles), or set it back to 0.`
     );
   }
   // Amplitude and frequency mean something different for every behaviour that
@@ -786,7 +786,7 @@ const compile = (input, helpers) => {
   );
   _stackPushScriptValue(frequency);
   _stackPushScriptValue(amplitude);
-  _stackPushScriptValue(xorTileCollision);
+  _stackPushScriptValue(overrideTileCollision);
   _stackPushScriptValue(gravity);
   // Numbers from here on: these become raw operands in the instruction.
   _stackPushConst(Number(collision));

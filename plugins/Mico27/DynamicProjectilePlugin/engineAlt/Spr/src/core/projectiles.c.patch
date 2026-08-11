@@ -2,7 +2,7 @@ Index: src/core/projectiles.c
 ===================================================================
 --- src/core/projectiles.c
 +++ src/core/projectiles.c
-@@ -2,169 +2,1719 @@
+@@ -2,169 +2,1761 @@
  
  #include "projectiles.h"
  
@@ -59,7 +59,7 @@ Index: src/core/projectiles.c
 +// What a projectile does when it reaches a solid tile
 +// (projectile_def_t.collision, 2 bits). BOUNCE reflects the velocity exactly -
 +// there is no rebound strength, which is what frees the old `bounce` byte for
-+// xor_tile_collision - and STAY drops the velocity so the projectile halts
++// override_tile_collision - and STAY drops the velocity so the projectile halts
 +// where it struck and lives out its lifetime there.
 +#define COLLISION_MODE_NONE   0
 +#define COLLISION_MODE_REMOVE 1
@@ -1014,8 +1014,8 @@ Index: src/core/projectiles.c
 +    if (!seed && proj_def->collision == CHAIN_LOOSE) {
 +        chain_slack = PX_TO_SUBPX((WORD)proj_def->amplitude);
 +        // A chain never reaches the tile tests, so the definition's
-+        // xor_tile_collision byte carries its catch-up speed instead.
-+        chain_speed = PX_TO_SUBPX((WORD)proj_def->xor_tile_collision);
++        // override_tile_collision byte carries its catch-up speed instead.
++        chain_speed = PX_TO_SUBPX((WORD)proj_def->override_tile_collision);
 +        // Two passes: the first drags the links along behind the start actor,
 +        // the second pulls them back towards the end actor. Running both is
 +        // what keeps the chain spanning the gap whichever end moves - one pass
@@ -1245,107 +1245,142 @@ Index: src/core/projectiles.c
 +    }
 +#endif
 +
-+    // Every mask below is XOR'd with the definition's xor_tile_collision, so
-+    // this projectile can count different tile bits as solid from everything
-+    // else in the scene. With the feature off PROJ_TILE_COL is the identity and
-+    // the tests compile exactly as they did without it. Read once here rather
-+    // than per test; undefined with the rest at the end of the function.
-+#ifdef DYNPROJ_ENABLE_XOR_TILE_COLLISION
-+    const UBYTE col_xor = proj_def->xor_tile_collision;
-+#define PROJ_TILE_COL(mask) ((mask) ^ col_xor)
++    // Every mask below is replaced outright by the definition's
++    // override_tile_collision when it is non-zero, so this projectile can react
++    // to a fixed set of tile bits regardless of which direction it is testing.
++    // With the feature off PROJ_TILE_COL is the identity and the tests compile
++    // exactly as they did without it. Read once here rather than per test;
++    // undefined with the rest at the end of the function.
++#ifdef DYNPROJ_ENABLE_OVERRIDE_TILE_COLLISION
++    const UBYTE col_override = proj_def->override_tile_collision;
++#define PROJ_TILE_COL(mask) (col_override ? col_override : (mask))
 +#else
 +#define PROJ_TILE_COL(mask) (mask)
 +#endif
 +
++    WORD dx = projectile->delta_pos.x;
++    WORD dy = projectile->delta_pos.y;
++
++    if (!dx && !dy) return;
++
++    UBYTE hit_tile;
++
 +#if DYNPROJ_TILE_COLLISION == 1
-+    // Bounding box mode: test against the tiles the projectile's own bounds
-+    // rect covers, the way the stock actor collision does.
 +    UBYTE tile_x0 = SUBPX_TO_TILE(projectile->pos.x + proj_def->bounds.left);
 +    UBYTE tile_x1 = SUBPX_TO_TILE(projectile->pos.x + proj_def->bounds.right);
 +    UBYTE tile_y0 = SUBPX_TO_TILE(projectile->pos.y + proj_def->bounds.top);
 +    UBYTE tile_y1 = SUBPX_TO_TILE(projectile->pos.y + proj_def->bounds.bottom);
-+
-+// One test per direction of travel, each one across the span of the edge being
-+// led with. Mask and edge are paired the way the top-down state pairs them
-+// (topdown_update): what stops something moving right is a tile carrying
-+// COLLISION_LEFT, since the left face is the one being entered through.
-+#define HIT_GOING_DOWN()  tile_col_test_range_x(PROJ_TILE_COL(COLLISION_TOP),    tile_y1, tile_x0, tile_x1)
-+#define HIT_GOING_UP()    tile_col_test_range_x(PROJ_TILE_COL(COLLISION_BOTTOM), tile_y0, tile_x0, tile_x1)
-+#define HIT_GOING_RIGHT() tile_col_test_range_y(PROJ_TILE_COL(COLLISION_LEFT),   tile_x1, tile_y0, tile_y1)
-+#define HIT_GOING_LEFT()  tile_col_test_range_y(PROJ_TILE_COL(COLLISION_RIGHT),  tile_x0, tile_y0, tile_y1)
-+#define HIT_SOLID()       tile_col_test_range_x(PROJ_TILE_COL(COLLISION_ALL),    tile_y0, tile_x0, tile_x1)
++    if (dx > 0){
++        UBYTE tile_x_right = SUBPX_TO_TILE(projectile->pos.x + dx + proj_def->bounds.right);
++        hit_tile = tile_col_test_range_y(PROJ_TILE_COL(COLLISION_LEFT), tile_x_right, tile_y0, tile_y1);
++        if (hit_tile){
++            switch(proj_def->collision) {
++                case COLLISION_MODE_REMOVE:
++                    // Goes through projectile_hit_tile() rather than removing
++                    // outright, so a hookshot head reacts through its own
++                    // state machine instead of just vanishing.
++                    projectile_hit_tile();
++                    return;
++                case COLLISION_MODE_BOUNCE:
++                    projectile->delta_pos.x = -projectile->delta_pos.x;
++                    break;
++                case COLLISION_MODE_STAY:
++                    projectile->delta_pos.x = 0;
++                    projectile->delta_pos.y = 0;
++            }
++            run_tile_hit_script(TILE_FACE_LEFT);
++        }
++    } else {
++        UBYTE tile_x_left = SUBPX_TO_TILE(projectile->pos.x + dx + proj_def->bounds.left);
++        hit_tile = tile_col_test_range_y(PROJ_TILE_COL(COLLISION_RIGHT), tile_x_left, tile_y0, tile_y1);
++        if (hit_tile){
++            switch(proj_def->collision) {
++                case COLLISION_MODE_REMOVE:
++                    projectile_hit_tile();
++                    return;
++                case COLLISION_MODE_BOUNCE:
++                    projectile->delta_pos.x = -projectile->delta_pos.x;
++                    break;
++                case COLLISION_MODE_STAY:
++                    projectile->delta_pos.x = 0;
++                    projectile->delta_pos.y = 0;
++            }
++            run_tile_hit_script(TILE_FACE_RIGHT);
++        }
++    }
++    if (dy < 0){
++        UBYTE tile_y_bottom = SUBPX_TO_TILE(projectile->pos.y - dy + proj_def->bounds.bottom);
++        hit_tile = tile_col_test_range_x(PROJ_TILE_COL(COLLISION_TOP), tile_y_bottom, tile_x0, tile_x1);
++        if (hit_tile){
++            switch(proj_def->collision) {
++                case COLLISION_MODE_REMOVE:
++                    projectile_hit_tile();
++                    return;
++                case COLLISION_MODE_BOUNCE:
++                    projectile->delta_pos.y = -projectile->delta_pos.y;
++                    break;
++                case COLLISION_MODE_STAY:
++                    projectile->delta_pos.x = 0;
++                    projectile->delta_pos.y = 0;
++            }
++            run_tile_hit_script(TILE_FACE_TOP);
++        }
++    } else {
++        UBYTE tile_y_top = SUBPX_TO_TILE(projectile->pos.y - dy + proj_def->bounds.top);
++        hit_tile = tile_col_test_range_x(PROJ_TILE_COL(COLLISION_BOTTOM), tile_y_top, tile_x0, tile_x1);
++        if (hit_tile){
++            switch(proj_def->collision) {
++                case COLLISION_MODE_REMOVE:
++                    projectile_hit_tile();
++                    return;
++                case COLLISION_MODE_BOUNCE:
++                    projectile->delta_pos.y = -projectile->delta_pos.y;
++                    break;
++                case COLLISION_MODE_STAY:
++                    projectile->delta_pos.x = 0;
++                    projectile->delta_pos.y = 0;
++            }
++            run_tile_hit_script(TILE_FACE_BOTTOM);
++        }
++    }
 +#else
-+    // Origin point mode: one tile lookup at the projectile position, which
-+    // every test below then reads out of.
-+    UBYTE tile = tile_at(SUBPX_TO_TILE(projectile->pos.x), SUBPX_TO_TILE(projectile->pos.y));
 +
-+#define HIT_GOING_DOWN()  (tile & PROJ_TILE_COL(COLLISION_TOP))
-+#define HIT_GOING_UP()    (tile & PROJ_TILE_COL(COLLISION_BOTTOM))
-+#define HIT_GOING_RIGHT() (tile & PROJ_TILE_COL(COLLISION_LEFT))
-+#define HIT_GOING_LEFT()  (tile & PROJ_TILE_COL(COLLISION_RIGHT))
-+#define HIT_SOLID()       (tile & PROJ_TILE_COL(COLLISION_ALL))
-+#endif
-+
-+    if (proj_def->collision == COLLISION_MODE_REMOVE) {
-+        if (HIT_SOLID()) projectile_hit_tile();
++    UBYTE tile_x = SUBPX_TO_TILE(projectile->pos.x + dx);
++    UBYTE tile_y = SUBPX_TO_TILE(projectile->pos.y);
++    hit_tile = tile_at(tile_x, tile_y) & PROJ_TILE_COL((dx > 0) ? COLLISION_LEFT : COLLISION_RIGHT);
++    if (hit_tile){
++        switch(proj_def->collision) {
++            case COLLISION_MODE_REMOVE:
++                projectile_hit_tile();
++                return;
++            case COLLISION_MODE_BOUNCE:
++                projectile->delta_pos.x = -projectile->delta_pos.x;
++                break;
++            case COLLISION_MODE_STAY:
++                projectile->delta_pos.x = 0;
++                projectile->delta_pos.y = 0;
++        }
++        run_tile_hit_script((dx > 0)? TILE_FACE_LEFT: TILE_FACE_RIGHT);
 +        return;
 +    }
-+
-+    // Which way it is actually going. pos.y has delta_pos.y SUBTRACTED from it,
-+    // so a positive y delta is upward travel.
-+    WORD dx = projectile->delta_pos.x;
-+    WORD dy = projectile->delta_pos.y;
-+
-+    // Bounce and Stay both act on the velocity, so a projectile that has none
-+    // has nothing for them to do: reflecting zero writes zero back and stopping
-+    // it is already true. Orbit, anchor, custom and a trail hung off an actor
-+    // are placed by other means and never fill delta_pos, so this is also what
-+    // keeps them from reporting a tile hit every pass while they sit inside
-+    // scenery. Those behaviours want Remove Projectile, which is handled above
-+    // and needs no velocity. Skipped before the tile tests rather than after.
-+    if (!dx && !dy) return;
-+
-+    // Only an edge the projectile is heading for can be the one it struck. A
-+    // solid tile carries every collision bit, so testing an edge it was not
-+    // leading with answers for a wall it flew into from any other side too.
-+    UBYTE hit_x = FALSE, hit_y = FALSE;
-+
-+    if (dx > 0)      hit_x = (HIT_GOING_RIGHT() != 0);
-+    else if (dx < 0) hit_x = (HIT_GOING_LEFT()  != 0);
-+    if (dy < 0)      hit_y = (HIT_GOING_DOWN() != 0);
-+    else if (dy > 0) hit_y = (HIT_GOING_UP()   != 0);
-+
-+    // Both at once means a corner, or a single tile caught by both spans. The
-+    // axis it is travelling along fastest is the edge it reached first, so that
-+    // one takes the bounce; if the other really is blocked too it answers on
-+    // the next pass, once this reflection has taken the faster axis away.
-+    if (hit_x && hit_y) {
-+        WORD ax = (dx < 0) ? -dx : dx;
-+        WORD ay = (dy < 0) ? -dy : dy;
-+        if (ax > ay) hit_y = FALSE;
-+        else hit_x = FALSE;
-+    }
-+
-+    // Bounce reflects the axis that struck and leaves the other one running, so
-+    // a shot skimming a floor keeps its forward speed. Stay drops both, because
-+    // "stopped" that still slid along the surface it hit would not be stopped.
-+    UBYTE bounce = (proj_def->collision == COLLISION_MODE_BOUNCE);
-+
-+    if (hit_x) {
-+        if (bounce) projectile->delta_pos.x = -projectile->delta_pos.x;
-+        else projectile->delta_pos.x = projectile->delta_pos.y = 0;
-+        run_tile_hit_script((dx > 0) ? TILE_FACE_LEFT : TILE_FACE_RIGHT);
-+    } else if (hit_y) {
-+        if (bounce) projectile->delta_pos.y = -projectile->delta_pos.y;
-+        else projectile->delta_pos.x = projectile->delta_pos.y = 0;
++    tile_y = SUBPX_TO_TILE(projectile->pos.y - dy);
++    hit_tile = tile_at(tile_x, tile_y) & PROJ_TILE_COL((dy < 0) ? COLLISION_TOP : COLLISION_BOTTOM);
++    if (hit_tile){
++        switch(proj_def->collision) {
++            case COLLISION_MODE_REMOVE:
++                projectile_hit_tile();
++                return;
++            case COLLISION_MODE_BOUNCE:
++                projectile->delta_pos.y = -projectile->delta_pos.y;
++                break;
++            case COLLISION_MODE_STAY:
++                projectile->delta_pos.x = 0;
++                projectile->delta_pos.y = 0;
++        }
 +        run_tile_hit_script((dy < 0) ? TILE_FACE_TOP : TILE_FACE_BOTTOM);
 +    }
++#endif
 +
-+#undef HIT_GOING_DOWN
-+#undef HIT_GOING_UP
-+#undef HIT_GOING_RIGHT
-+#undef HIT_GOING_LEFT
-+#undef HIT_SOLID
 +#undef PROJ_TILE_COL
 +}
 +
@@ -1585,6 +1620,9 @@ Index: src/core/projectiles.c
 -                // Hit! - Fire collision script here
 -                if ((hit_actor->script.bank) && (hit_actor->hscript_hit & SCRIPT_TERMINATED)) {
 -                    script_execute(hit_actor->script.bank, hit_actor->script.ptr, &(hit_actor->hscript_hit), 1, (UWORD)(projectile->def.collision_group));
+-                }
+-                if (!projectile->def.strong) {
+-                    remove_projectile();
 +#endif
 +
 +            // The behaviour update keeps its own every-other-frame cadence,
@@ -1595,12 +1633,6 @@ Index: src/core/projectiles.c
 +                if (next_projectile) {
 +                    // handle_types() removed this projectile and already
 +                    // advanced the cursor - nothing left to run on it.
-+                    continue;
-                 }
--                if (!projectile->def.strong) {
--                    remove_projectile();
-+                handle_bounce();
-+                if (next_projectile) {
                      continue;
                  }
 +                BYTE gravity = DEF_GRAVITY(proj_def);
@@ -1609,6 +1641,17 @@ Index: src/core/projectiles.c
 +                }
              }
 -#if PROJECTILES_COLLISION_SPREAD != EVERY_FRAME
++
++            // Tile collision has to run every frame, not on the behaviour
++            // update's every-other-frame cadence above: the position move
++            // below happens every frame, so gating this the same way let
++            // delta_pos.y accumulate from gravity for two frames while only
++            // being lookahead-tested for one, letting fast falls tunnel
++            // through floors.
++            handle_bounce();
++            if (next_projectile) {
++                continue;
++            }
 +
 +            // Move projectile (linear behaviours: default, arc, boomerang,
 +            // sine, and a trail that carries its own head - which travels like
@@ -1803,7 +1846,7 @@ Index: src/core/projectiles.c
      }
  
      SWITCH_ROM(_save_bank);
-@@ -172,66 +1722,222 @@
+@@ -172,66 +1764,222 @@
  
  void projectile_launch(UBYTE index, upoint16_t *pos, UBYTE angle) BANKED {
      projectile_t *projectile = projectiles_inactive_head;
@@ -2004,8 +2047,8 @@ Index: src/core/projectiles.c
 +    def->gravity   = abs(gravity);
 +    def->invert_gravity = gravity < 0 ? 1 : 0;
 +    // Doubles as the CHAIN link catch-up speed, so it is stored whether or not
-+    // the XOR feature is compiled in.
-+    def->xor_tile_collision = *(UBYTE *)VM_REF_TO_PTR(FN_ARG5);
++    // the override feature is compiled in.
++    def->override_tile_collision = *(UBYTE *)VM_REF_TO_PTR(FN_ARG5);
 +    def->amplitude = *(BYTE  *)VM_REF_TO_PTR(FN_ARG6);
 +    def->frequency = *(UBYTE *)VM_REF_TO_PTR(FN_ARG7);
 +    (void)THIS;

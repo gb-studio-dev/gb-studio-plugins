@@ -10,25 +10,26 @@
 #include "vm.h"
 #include "events.h"
 
-// Engine field. XOR'd into every tile collision mask the scene type code tests
-// for the PLAYER: XOR a COLLISION_* direction bit out to walk through that side,
-// or XOR a tile property bit in to make those tiles solid. 0 = stock collision.
+// Engine field. Replaces every tile collision mask the scene type code tests
+// for the PLAYER when non-zero, so a scene type can react to a fixed set of
+// tile bits regardless of which direction it is testing. 0 = stock collision
+// (mask tested as normal).
 //
 // Declared even when the feature is compiled out: GB Studio builds the engine
 // field's initialiser (a .globl plus a memory set) from the engine.json entry
 // regardless of any #define, so the symbol has to exist or the link fails.
-extern UBYTE player_xor_tile_collision;
+extern UBYTE player_override_tile_collision;
 
 // Wrapped around every tile collision mask the scene type code tests for the
-// player. With COLLISION_EX_ENABLE_PLAYER_XOR off it expands to the plain mask,
-// so each of the ~34 test sites compiles exactly as stock does - no load, no
-// XOR, no ROM, nothing per frame.
+// player. With COLLISION_EX_ENABLE_PLAYER_OVERRIDE off it expands to the plain
+// mask, so each of the ~34 test sites compiles exactly as stock does - no load,
+// no override, no ROM, nothing per frame.
 //
 // Only the PLAYER's own tests go through this. A dynamic actor has its own
-// per-behavior XOR (DynamicActorPlugin) and a projectile its own per-definition
-// one (DynamicProjectilePlugin), so nothing is XOR'd twice.
-#ifdef COLLISION_EX_ENABLE_PLAYER_XOR
-#define PLAYER_TILE_COL(mask) ((mask) ^ player_xor_tile_collision)
+// per-behavior override (DynamicActorPlugin) and a projectile its own
+// per-definition one (DynamicProjectilePlugin), so nothing is overridden twice.
+#ifdef COLLISION_EX_ENABLE_PLAYER_OVERRIDE
+#define PLAYER_TILE_COL(mask) (player_override_tile_collision ? player_override_tile_collision : (mask))
 #else
 #define PLAYER_TILE_COL(mask) (mask)
 #endif

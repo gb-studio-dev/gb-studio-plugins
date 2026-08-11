@@ -349,10 +349,10 @@ export const fields = [
     },
   },
   {
-    key: "xorTileCollision",
-    label: "Tile collision mask XOR",
+    key: "overrideTileCollision",
+    label: "Tile Collision Override",
     description:
-      "Advanced. Requires the 'Enable tile collision mask XOR' engine setting; ignored (and rejected if set) without it. XOR'd into every collision mask this behavior tests against a tile, so 0 means stock collision. Tile bits: 1 top, 2 bottom, 4 left, 8 right; then the 16-112 value space (16 ladder, 32-112 the six slopes) and 128, which no engine code reads. A property bit (16 and up) is only ever added to the test, so 16 makes ladder tiles solid from every side. A direction bit is removed from the test that owns it and added to the other three, so 1 removes this behavior's floor but also makes floor tiles count as ceilings - safe on a behavior that moves on one axis. An empty tile is never solid whatever the value.",
+      "Advanced. Requires the 'Enable tile collision override' engine setting; ignored (and rejected if set) without it. Replaces the collision mask this behavior tests against a tile when non-zero, so 0 means stock collision (tested against the direction it is moving, as normal). Tile bits: 1 top, 2 bottom, 4 left, 8 right; then the 16-112 value space (16 ladder, 32-112 the six slopes) and 128, which no engine code reads. A property bit (16 and up) makes tiles carrying it solid from every direction. A direction bit (1-8) makes the behavior react to only that one side, from whichever direction it approaches. An empty tile is never solid whatever the value.",
     type: "value",
     min: 0,
     max: 255,
@@ -444,14 +444,15 @@ export const compile = (input, helpers) => {
     eventFlags |= BHV_EVENT_ACTIVATE_TRIGGERS;
   }
 
-  // The engine ignores the XOR unless its setting is on, so a value that would
-  // silently do nothing is reported here instead of at runtime. A variable or
-  // expression can't be checked at compile time - the setting alone decides.
-  const xorTileCollision = input.xorTileCollision || { type: "number", value: 0 };
-  const xorIsSet =
-    xorTileCollision.type !== "number" || Number(xorTileCollision.value) !== 0;
-  if (xorIsSet) {
-    const key = "DYNAMIC_ACTOR_ENABLE_XOR_TILE_COLLISION";
+  // The engine ignores the override unless its setting is on, so a value that
+  // would silently do nothing is reported here instead of at runtime. A
+  // variable or expression can't be checked at compile time - the setting
+  // alone decides.
+  const overrideTileCollision = input.overrideTileCollision || { type: "number", value: 0 };
+  const overrideIsSet =
+    overrideTileCollision.type !== "number" || Number(overrideTileCollision.value) !== 0;
+  if (overrideIsSet) {
+    const key = "DYNAMIC_ACTOR_ENABLE_OVERRIDE_TILE_COLLISION";
     const fv =
       helpers.engineFieldValues && helpers.engineFieldValues.find((s) => s.id === key);
     const field = helpers.engineFields && helpers.engineFields[key];
@@ -463,7 +464,7 @@ export const compile = (input, helpers) => {
         : true;
     if (!enabled) {
       throw new Error(
-        `"Tile collision mask XOR" requires the "Enable tile collision mask XOR" engine setting to be enabled (Settings → Engine → Dynamic actor), or set it back to 0.`,
+        `"Tile Collision Override" requires the "Enable tile collision override" engine setting to be enabled (Settings → Engine → Dynamic actor), or set it back to 0.`,
       );
     }
   }
@@ -473,7 +474,7 @@ export const compile = (input, helpers) => {
   // Pushed first so the existing arguments keep their FN_ARGn slots. Pushed
   // whether or not the feature is compiled in, so the argument count always
   // matches what vm_define_actor_behavior indexes and the VM_POP below.
-  _stackPushScriptValue(xorTileCollision);
+  _stackPushScriptValue(overrideTileCollision);
   _stackPushConst(eventFlags);
   _stackPushConst(collisionType);
   _stackPushScriptValue(input.bounce || { type: "number", value: 128 });

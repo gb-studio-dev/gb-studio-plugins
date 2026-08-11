@@ -38,9 +38,9 @@
           "defaultValue": 0
         },
         {
-          "key": "DYNAMIC_ACTOR_ENABLE_XOR_TILE_COLLISION",
-          "label": "Enable tile collision mask XOR",
-          "description": "Compile the per-behavior 'Tile collision mask XOR' of Define Actor Behavior, which lets a behavior ignore a collision direction or treat an extra tile property bit as solid. Unchecked, every tile collision test in the plugin compiles exactly as it did without the feature - no mask load, no XOR, nothing per actor per frame - and the field is ignored. The player's own equivalent lives in CollisionExPlugin.",
+          "key": "DYNAMIC_ACTOR_ENABLE_OVERRIDE_TILE_COLLISION",
+          "label": "Enable tile collision override",
+          "description": "Compile the per-behavior 'Tile collision override' of Define Actor Behavior, which replaces the mask a behavior tests against a tile with a fixed value instead of the direction it is moving. Unchecked, every tile collision test in the plugin compiles exactly as it did without the feature - no mask load, no override, nothing per actor per frame - and the field is ignored. The player's own equivalent lives in CollisionExPlugin.",
           "group": "Dynamic actor",
           "type": "checkbox",
           "cType": "define",

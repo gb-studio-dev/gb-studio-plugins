@@ -56,22 +56,22 @@ UBYTE dynamic_actor_event_tile_y;
 script_event_t dynamic_actor_events[DYNAMIC_ACTOR_CALLBACK_SIZE];
 static actor_t *dynamic_actor_current_actor;
 
-// xor_tile_collision of the behavior driving the actor currently being moved,
-// cached here so the collision helpers don't reload it from the behavior def at
-// every test site. Kept in step with dynamic_actor_current_actor by
-// DYNAMIC_ACTOR_LOAD_TILE_COL_XOR.
+// override_tile_collision of the behavior driving the actor currently being
+// moved, cached here so the collision helpers don't reload it from the
+// behavior def at every test site. Kept in step with dynamic_actor_current_actor
+// by DYNAMIC_ACTOR_LOAD_TILE_COL_OVERRIDE.
 //
 // With the feature off, DYNAMIC_ACTOR_TILE_COL passes the mask straight through
 // and the load expands to nothing (its argument is never evaluated), so the ~27
 // collision test sites below compile exactly as they did before the feature
 // existed and the physics loop pays nothing per actor per frame.
-#ifdef DYNAMIC_ACTOR_ENABLE_XOR_TILE_COLLISION
-static UBYTE dynamic_actor_xor_tile_collision;
-#define DYNAMIC_ACTOR_TILE_COL(mask) ((mask) ^ dynamic_actor_xor_tile_collision)
-#define DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(value) (dynamic_actor_xor_tile_collision = (value))
+#ifdef DYNAMIC_ACTOR_ENABLE_OVERRIDE_TILE_COLLISION
+static UBYTE dynamic_actor_override_tile_collision;
+#define DYNAMIC_ACTOR_TILE_COL(mask) (dynamic_actor_override_tile_collision ? dynamic_actor_override_tile_collision : (mask))
+#define DYNAMIC_ACTOR_LOAD_TILE_COL_OVERRIDE(value) (dynamic_actor_override_tile_collision = (value))
 #else
 #define DYNAMIC_ACTOR_TILE_COL(mask) (mask)
-#define DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(value) ((void)0)
+#define DYNAMIC_ACTOR_LOAD_TILE_COL_OVERRIDE(value) ((void)0)
 #endif
 
 #ifdef DYNAMIC_ACTOR_ENABLE_PARENT
@@ -675,7 +675,7 @@ static UWORD check_pit_bbox(UWORD start_x, UWORD start_y, rect16_t *bounds, UBYT
 #endif
 
 #define ACTOR_COLLISION_TYPE(actor) (behavior_defs[(actor)->actor_behavior_id].collision_type)
-#define ACTOR_XOR_TILE_COLLISION(actor) (behavior_defs[(actor)->actor_behavior_id].xor_tile_collision)
+#define ACTOR_OVERRIDE_TILE_COLLISION(actor) (behavior_defs[(actor)->actor_behavior_id].override_tile_collision)
 
 #ifdef DYNAMIC_ACTOR_ENABLE_MOVE_X
 static UWORD check_horizontal_collision_by_type(UWORD start_x, UWORD start_y, actor_t *actor, UBYTE right, UBYTE collision_type) {
@@ -786,9 +786,9 @@ static void dynamic_actor_apply_parent_delta(actor_t *actor) {
     }
     // Set the current actor so the collision helpers fire this rider's tile
     // collision events (they read dynamic_actor_current_actor) and test tiles
-    // with this behavior's collision mask XOR.
+    // with this behavior's tile collision override.
     dynamic_actor_current_actor = actor;
-    DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(def->xor_tile_collision);
+    DYNAMIC_ACTOR_LOAD_TILE_COL_OVERRIDE(def->override_tile_collision);
     if (parent_actor_delta_x && !(flags2 & BHV3_LOCK_POS_X)) {
         new_actor_x = actor->pos.x + parent_actor_delta_x;
 #ifdef DYNAMIC_ACTOR_ENABLE_MOVE_X
@@ -854,7 +854,7 @@ void dynamic_actor_update(void) BANKED {
         UBYTE flags2 = def->flags2;
         UBYTE event_flags = def->event_flags;
         dynamic_actor_current_actor = actor;
-        DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(def->xor_tile_collision);
+        DYNAMIC_ACTOR_LOAD_TILE_COL_OVERRIDE(def->override_tile_collision);
 #ifdef DYNAMIC_ACTOR_ENABLE_TILE_ENTER_EVENT
         // Which cell of the tile enter grid the actor started this frame in.
         // Only tracked when something is listening for it.
@@ -1255,7 +1255,7 @@ void dynamic_actor_update(void) BANKED {
     }
 
     dynamic_actor_current_actor = NULL;
-    DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(0);
+    DYNAMIC_ACTOR_LOAD_TILE_COL_OVERRIDE(0);
 
 #ifdef DYNAMIC_ACTOR_ENABLE_PARENT
     // End-of-frame pass, skipped entirely until parenting is first used:
@@ -1351,9 +1351,9 @@ UBYTE vm_wait_for_collision(void * THIS, UBYTE start, UWORD * stack_frame) OLDCA
     actor_t* actor = actors + stack_frame[0];
     behavior_def_t *def = &behavior_defs[actor->actor_behavior_id];
     UBYTE collision_type = def->collision_type;
-    // Probe the tiles with the same mask XOR the behavior itself moves with,
+    // Probe the tiles with the same override the behavior itself moves with,
     // otherwise the wait would report a wall the actor is allowed to pass.
-    DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(def->xor_tile_collision);
+    DYNAMIC_ACTOR_LOAD_TILE_COL_OVERRIDE(def->override_tile_collision);
     if (start){
         CLR_FLAG(actor->flags, ACTOR_FLAG_INTERRUPT);
     } else {
@@ -1465,8 +1465,8 @@ UBYTE vm_actor_crawl_step(void * THIS, UBYTE start, UWORD * stack_frame) OLDCALL
     UBYTE speed = actor->move_speed >> 1; // player max velocity is 128, so divide by 2 to get a speed that lands on cell boundaries
     UBYTE collision_type = ACTOR_COLLISION_TYPE(actor);
     // The crawl steers through the same collision helpers as the behavior, so it
-    // needs the behavior's collision mask XOR loaded too.
-    DYNAMIC_ACTOR_LOAD_TILE_COL_XOR(ACTOR_XOR_TILE_COLLISION(actor));
+    // needs the behavior's tile collision override loaded too.
+    DYNAMIC_ACTOR_LOAD_TILE_COL_OVERRIDE(ACTOR_OVERRIDE_TILE_COLLISION(actor));
     UBYTE tile_x;
     UBYTE tile_y;
 
