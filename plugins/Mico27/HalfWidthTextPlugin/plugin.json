@@ -5,87 +5,13 @@
   "url": "https://github.com/Mico27/gbs-HalfWidthTextPlugin",
   "description": "Draws 4px-wide text (two characters per tile) using the Pokemon TCG technique: character pairs are composed into tiles on the fly and cached in VRAM with an LRU list, so repeated pairs reuse the same tile.",
   "license": "MIT",
-  "version": "4.3.5",
+  "version": "4.3.6",
   "gbsVersion": ">=4.3.0",
   "mutuallyExclusive": [
     "GlyphTextPlugin",
     "TallTextPlugin"
   ],
   "engineAltRules": [
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/ContinuousScenePlugin",
-          "Mico27/ScreenScrollPlugin",
-          "Mico27/GlyphTextPlugin"
-        ]
-      },
-      "use": "Cont_ScreenS_G"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ContinuousScenePlugin",
-          "ScreenScrollPlugin",
-          "GlyphTextPlugin"
-        ]
-      },
-      "use": "Cont_ScreenS_G"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/ContinuousScenePlugin",
-          "Mico27/GlyphTextPlugin"
-        ]
-      },
-      "use": "Cont_G"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ContinuousScenePlugin",
-          "GlyphTextPlugin"
-        ]
-      },
-      "use": "Cont_G"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/ContinuousScenePlugin",
-          "Mico27/ScreenScrollPlugin"
-        ]
-      },
-      "use": "Cont_ScreenS"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ContinuousScenePlugin",
-          "ScreenScrollPlugin"
-        ]
-      },
-      "use": "Cont_ScreenS"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/ScreenScrollPlugin",
-          "Mico27/GlyphTextPlugin"
-        ]
-      },
-      "use": "ScreenS_G"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ScreenScrollPlugin",
-          "GlyphTextPlugin"
-        ]
-      },
-      "use": "ScreenS_G"
-    },
     {
       "when": {
         "additionalPlugins": [
@@ -101,22 +27,6 @@
         ]
       },
       "use": "Cont"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/GlyphTextPlugin"
-        ]
-      },
-      "use": "G"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "GlyphTextPlugin"
-        ]
-      },
-      "use": "G"
     },
     {
       "when": {

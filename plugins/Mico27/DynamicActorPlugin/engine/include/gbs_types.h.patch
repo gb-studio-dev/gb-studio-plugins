@@ -2,13 +2,6 @@ Index: include/gbs_types.h
 ===================================================================
 --- include/gbs_types.h
 +++ include/gbs_types.h
-@@ -1,5 +1,5 @@
--#ifndef GBS_TYPES_H
-+﻿#ifndef GBS_TYPES_H
- #define GBS_TYPES_H
- 
- #include <gbdk/platform.h>
- #include <gbdk/metasprites.h>
 @@ -10,8 +10,9 @@
  #include "data/scene_types.h"
  #include "bankdata.h"

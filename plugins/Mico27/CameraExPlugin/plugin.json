@@ -5,28 +5,10 @@
   "url": "https://github.com/Mico27/gbs-CameraExPlugin",
   "description": "Extends the stock camera: lock onto any actor (not just the player), lock onto the median position of several actors, smooth (eased) camera transitions when the lock target / offset / deadzone changes, and camera movement along a true direct line instead of only horizontal-first, vertical-first or 45 degree diagonal.",
   "license": "MIT",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "gbsVersion": ">=4.3.0",
   "order": 10,
   "engineAltRules": [
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/ContinuousScenePlugin",
-          "Mico27/ScreenScrollPlugin"
-        ]
-      },
-      "use": "Cont_ScreenS"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ContinuousScenePlugin",
-          "ScreenScrollPlugin"
-        ]
-      },
-      "use": "Cont_ScreenS"
-    },
     {
       "when": {
         "additionalPlugins": [

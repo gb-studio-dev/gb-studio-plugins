@@ -5,7 +5,7 @@
   "url": "https://github.com/Mico27/gbs-fadestreet",
   "description": "Toolset for animation color palettes and custom fading.",
   "license": "MIT",
-  "version": "4.3.2",
+  "version": "4.3.3",
   "gbsVersion": ">=4.3.0",
   "order": -4,
   "engineAltRules": [
@@ -13,28 +13,6 @@
       "when": {
         "additionalPlugins": [
           "Mico27/ContinuousScenePlugin",
-          "Mico27/ScreenScrollPlugin",
-          "Mico27/MetaTilePlugin",
-          "Mico27/SceneStackExPlugin"
-        ]
-      },
-      "use": "Cont_ScreenS_M_Sce"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ContinuousScenePlugin",
-          "ScreenScrollPlugin",
-          "MetaTilePlugin",
-          "SceneStackExPlugin"
-        ]
-      },
-      "use": "Cont_ScreenS_M_Sce"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/ContinuousScenePlugin",
           "Mico27/MetaTilePlugin",
           "Mico27/SceneStackExPlugin"
         ]
@@ -50,46 +28,6 @@
         ]
       },
       "use": "Cont_M_Sce"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/ContinuousScenePlugin",
-          "Mico27/ScreenScrollPlugin",
-          "Mico27/MetaTilePlugin"
-        ]
-      },
-      "use": "Cont_ScreenS_M"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ContinuousScenePlugin",
-          "ScreenScrollPlugin",
-          "MetaTilePlugin"
-        ]
-      },
-      "use": "Cont_ScreenS_M"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/ContinuousScenePlugin",
-          "Mico27/ScreenScrollPlugin",
-          "Mico27/SceneStackExPlugin"
-        ]
-      },
-      "use": "Cont_ScreenS_Sce"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ContinuousScenePlugin",
-          "ScreenScrollPlugin",
-          "SceneStackExPlugin"
-        ]
-      },
-      "use": "Cont_ScreenS_Sce"
     },
     {
       "when": {
@@ -146,24 +84,6 @@
         ]
       },
       "use": "Cont_Sce"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "Mico27/ContinuousScenePlugin",
-          "Mico27/ScreenScrollPlugin"
-        ]
-      },
-      "use": "Cont_ScreenS"
-    },
-    {
-      "when": {
-        "additionalPlugins": [
-          "ContinuousScenePlugin",
-          "ScreenScrollPlugin"
-        ]
-      },
-      "use": "Cont_ScreenS"
     },
     {
       "when": {
