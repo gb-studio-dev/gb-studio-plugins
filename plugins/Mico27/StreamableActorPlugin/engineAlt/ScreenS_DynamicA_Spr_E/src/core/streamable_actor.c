@@ -93,17 +93,19 @@ static void stream_fetch(stream_frame_t *dest, const stream_frame_t *src, UBYTE 
 // That is the difference between a four tile frame costing most of VBlank and
 // costing almost none of it.
 //
-// GDMA ignores the low four bits of its source address, so it can only be used
-// when the sheet's tile data happens to be 16 byte aligned - which depends on
-// where the linker put it. The check is two instructions and the guarded copy
-// is always there to fall back on, so an unaligned sheet is slower but never
-// wrong.
+// GDMA ignores the low four bits of its source address, so it only reads the
+// right bytes when the tile pool is 16 byte aligned - which depends on where
+// the linker put it, and is what the STREAMABLE_ACTOR_ALIGN_POOLS setting
+// guarantees. There is deliberately no runtime check for that here: an
+// unaligned pool draws visibly scrambled tiles, which is the signal to turn
+// that setting on. Turn STREAMABLE_ACTOR_USE_HDMA off to fall back to the slow
+// guarded copy, which is always correct.
 static void stream_copy(UBYTE base_tile, UBYTE n, const UBYTE *src, UBYTE bank) NONBANKED {
     UBYTE save_bank = CURRENT_BANK;
     SWITCH_ROM(bank);
 
-#ifdef CGB
-    if (_is_CGB && (((UWORD)src & 0x0Fu) == 0)) {
+#if defined(CGB) && defined(STREAMABLE_ACTOR_USE_HDMA)
+    if (_is_CGB) {
         UWORD dest = 0x8000u + ((UWORD)base_tile << 4);
         HDMA1_REG = (UBYTE)((UWORD)src >> 8);
         HDMA2_REG = (UBYTE)((UWORD)src & 0xF0u);
@@ -185,7 +187,7 @@ void streamable_actor_upload(stream_slot_t *slot, UBYTE frame) BANKED {
         UBYTE save_vbk = VBK_REG;
         VBK_REG = VBK_BANK_0;
 #endif
-        SetBankedSpriteData(dest, n, slot->tiles + fd.offset, slot->bank);
+        SetBankedSpriteData(dest, n, slot->tiles + fd.offset, slot->tiles_bank);
 #ifdef CGB
         VBK_REG = save_vbk;
 #endif
@@ -277,7 +279,7 @@ void streamable_actor_sync_slot(stream_slot_t *slot, actor_t *actor) BANKED {
 #endif
                 // The engine's guarded copy: it waits out mode 3 byte by byte,
                 // which is what makes copying outside VBlank safe at all.
-                SetBankedSpriteData(back_tile, n, slot->tiles + fd.offset, slot->bank);
+                SetBankedSpriteData(back_tile, n, slot->tiles + fd.offset, slot->tiles_bank);
 #ifdef CGB
                 VBK_REG = save_vbk;
 #endif
@@ -290,10 +292,15 @@ void streamable_actor_sync_slot(stream_slot_t *slot, actor_t *actor) BANKED {
     slot->cur_frame = frame;
 }
 
-// Bank 0 resident, run once at the top of actors_render(). Walking the few
-// streaming slots there beats asking "is this actor streamed?" for every actor
-// being drawn, and by that point each actor's frame for this render is final,
-// so the tiles still land before anything is drawn from them.
+// Run once at the end of actors_update(), which every caller follows
+// immediately with actors_render(). Walking the few streaming slots there beats
+// asking "is this actor streamed?" for every actor being drawn, and by that
+// point each actor's frame for the coming render is final, so the tiles still
+// land before anything is drawn from them.
+//
+// Banked rather than bank 0 resident: the caller is banked too, so this costs
+// one trampoline through ___sdcc_bcall_ehl per frame even when there is nothing
+// to do, in exchange for keeping the plugin out of bank 0.
 //
 // The two frame comparisons matter as much as the loop. Reaching
 // streamable_actor_sync_slot() costs a banked call through ___sdcc_bcall_ehl,
@@ -301,7 +308,7 @@ void streamable_actor_sync_slot(stream_slot_t *slot, actor_t *actor) BANKED {
 // read of three bytes of frame descriptor - hundreds of cycles to conclude
 // there is nothing to do. Remembering which frame sits in each half of the
 // band answers that here, with byte compares.
-void streamable_actor_sync_all(void) NONBANKED {
+void streamable_actor_sync_all(void) BANKED {
     if (!streamable_actor_enabled) return;
 
     stream_slot_t *slot = streamable_actor_slots;
@@ -377,7 +384,7 @@ void stream_vbl_update(void) BANKED {
             budget = n;
         }
 
-        if (n) stream_copy(slot->base_tile, n, slot->tiles + fd.offset, slot->bank);
+        if (n) stream_copy(slot->base_tile, n, slot->tiles + fd.offset, slot->tiles_bank);
         slot->cur_frame = frame;
         budget -= n;
     }
@@ -466,6 +473,7 @@ void vm_stream_actor(SCRIPT_CTX *THIS) OLDCALL BANKED {
 
     slot->sheet      = sheet;
     slot->bank       = bank;
+    slot->tiles_bank = sd.tiles_bank;
     slot->tiles      = sd.tiles;
     slot->frames     = sd.frames;
     slot->n_frames   = sd.n_frames;

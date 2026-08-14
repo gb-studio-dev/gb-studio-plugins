@@ -59,6 +59,7 @@ typedef struct stream_sheet_t {
     const stream_frame_t *frames;   // one entry per metasprite (actor->frame)
     uint8_t n_frames;
     uint8_t max_tiles;              // largest frame = VRAM tiles the actor needs
+    uint8_t tiles_bank;             // bank of the shared pool tiles[] points into
 } stream_sheet_t;
 
 // ---------------------------------------------------------------------------
@@ -70,7 +71,8 @@ typedef struct stream_slot_t {
     const void *sheet;              // expected actor->sprite.ptr (staleness guard)
     const uint8_t *tiles;
     const stream_frame_t *frames;
-    uint8_t bank;                   // bank holding tiles[] and frames[]
+    uint8_t bank;                   // bank holding frames[] and the sheet itself
+    uint8_t tiles_bank;             // bank holding the shared tile pool
     uint8_t n_frames;
     uint8_t base_tile;              // first VRAM tile of the actor's band
     uint8_t band_tiles;             // tiles one frame needs (upload clamp)
@@ -97,8 +99,8 @@ void streamable_actor_upload(stream_slot_t *slot, UBYTE frame) BANKED;
 
 #if STREAM_BUFFERED
 
-// VRAM buffer mode does its copying from actors_render(), in the actor.c
-// override, just before an actor's metasprite is drawn - never from VBlank.
+// VRAM buffer mode does its copying from the end of actors_update(), in the
+// actor.c override, just before the actors are rendered - never from VBlank.
 // By then the frame the actor is about to be drawn with is final, so the new
 // tiles and the OAM entries that reference them always agree, and the copy
 // costs ordinary main-thread time instead of holding off the LCD interrupts
@@ -108,12 +110,13 @@ void streamable_actor_upload(stream_slot_t *slot, UBYTE frame) BANKED;
 // is mid-frame - which is why this mode keeps a second band and switches the
 // actor over once the copy is complete.
 //
-// Called once at the top of actors_render(), not per actor: by then every
-// actor's frame for this render is final, and walking the handful of streaming
-// slots is far less work than asking "is this one streamed?" for every actor
-// being drawn. A bank 0 resident, so the common case never pays for a banked
-// call into the plugin bank.
-void streamable_actor_sync_all(void) NONBANKED;
+// Called once at the end of actors_update(), not per actor: by then every
+// actor's frame for the coming render is final, and walking the handful of
+// streaming slots is far less work than asking "is this one streamed?" for
+// every actor being drawn. Banked, so it costs the plugin no bank 0 space -
+// the caller is banked too, so an idle frame pays one trampoline through
+// ___sdcc_bcall_ehl.
+void streamable_actor_sync_all(void) BANKED;
 
 // Copies one frame into the actor's spare band and switches it over. Assumes
 // its caller has already checked that the slot is live and that the frame is

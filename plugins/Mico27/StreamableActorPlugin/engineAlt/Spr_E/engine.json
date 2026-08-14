@@ -37,13 +37,47 @@
         {
             "key": "STREAMABLE_ACTOR_SLOTS",
             "label": "Streamed actor slots",
-            "description": "How many actors can stream their frames at the same time. Each slot costs 13 bytes of WRAM.",
+            "description": "How many actors can stream their frames at the same time. Each slot costs 14 bytes of WRAM.",
             "group": "Streamable Actors",
             "type": "slider",
             "cType": "define",
             "defaultValue": 4,
             "min": 1,
             "max": 16
+        },
+        {
+            "key": "STREAMABLE_ACTOR_USE_HDMA",
+            "label": "Use HDMA on Game Boy Color",
+            "description": "Copies tiles with general purpose DMA on a Game Boy Color - about 8 cycles per tile instead of 208, which is what makes the tile budget comfortable there. GDMA ignores the low four bits of its source address, so it needs the tile pool to be 16-byte aligned and is used here without checking whether it is: if your streamed actors draw scrambled tiles on a Game Boy Color, the pool did not land aligned, and turning 'Force aligned tile pools' on fixes it. Turn this off to always use the slow byte-at-a-time copy, which is correct either way. Has no effect on DMG builds.",
+            "group": "Streamable Actors",
+            "type": "checkbox",
+            "cType": "define",
+            "defaultValue": 1,
+            "conditions": [
+                {
+                    "key": "STREAMABLE_ACTOR_MODE",
+                    "eq": "STREAM_MODE_VBLANK"
+                }
+            ]
+        },
+        {
+            "key": "STREAMABLE_ACTOR_ALIGN_POOLS",
+            "label": "Force aligned tile pools",
+            "description": "Pads each shared tile pool out to a full ROM bank, so the bank packer has to give it a bank of its own. A pool that starts at the beginning of a bank is 16-byte aligned, which is what lets a Game Boy Color build move tiles with general purpose DMA - about 8 cycles per tile instead of 208. Without this the pools are usually aligned anyway, but nothing guarantees it. Costs whatever is left over in the last bank of each pool, up to 16 KB, and does nothing on DMG-only builds. Only applies in VBlank mode with 'Use HDMA on Game Boy Color' on - VRAM buffer mode copies from the render loop, where general purpose DMA cannot be used, and without HDMA nothing needs the alignment.",
+            "group": "Streamable Actors",
+            "type": "checkbox",
+            "cType": "define",
+            "defaultValue": 0,
+            "conditions": [
+                {
+                    "key": "STREAMABLE_ACTOR_MODE",
+                    "eq": "STREAM_MODE_VBLANK"
+                },
+                {
+                    "key": "STREAMABLE_ACTOR_USE_HDMA",
+                    "truthy": true
+                }
+            ]
         }
     ],
     "sceneTypes": []
