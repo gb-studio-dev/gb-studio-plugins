@@ -279,6 +279,18 @@ extern const stream_sheet_t ${symbol}_desc;
 // named `spriteSheetId` to that pool, and gives every actor without an
 // exclusive reservation a slot for its editor spritesheet - both are wasted
 // VRAM for a streamed actor.
+// VRAM buffer mode gives each streamed actor two bands and copies into the one
+// it is not drawing from, so the reservation has to be twice the frame size.
+// (Plugin event files cannot require sibling modules, so this is duplicated in
+// the events that reserve tiles.)
+const bandsPerActor = (options) => {
+  const values = options.engineFieldValues || [];
+  const field = values.find((v) => v && v.id === "STREAMABLE_ACTOR_MODE");
+  const value =
+    field && field.value !== undefined ? field.value : "STREAM_MODE_VBLANK";
+  return String(value) === "STREAM_MODE_VRAM_BUFFER" ? 2 : 1;
+};
+
 const removeFromScenePool = (scene, spriteSheetId, keepForActorId) => {
   if (!scene || !scene.sprites || !spriteSheetId) return;
   const stillUsed = (scene.actors || []).some(
@@ -336,7 +348,7 @@ export const compile = (input, helpers) => {
     removeFromScenePool(scene, input.spriteSheetId, actorId);
     scene.actorsExclusiveLookup[actorId] = Math.max(
       scene.actorsExclusiveLookup[actorId] || 0,
-      reserveTiles
+      reserveTiles * bandsPerActor(options)
     );
   }
 

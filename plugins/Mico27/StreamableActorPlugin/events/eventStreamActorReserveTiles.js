@@ -64,6 +64,16 @@ const analyseStreamSheet = (sprite, spriteMode) => {
   return order.reduce((max, index) => Math.max(max, uniq[index] || 0), 0);
 };
 
+// VRAM buffer mode gives each streamed actor two bands and copies into the one
+// it is not drawing from, so the reservation has to be twice the frame size.
+const bandsPerActor = (options) => {
+  const values = options.engineFieldValues || [];
+  const field = values.find((v) => v && v.id === "STREAMABLE_ACTOR_MODE");
+  const value =
+    field && field.value !== undefined ? field.value : "STREAM_MODE_VBLANK";
+  return String(value) === "STREAM_MODE_VRAM_BUFFER" ? 2 : 1;
+};
+
 const removeFromScenePool = (scene, spriteSheetId, keepForActorId) => {
   if (!scene || !scene.sprites || !spriteSheetId) return;
   const stillUsed = (scene.actors || []).some(
@@ -108,6 +118,6 @@ export const compile = (input, helpers) => {
 
   scene.actorsExclusiveLookup[actorId] = Math.max(
     scene.actorsExclusiveLookup[actorId] || 0,
-    reserveTiles
+    reserveTiles * bandsPerActor(options)
   );
 };

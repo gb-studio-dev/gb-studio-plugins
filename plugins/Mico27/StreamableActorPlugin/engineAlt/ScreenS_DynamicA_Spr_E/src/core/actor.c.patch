@@ -1,0 +1,27 @@
+Index: src/core/actor.c
+===================================================================
+--- src/core/actor.c
++++ src/core/actor.c
+@@ -20,8 +20,11 @@
+ #include "actor_active_index.h"
+ #include "data/states_defines.h"
+ #include "dynamic_actor.h"
+ #include "scene_transition.h"
++// StreamableActorPlugin: brings streamed actors' tiles in before anything
++// is drawn from them. Expands to nothing outside VRAM buffer mode.
++#include "streamable_actor.h"
+ 
+ #ifdef STRICT
+     #include <gb/bgb_emu.h>
+     #include <gb/crash_handler.h>
+@@ -179,8 +182,10 @@
+ void actors_render(void) NONBANKED {
+     UBYTE _save = CURRENT_BANK;
+     static actor_t *actor;
+ 
++    STREAMABLE_ACTOR_SYNC_ALL();
++
+     if (emote_actor) {
+         SWITCH_ROM(emote_actor->sprite.bank);
+         spritesheet_t *sprite = emote_actor->sprite.ptr;
+         screen_x = SUBPX_TO_PX(emote_actor->pos.x) - scroll_x + sprite->emote_origin.x;
