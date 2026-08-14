@@ -584,10 +584,6 @@ static void gtx_vwf_flush(void) {
 #ifdef CGB
     if (bank) VBK_REG = 0;
 #endif
-    // wrap around within the 32-tile map row instead of bleeding into the next line
-    if (((UBYTE)gtx_dest_ptr >> 5) != ((UBYTE)gtx_dest_base >> 5)) {
-        gtx_dest_ptr -= 32u;
-    }
     gtx_set_tile(gtx_dest_ptr, tile, bank);                 // top
     if (current_text_layer == TEXT_LAYER_BKG) {
         // bottom cell one map row below, wrapped within the 32x32 map
@@ -595,7 +591,7 @@ static void gtx_vwf_flush(void) {
     } else {
         gtx_set_tile(gtx_dest_ptr + 32u, tile + 1u, bank);  // bottom, map row below
     }
-    gtx_dest_ptr++;
+    gtx_dest_ptr = gtx_row_cell(gtx_dest_ptr, 1);
     if (++gtx_count >= gtx_size) gtx_count = 0;
     memcpy(&gtx_vwf_col[0][0], &gtx_vwf_col[1][0], 32);
     memset(&gtx_vwf_col[2][0], 0, 16);
@@ -640,10 +636,6 @@ static void gtx_emit_char(UWORD key) {
     UBYTE * right;
     UBYTE * below;
     if (current_text_layer == TEXT_LAYER_BKG) {
-        // wrap around within the 32-tile map row instead of bleeding into the next line
-        if (((UBYTE)gtx_dest_ptr >> 5) != ((UBYTE)gtx_dest_base >> 5)) {
-            gtx_dest_ptr -= 32u;
-        }
         // one map row below, wrapped within the 32x32 map
         below = text_render_base_addr + (((UWORD)(gtx_dest_ptr - text_render_base_addr) + 32u) & 1023u);
 #ifdef GTX_NARROW_HALFWIDTH
@@ -651,7 +643,7 @@ static void gtx_emit_char(UWORD key) {
             // half width: one column, two tiles (the quad's other half is unused)
             gtx_set_tile(gtx_dest_ptr, tile, bank);         // top
             gtx_set_tile(below, tile + 1u, bank);           // bottom
-            gtx_dest_ptr++;
+            gtx_dest_ptr = gtx_row_cell(gtx_dest_ptr, 1);
             return;
         }
 #endif
@@ -661,14 +653,11 @@ static void gtx_emit_char(UWORD key) {
         gtx_set_tile(below, tile + 2u, bank);               // bottom left
         gtx_set_tile(gtx_row_cell(below, 1), tile + 3u, bank);  // bottom right
     } else {
-        if (((UBYTE)gtx_dest_ptr >> 5) != ((UBYTE)gtx_dest_base >> 5)) {
-            gtx_dest_ptr -= 32u;
-        }
 #ifdef GTX_NARROW_HALFWIDTH
         if (key & GTX_KEY_NARROW) {
             gtx_set_tile(gtx_dest_ptr, tile, bank);             // top
             gtx_set_tile(gtx_dest_ptr + 32u, tile + 1u, bank);  // bottom, map row below
-            gtx_dest_ptr++;
+            gtx_dest_ptr = gtx_row_cell(gtx_dest_ptr, 1);
             return;
         }
 #endif
@@ -678,7 +667,7 @@ static void gtx_emit_char(UWORD key) {
         gtx_set_tile(gtx_dest_ptr + 32u, tile + 2u, bank);  // bottom left, map row below
         gtx_set_tile(right + 32u, tile + 3u, bank);         // bottom right
     }
-    gtx_dest_ptr += 2u;
+    gtx_dest_ptr = gtx_row_cell(gtx_dest_ptr, 2);
 }
 
 #endif

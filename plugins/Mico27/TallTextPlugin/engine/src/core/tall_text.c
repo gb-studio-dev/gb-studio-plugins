@@ -252,17 +252,18 @@ inline void ttx_set_tile(UBYTE * addr, UBYTE tile, UBYTE bank) {
     set_vram_byte(addr, tile);
 }
 
+// address of the cell n columns right of p, wrapped inside p's 32-cell map row
+static UBYTE * ttx_row_cell(UBYTE * p, UBYTE n) {
+    return (UBYTE *)(((UWORD)p & 0xFFE0u) | (((UWORD)p + n) & 0x1Fu));
+}
+
 static void ttx_emit_char(UBYTE ch) {
     UBYTE entry = ttx_get_char_entry(ch);
     UBYTE tile = ttx_entry_tile(entry);
     UBYTE bank = ttx_entry_bank(entry);
-    // wrap around within the 32-tile map row instead of bleeding into the next line
-    if (((UBYTE)ttx_dest_ptr >> 5) != ((UBYTE)ttx_dest_base >> 5)) {
-        ttx_dest_ptr -= 32u;
-    }
     ttx_set_tile(ttx_dest_ptr, tile, bank);              // top half
     ttx_set_tile(ttx_dest_ptr + 32u, tile + 1u, bank);   // bottom half, map row below
-    ttx_dest_ptr++;
+    ttx_dest_ptr = ttx_row_cell(ttx_dest_ptr, 1);
 }
 
 // renders one character (or a run of control codes) of ui_text_data.

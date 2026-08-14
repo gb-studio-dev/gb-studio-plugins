@@ -60,7 +60,22 @@ Index: src/core/ui.c
      static UBYTE current_font_idx, current_text_bkg_fill, current_vwf_direction, current_text_ff_joypad, current_text_draw_speed;
  
      if (ui_text_ptr == 0) {
-@@ -435,8 +456,11 @@
+@@ -426,17 +447,25 @@
+                 // fall down to default
+             default:
+                 if (ui_print_render(*ui_text_ptr)) {
+                     ui_set_tile(ui_dest_ptr, ui_prev_tile, ui_prev_tile_bank);
+-                    if (vwf_direction == UI_PRINT_LEFTTORIGHT)  ui_dest_ptr++; else ui_dest_ptr--;
++                    // tilemap rows are 32 tiles wide and wrap around, so the cell that follows
++                    // column 31 is column 0 of the same row: step the column only and keep the
++                    // row address bits, whichever direction the text is printed in
++                    UBYTE col = (UBYTE)(UWORD)ui_dest_ptr;
++                    if (vwf_direction == UI_PRINT_LEFTTORIGHT) col++; else col--;
++                    ui_dest_ptr = (UBYTE *)(((UWORD)ui_dest_ptr & 0xFFE0u) | (col & 0x1Fu));
+                 }
+                 if (vwf_current_offset) ui_set_tile(ui_dest_ptr, ui_current_tile, ui_current_tile_bank);
+                 ui_text_ptr++;
+                 return TRUE;
          }
          ui_text_ptr++;
      }
@@ -72,7 +87,7 @@ Index: src/core/ui.c
  void ui_update(void) BANKED {
      UBYTE flag = FALSE;
  
-@@ -475,8 +499,11 @@
+@@ -475,8 +504,11 @@
      // play sound
      if ((flag) && (text_sound_bank != SFX_STOP_BANK)) music_play_sfx(text_sound_bank, text_sound_data, text_sound_mask, MUSIC_SFX_PRIORITY_NORMAL);
  }
@@ -84,7 +99,7 @@ Index: src/core/ui.c
      menu_item_t current_menu_item;
      UBYTE current_index = ((options & MENU_SET_START) ? start_index : 1u), next_index = 0u;
      // copy first menu item
-@@ -554,8 +581,9 @@
+@@ -554,8 +586,9 @@
          // reset next index
          next_index = 0;
      };

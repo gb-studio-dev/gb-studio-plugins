@@ -253,6 +253,11 @@ static UBYTE hwt_get_pair_entry(UBYTE l, UBYTE r) {
 }
 #endif
 
+// address of the cell n columns right of p, wrapped inside p's 32-cell map row
+static UBYTE * hwt_row_cell(UBYTE * p, UBYTE n) {
+    return (UBYTE *)(((UWORD)p & 0xFFE0u) | (((UWORD)p + n) & 0x1Fu));
+}
+
 static void hwt_emit_pair(UBYTE l, UBYTE r) {
     UBYTE entry = hwt_get_pair_entry(l, r);
     UBYTE tile = hwt_entry_tile(entry);
@@ -260,9 +265,6 @@ static void hwt_emit_pair(UBYTE l, UBYTE r) {
     (void)bank;
     // wrap around within the 32-tile map row instead of bleeding into the next line on background
     if (current_text_layer == TEXT_LAYER_BKG) {
-        if (((UBYTE)hwt_dest_ptr >> 5) != ((UBYTE)hwt_dest_base >> 5)) {
-            hwt_dest_ptr -= 32u;
-        }
     }
 #ifdef CGB
     // the attribute byte carries the palette and the tile data bank (bit 3)
@@ -274,7 +276,7 @@ static void hwt_emit_pair(UBYTE l, UBYTE r) {
     }
 #endif
     set_vram_byte(hwt_dest_ptr, tile);
-    hwt_dest_ptr++;
+    hwt_dest_ptr = hwt_row_cell(hwt_dest_ptr, 1);
 }
 
 // finish an incomplete pair with a half-width space

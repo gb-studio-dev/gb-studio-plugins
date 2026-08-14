@@ -5,7 +5,7 @@
   "url": "https://github.com/Mico27/gbs-ContinuousScenePlugin",
   "description": "Allows connecting scenes for continuous scrolling for sprawling overworld maps",
   "license": "MIT",
-  "version": "4.3.7",
+  "version": "4.3.8",
   "gbsVersion": ">=4.3.0",
   "order": -13,
   "mutuallyExclusive": [

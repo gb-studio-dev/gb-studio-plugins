@@ -5,7 +5,7 @@
   "url": "https://github.com/Mico27/gbs-uiAltDisplayTextPlugin",
   "description": "Alternate method of displaying text (uses font loaded in tileset VRAM instead of writing text to tileset VRAM)",
   "license": "MIT",
-  "version": "4.3.1",
+  "version": "4.3.2",
   "gbsVersion": ">=4.3.0",
   "engineAltRules": [
     {

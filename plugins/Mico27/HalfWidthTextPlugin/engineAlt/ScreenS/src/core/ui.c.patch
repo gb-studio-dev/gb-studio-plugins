@@ -60,7 +60,7 @@ Index: src/core/ui.c
      static UBYTE current_font_idx, current_text_bkg_fill, current_vwf_direction, current_text_ff_joypad, current_text_draw_speed;
  
      if (ui_text_ptr == 0) {
-@@ -450,8 +471,11 @@
+@@ -449,8 +470,11 @@
          }
          ui_text_ptr++;
      }

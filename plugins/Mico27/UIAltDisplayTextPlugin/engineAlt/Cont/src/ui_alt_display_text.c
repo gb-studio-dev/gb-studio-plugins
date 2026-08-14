@@ -33,6 +33,12 @@ inline void ui_alt_set_tile(UBYTE * addr, UBYTE tile) {
 #endif
     set_vram_byte(addr, tile);
 }
+
+// address of the cell n columns right of p, wrapped inside p's 32-cell map row
+static UBYTE * ui_alt_row_cell(UBYTE * p, UBYTE n) {
+    return (UBYTE *)(((UWORD)p & 0xFFE0u) | (((UWORD)p + n) & 0x1Fu));
+}
+
 UBYTE ui_alt_draw_text_buffer_char(void) BANKED {
     static UBYTE current_text_ff_joypad, current_text_draw_speed;
     if (ui_alt_text_ptr == 0) {
@@ -156,12 +162,9 @@ UBYTE ui_alt_draw_text_buffer_char(void) BANKED {
                 //UBYTE tile = ReadBankedUBYTE(char_tileset_mapping + (*ui_alt_text_ptr) , BANK(char_tileset_mapping));
                 //warp around of vram instead of next line on background
                 if (current_text_layer == TEXT_LAYER_BKG) {
-                    if (((UBYTE)ui_alt_dest_ptr >> 5) != ((UBYTE)ui_alt_dest_base >> 5)){
-                        ui_alt_dest_ptr -= 32u;
-                    }
                 }
                 ui_alt_set_tile(ui_alt_dest_ptr, tile);
-                ui_alt_dest_ptr++;
+                ui_alt_dest_ptr = ui_alt_row_cell(ui_alt_dest_ptr, 1);
                 ui_alt_text_ptr++;
                 return TRUE;
         }
