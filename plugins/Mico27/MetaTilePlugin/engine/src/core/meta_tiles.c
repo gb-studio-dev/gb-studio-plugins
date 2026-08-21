@@ -8,6 +8,7 @@
 #include "vm.h"
 #include "bankdata.h"
 #include "scroll.h"
+#include "math.h"
 #include "gbs_types.h"
 #include "actor.h"
 #include "data/game_globals.h"
@@ -19,6 +20,18 @@
 #else
 #define METATILE_TILE_WIDTH 1
 #endif
+
+// ---------------------------------------------------------------------------
+// Screen-relative coordinates ("relative to camera scroll").
+// When `rel` is non-zero the caller's X/Y are screen tile coordinates, with
+// (0,0) at the top-left tile currently visible, and the camera's scroll
+// position is added to turn them into absolute scene tile coordinates.
+// draw_scroll_x/y are the values actually written to SCX/SCY by the engine.
+// The coordinate argument is evaluated twice, so only pass a plain value or a
+// side-effect-free expression.
+// ---------------------------------------------------------------------------
+#define SCROLL_REL_X(x, rel) ((UBYTE)((rel) ? ((x) + PX_TO_TILE(draw_scroll_x)) : (x)))
+#define SCROLL_REL_Y(y, rel) ((UBYTE)((rel) ? ((y) + PX_TO_TILE(draw_scroll_y)) : (y)))
 
 uint8_t __at(SRAM_COLLISION_DATA_PTR) sram_collision_data[COLLISION_DATA_SIZE];
 uint8_t __at(SRAM_MAP_DATA_PTR) sram_map_data[MAX_MAP_DATA_SIZE];
@@ -167,10 +180,13 @@ void vm_submap_metatiles(SCRIPT_CTX * THIS) OLDCALL BANKED {
     uint8_t commit = *(int8_t*)VM_REF_TO_PTR(FN_ARG3);
     uint8_t scene_bank = *(uint8_t *) VM_REF_TO_PTR(FN_ARG4);
     const scene_t * scene_ptr = *(scene_t **) VM_REF_TO_PTR(FN_ARG5);
+    uint8_t relative = *(uint8_t *) VM_REF_TO_PTR(FN_ARG6);
     uint8_t source_x = source_pos & 0xFF;
     uint8_t source_y = (source_pos >> 8) & 0xFF;
     uint8_t dest_x = dest_pos & 0xFF;
     uint8_t dest_y = (dest_pos >> 8) & 0xFF;
+    dest_x = SCROLL_REL_X(dest_x, relative);
+    dest_y = SCROLL_REL_Y(dest_y, relative);
     uint8_t width = (wh & 0xFF) & 31;
     uint8_t height = ((wh >> 8) & 0xFF) & 31;
     scene_t scn;
@@ -207,6 +223,9 @@ void vm_redraw_metatiles(SCRIPT_CTX * THIS) OLDCALL BANKED {
     UBYTE y = *(uint8_t *) VM_REF_TO_PTR(FN_ARG1);
     UBYTE width = *(uint8_t *) VM_REF_TO_PTR(FN_ARG2);
     UBYTE height = *(uint8_t *) VM_REF_TO_PTR(FN_ARG3);
+    uint8_t relative = *(uint8_t *) VM_REF_TO_PTR(FN_ARG4);
+    x = SCROLL_REL_X(x, relative);
+    y = SCROLL_REL_Y(y, relative);
     for (uint8_t i = 0; i < height; i++){
         UBYTE current_y = y + i;
         bkg_address_offset = ((UWORD)get_bkg_xy_addr(x & 31, current_y & 31)) - 0x9800;
