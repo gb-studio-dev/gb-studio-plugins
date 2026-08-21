@@ -1,13 +1,9 @@
 const l10n = require("../helpers/l10n").default;
 
-// Plugin-only event: reads a save point by its position in the Save
-// configuration list, which the built-in peek event cannot express.
-const id = "EVENT_PEEK_DATA_BY_INDEX";
-const groups = ["EVENT_GROUP_SAVE_DATA", "EVENT_GROUP_VARIABLES"];
-const subGroups = {
-  "EVENT_GROUP_SAVE_DATA": "EVENT_GROUP_VARIABLES",
-  "EVENT_GROUP_VARIABLES": "EVENT_GROUP_SAVE_DATA"
-}
+// Overrides the built-in Game Data Save event: same event ID, so existing
+// scripts keep working and there is no second entry in the Add Event menu.
+const id = "EVENT_SAVE_DATA";
+const groups = ["EVENT_GROUP_SAVE_DATA"];
 
 // ---------------------------------------------------------------------------
 // Save slot plumbing, kept in step with engine/src/core/load_save.c.
@@ -202,63 +198,93 @@ const saveSlotFields = [
   },
 ];
 
-const fields = [
-  {
-    key: "variableDest",
-    label: l10n("FIELD_SET_VARIABLE"),
-    description: l10n("FIELD_VARIABLE_SET_DESC"),
-    type: "variable",
-    defaultValue: "LAST_VARIABLE",
-  },
-  {
-    type: "group",
-    fields: [
-      {
-        key: `variableSource`,
-        label: "Saved data index",
-        description:
-          "Index to read. With a Save configuration event this is the 0-based position of the variable in that event's list. With the \"Save all variables only\" engine setting it is the variable's own index instead.",
-        type: "number",
-        defaultValue: 0,
+const fields = [].concat(
+  [
+    {
+      label: l10n("FIELD_SAVE_DATA"),
+    },
+  ],
+  saveSlotFields,
+  [
+    {
+      key: "__scriptTabs",
+      type: "tabs",
+      defaultValue: "save",
+      values: {
+        save: l10n("FIELD_ON_SAVE"),
+        load: l10n("FIELD_ON_LOAD"),
       },
-    ].concat(saveSlotFields),
-  },
-];
+    },
+    {
+      key: "true",
+      label: l10n("FIELD_ON_SAVE"),
+      description: l10n("FIELD_ON_SAVE_DESC"),
+      type: "events",
+      conditions: [
+        {
+          key: `__scriptTabs`,
+          ne: "load",
+        },
+      ],
+    },
+    {
+      key: "load",
+      label: l10n("FIELD_ON_LOAD"),
+      description: l10n("FIELD_ON_LOAD_DESC"),
+      type: "events",
+      conditions: [
+        {
+          key: `__scriptTabs`,
+          eq: "load",
+        },
+      ],
+    },
+  ]
+);
 
 const compile = (input, helpers) => {
+  const { dataSave, _addComment, _callNative, _stackPop, _compilePath, warnings } =
+    helpers;
 
-    const { _declareLocal, getVariableAlias, getNextLabel, _addComment, _ifConst, _setVariableConst, _label, _addNL, _stackPushConst, _callNative, _stackPop, _isIndirectVariable, _setInd } = helpers;
+  const onSavePath = input.true || [];
+  const onLoadPath = input.load || [];
+  const layout = saveLayout(helpers);
+  const slot = literalSaveSlot(helpers, input);
 
-  const variableAlias = getVariableAlias(input.variableDest);
-  let dest = variableAlias;
-  if (_isIndirectVariable(input.variableDest)) {
-    const dataResultRef = _declareLocal("data_result", 1, true);
-    dest = dataResultRef;
+  // The stock path raises EXCEPTION_SAVE, which carries the slot as a literal
+  // operand. Anything the plugin needs to do differently is handled engine-side
+  // in src/core/core.c, so a fixed slot stays on the stock path.
+  if (slot !== null) {
+    if (layout.structure !== STRUCTURE_FULL && onLoadPath.length > 0 && warnings) {
+      warnings(
+        `Game Data Save: the "On Load" branch cannot run with "Save structure" set to "${
+          STRUCTURE_LABELS[layout.structure]
+        }" — no running script is saved, so a load never resumes here. Move that script after the Game Data Load event.`
+      );
+    }
+    dataSave(slot, onSavePath, onLoadPath);
+    return;
   }
 
-  _addComment(
-    `Store ${input.variableSource} from save slot ${describeSaveSlot(input)} into ${variableAlias}`
-  );
+  checkRuntimeSaveSlot(helpers, "Game Data Save");
 
-  _stackPushConst(dest);
-  _stackPushConst(1);
-  _stackPushConst(input.variableSource);
+  if (onLoadPath.length > 0 && warnings) {
+    warnings(
+      `Game Data Save: the "On Load" branch cannot run when the save slot comes from a variable. Move that script after the Game Data Load event, or use a fixed slot.`
+    );
+  }
+
+  _addComment(`Save Game Data In Slot ${describeSaveSlot(input)}`);
   pushSaveSlot(helpers, input);
-  _callNative("vm_data_peek_ex");
-  _stackPop(4);
-
-  if (_isIndirectVariable(input.variableDest)) {
-    _setInd(variableAlias, dest);
-  }
-
+  _callNative("vm_data_save_ex");
+  _stackPop(1);
+  _compilePath(onSavePath);
 };
 
 module.exports = {
   id,
-  name: "Store Variable from Game Data In Variable by Index",
-  description: "Store Variable from Game Data In Variable by Index",
+  description: l10n("EVENT_SAVE_DATA_DESC"),
   groups,
-  subGroups,
   fields,
   compile,
 };

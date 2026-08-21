@@ -2,22 +2,85 @@ Index: src/core/load_save.c
 ===================================================================
 --- src/core/load_save.c
 +++ src/core/load_save.c
-@@ -9,16 +9,22 @@
+@@ -9,28 +9,105 @@
  #include "vm.h"
  #include "events.h"
  #include "music_manager.h"
  #include "data_manager.h"
 +#include "data/game_globals.h"
++#include "data/states_defines.h"
 +
  #ifdef BATTERYLESS
      #include "bankdata.h"
      #include "flasher.h"
  #endif
  
++// ---------------------------------------------------------------------------
++// Configure Load/Save engine settings (Settings > Engine > Configure Load/Save)
++//
++//   SAVE_STRUCTURE        what a save slot holds. FULL is GB Studio's own
++//                         structure, scene and running scripts included; the
++//                         other two hold variables and nothing else.
++//   SAVE_SRAM_START_BANK  first SRAM bank the save slots are written to.
++//   SAVE_SLOT_COUNT       how many save slots the game has.
++// ---------------------------------------------------------------------------
++#define SAVE_STRUCTURE_FULL      0
++#define SAVE_STRUCTURE_VARIABLES 1
++#define SAVE_STRUCTURE_CUSTOM    2
++
++#ifndef SAVE_STRUCTURE
++#define SAVE_STRUCTURE SAVE_STRUCTURE_FULL
++#endif
++
++#ifndef SAVE_SRAM_START_BANK
++#define SAVE_SRAM_START_BANK 1
++#endif
++#ifndef SAVE_SLOT_COUNT
++#define SAVE_SLOT_COUNT 3
++#endif
++
++// SRAM bank 0 holds the MetaTile plugin's map and collision data, so the save
++// slots start at bank 1 however low "Starting SRAM bank" is set.
++#define SAVE_SRAM_RESERVED_BANKS 1
++
++// The starting bank is only a request: it is clamped up so a project can never
++// be built with save slots sitting on top of another plugin's SRAM.
++#if (SAVE_SRAM_START_BANK < SAVE_SRAM_RESERVED_BANKS)
++#define SAVE_SRAM_FIRST_BANK SAVE_SRAM_RESERVED_BANKS
++#else
++#define SAVE_SRAM_FIRST_BANK SAVE_SRAM_START_BANK
++#endif
++
++// Slots are packed head to tail, so N slots can never span more than N banks.
++// GB Studio links every ROM with 4 SRAM banks (-Wm-ya4), so banks 0..3 exist
++// and that is where the slots have to stop whatever the settings ask for.
++#if ((SAVE_SRAM_FIRST_BANK + SAVE_SLOT_COUNT) > 4)
++#define SAVE_SRAM_END_BANK 4
++#else
++#define SAVE_SRAM_END_BANK (SAVE_SRAM_FIRST_BANK + SAVE_SLOT_COUNT)
++#endif
++
++// Does a save blob carry the VM contexts, and with them the scene the save was
++// taken in? Only the full save-state structure does. Kept in step with
++// src/core/core.c, which uses it to decide whether a load reloads the scene.
++#if SAVE_STRUCTURE == SAVE_STRUCTURE_FULL
++#define SAVE_KEEPS_CONTEXTS 1
++#else
++#define SAVE_KEEPS_CONTEXTS 0
++#endif
++
++// The custom structure is spelled out by a Save configuration event, which
++// generates data/save_points.h when the project is built.
++#if SAVE_STRUCTURE == SAVE_STRUCTURE_CUSTOM
++#if !__has_include ("data/save_points.h")
++#error Configure Load/Save: "Save structure" is set to "Custom variable set", but no Save configuration event was found. Add one to a script, or pick another save structure in Settings > Engine > Configure Load/Save.
++#endif
++#endif
++
  #define SIGN_BY_PTR(ptr) *((UINT32 *)(ptr))
  extern const UINT32 save_signature;
  
-+#if __has_include ("data/save_points.h")
++#if SAVE_STRUCTURE == SAVE_STRUCTURE_CUSTOM
 +#include "data/save_points.h"
 +#else
 +
@@ -25,8 +88,32 @@ Index: src/core/load_save.c
      void * target;
      size_t size;
      uint8_t id;
-@@ -52,8 +58,9 @@
+ } save_point_t;
+ 
+ #define SAVEPOINT(A, ID) {&(A), sizeof(A), (ID)}
++// Only the global variables, not the VM context stacks that sit behind them in
++// script_memory[]: those belong to the scripts running right now, and the load
++// happens from inside one of them.
++#define SAVEPOINT_VARIABLES(ID) {script_memory, (VM_HEAP_SIZE * sizeof(UWORD)), (ID)}
+ #define SAVEPOINTS_END {0, 0}
+ 
+ extern uint16_t __rand_seed;
+ 
+ const save_point_t save_points[] = {
++#if SAVE_STRUCTURE == SAVE_STRUCTURE_VARIABLES
++    // variables and nothing else
++    SAVEPOINT_VARIABLES(0),
++#else
+     // variables (must be first, need for peeking)
+     SAVEPOINT(script_memory, 0),
+     // VM contexts
+     SAVEPOINT(CTXS, 1),
+@@ -49,11 +126,13 @@
+     SAVEPOINT(actors, 17),
+     SAVEPOINT(actors_active_head, 18), SAVEPOINT(actors_inactive_head, 19), SAVEPOINT(player_moving, 20), SAVEPOINT(player_collision_actor, 21),
+     // system
      SAVEPOINT(__rand_seed, 22),
++#endif
      // terminator
      SAVEPOINTS_END
  };
@@ -35,12 +122,16 @@ Index: src/core/load_save.c
  #ifdef BATTERYLESS
      extern void _start_save;
  #endif
-@@ -64,11 +71,22 @@
+@@ -61,27 +140,45 @@
+ size_t save_blob_size;
+ 
+ void data_init(void) BANKED {
      ENABLE_RAM_MBC5;
-     SWITCH_RAM_BANK(1, RAM_BANKS_ONLY);
+-    SWITCH_RAM_BANK(1, RAM_BANKS_ONLY);
++    SWITCH_RAM_BANK(SAVE_SRAM_FIRST_BANK, RAM_BANKS_ONLY);
      // calculate save blob size
      save_blob_size = sizeof(save_signature) + sizeof(save_blob_size);
-+    #if __has_include ("data/save_points.h")
++    #if SAVE_STRUCTURE == SAVE_STRUCTURE_CUSTOM
 +    save_point_t point_ref;
 +    const save_point_t * point_ptr = save_points;
 +    MemcpyBanked(&point_ref, point_ptr, sizeof(save_point_t), BANK(save_points));
@@ -56,14 +147,37 @@ Index: src/core/load_save.c
 +    #endif
  #ifdef BATTERYLESS
      // load from FLASH ROM
-     for (UBYTE i = 0; i < SRAM_BANKS_TO_SAVE; i++) restore_sram_bank(i);
+-    for (UBYTE i = 0; i < SRAM_BANKS_TO_SAVE; i++) restore_sram_bank(i);
++    for (UBYTE i = 0; i < SAVE_SRAM_END_BANK; i++) restore_sram_bank(i);
  #endif
-@@ -98,8 +116,26 @@
+     SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
+ }
+ 
+ UBYTE * data_slot_address(UBYTE slot, UBYTE *bank) {
+-    UWORD res = 0, res_bank = 1;
++    UWORD res = 0;
++    UBYTE res_bank = SAVE_SRAM_FIRST_BANK;
++    // a slot the settings do not give the game
++    if (slot >= SAVE_SLOT_COUNT) return NULL;
++    // A blob that does not fit inside one SRAM bank has nowhere to go: writing
++    // it would run off the end of the bank and trash whatever the next one
++    // holds, so refuse the slot instead.
++    if ((save_blob_size == 0) || (save_blob_size > SRAM_BANK_SIZE)) return NULL;
+     for (UBYTE i = 0; i < slot; i++) {
+         res += save_blob_size;
+         if ((res + save_blob_size) > SRAM_BANK_SIZE) {
+-            if (++res_bank >= SRAM_BANKS_TO_SAVE) return NULL;
++            if (++res_bank >= SAVE_SRAM_END_BANK) return NULL;
+             res = 0;
+         }
+     }
+     *bank = res_bank;
+@@ -98,8 +195,26 @@
      save_data += sizeof(save_signature);
      // size of the save blob
      *(size_t*)save_data = save_blob_size;
      save_data += sizeof(save_blob_size);
-+    #if __has_include ("data/save_points.h")
++    #if SAVE_STRUCTURE == SAVE_STRUCTURE_CUSTOM
 +    save_point_t point_ref;
 +    const save_point_t * point_ptr = save_points;
 +    MemcpyBanked(&point_ref, point_ptr, sizeof(save_point_t), BANK(save_points));
@@ -85,7 +199,7 @@ Index: src/core/load_save.c
          // size of the block
          *(size_t*)save_data = point->size;
          save_data += sizeof(point->size);
-@@ -109,8 +145,9 @@
+@@ -109,11 +224,12 @@
          // block data
          memcpy(save_data, point->target, point->size);
          save_data += point->size;
@@ -93,22 +207,36 @@ Index: src/core/load_save.c
 +    #endif
  #ifdef BATTERYLESS
      // save to FLASH ROM
-     save_sram(SRAM_BANKS_TO_SAVE);
+-    save_sram(SRAM_BANKS_TO_SAVE);
++    save_sram(SAVE_SRAM_END_BANK);
  #endif
-@@ -127,8 +164,24 @@
+     SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
+ }
+ 
+@@ -127,8 +243,34 @@
      }
      // seek to the first block
      save_data += sizeof(save_signature) + sizeof(save_blob_size);
      // load blocks
-+    #if __has_include ("data/save_points.h")
++    #if SAVE_STRUCTURE == SAVE_STRUCTURE_CUSTOM
 +    save_point_t point_ref;
 +    const save_point_t * point_ptr = save_points;
 +    MemcpyBanked(&point_ref, point_ptr, sizeof(save_point_t), BANK(save_points));
 +    while(point_ref.target){
 +        // check chunk size
-+        if (*(size_t*)save_data != point_ref.size) return FALSE; else save_data += sizeof(point_ref.size);
++        if (*(size_t*)save_data != point_ref.size){
++            SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
++            return FALSE;
++        } else {
++            save_data += sizeof(point_ref.size);
++        }
 +        // check chunk id
-+        if (*(uint8_t*)save_data != point_ref.id) return FALSE; else save_data += sizeof(point_ref.id);
++        if (*(uint8_t*)save_data != point_ref.id){
++            SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
++            return FALSE;
++        } else {
++            save_data += sizeof(point_ref.id);
++        }
 +        // copy chunk data
 +        memcpy(point_ref.target, save_data, point_ref.size);
 +        save_data += point_ref.size;
@@ -120,17 +248,37 @@ Index: src/core/load_save.c
          // check chunk size
          if (*(size_t*)save_data != point->size){
              SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
-@@ -146,8 +199,9 @@
+@@ -146,15 +288,18 @@
          // copy chunk data
          memcpy(point->target, save_data, point->size);
          save_data += point->size;
      }
 +    #endif
      SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
++#if SAVE_KEEPS_CONTEXTS
      // Restart music
      if (music_current_track_bank != MUSIC_STOP_BANK) {
          music_next_track = music_current_track;
-@@ -180,4 +234,32 @@
+     } else {
+         music_sound_cut();
+     }
++#endif
+     return TRUE;
+ }
+ 
+ void data_clear(UBYTE slot) BANKED {
+@@ -163,9 +308,9 @@
+     SWITCH_RAM_BANK(data_bank, RAM_BANKS_ONLY);
+     SIGN_BY_PTR(save_data) = 0;
+ #ifdef BATTERYLESS
+     // save to FLASH ROM
+-    save_sram(SRAM_BANKS_TO_SAVE);
++    save_sram(SAVE_SRAM_END_BANK);
+ #endif
+     SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
+ }
+ 
+@@ -180,4 +325,46 @@
      if (count) memcpy(dest, save_data + (sizeof(save_signature) + sizeof(save_blob_size) + sizeof(size_t) + sizeof(uint8_t)) + (idx << 1), count << 1);
      SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
      return TRUE;
@@ -144,7 +292,13 @@ Index: src/core/load_save.c
 +        SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
 +        return FALSE;
 +    }
++#if SAVE_STRUCTURE == SAVE_STRUCTURE_CUSTOM
++    // one block per configured variable: idx is the save point index
 +    if (count) memcpy(dest, save_data + (sizeof(save_signature) + sizeof(save_blob_size) + (((idx + 1) * (sizeof(size_t) + sizeof(uint8_t) + sizeof(int16_t))) - sizeof(int16_t))), count << 1);
++#else
++    // the first block holds every variable: idx is the variable index
++    if (count) memcpy(dest, save_data + (sizeof(save_signature) + sizeof(save_blob_size) + sizeof(size_t) + sizeof(uint8_t)) + (idx << 1), count << 1);
++#endif
 +    SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
 +    return TRUE;
 +}
@@ -154,6 +308,14 @@ Index: src/core/load_save.c
 +    int16_t * A;
 +    if (idx < 0) A = THIS->stack_ptr + idx - 4; else A = script_memory + idx;
 +    data_peek_ex(*(uint8_t *)VM_REF_TO_PTR(FN_ARG0), *(uint16_t *)VM_REF_TO_PTR(FN_ARG1), *(uint16_t *)VM_REF_TO_PTR(FN_ARG2), A);
++}
++
++void vm_data_check_ex(SCRIPT_CTX * THIS) OLDCALL BANKED {
++    int16_t idx = *(int16_t*)VM_REF_TO_PTR(FN_ARG1);
++    int16_t * A;
++    if (idx < 0) A = THIS->stack_ptr + idx - 2; else A = script_memory + idx;
++    // count 0: no data is copied, only the slot and its signature are checked
++    *A = data_peek_ex(*(uint8_t *)VM_REF_TO_PTR(FN_ARG0), 0, 0, NULL);
 +}
 +
 +void vm_data_save_ex(SCRIPT_CTX * THIS) OLDCALL BANKED {

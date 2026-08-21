@@ -1,13 +1,9 @@
 const l10n = require("../helpers/l10n").default;
 
-// Plugin-only event: reads a save point by its position in the Save
-// configuration list, which the built-in peek event cannot express.
-const id = "EVENT_PEEK_DATA_BY_INDEX";
-const groups = ["EVENT_GROUP_SAVE_DATA", "EVENT_GROUP_VARIABLES"];
-const subGroups = {
-  "EVENT_GROUP_SAVE_DATA": "EVENT_GROUP_VARIABLES",
-  "EVENT_GROUP_VARIABLES": "EVENT_GROUP_SAVE_DATA"
-}
+// Overrides the built-in Game Data Load event: same event ID, so existing
+// scripts keep working and there is no second entry in the Add Event menu.
+const id = "EVENT_LOAD_DATA";
+const groups = ["EVENT_GROUP_SAVE_DATA"];
 
 // ---------------------------------------------------------------------------
 // Save slot plumbing, kept in step with engine/src/core/load_save.c.
@@ -202,63 +198,39 @@ const saveSlotFields = [
   },
 ];
 
-const fields = [
-  {
-    key: "variableDest",
-    label: l10n("FIELD_SET_VARIABLE"),
-    description: l10n("FIELD_VARIABLE_SET_DESC"),
-    type: "variable",
-    defaultValue: "LAST_VARIABLE",
-  },
-  {
-    type: "group",
-    fields: [
-      {
-        key: `variableSource`,
-        label: "Saved data index",
-        description:
-          "Index to read. With a Save configuration event this is the 0-based position of the variable in that event's list. With the \"Save all variables only\" engine setting it is the variable's own index instead.",
-        type: "number",
-        defaultValue: 0,
-      },
-    ].concat(saveSlotFields),
-  },
-];
+const fields = [].concat(
+  [
+    {
+      label: l10n("FIELD_LOAD_DATA"),
+    },
+  ],
+  saveSlotFields
+);
 
 const compile = (input, helpers) => {
+  const { dataLoad, _addComment, _callNative, _stackPop } = helpers;
 
-    const { _declareLocal, getVariableAlias, getNextLabel, _addComment, _ifConst, _setVariableConst, _label, _addNL, _stackPushConst, _callNative, _stackPop, _isIndirectVariable, _setInd } = helpers;
+  const slot = literalSaveSlot(helpers, input);
 
-  const variableAlias = getVariableAlias(input.variableDest);
-  let dest = variableAlias;
-  if (_isIndirectVariable(input.variableDest)) {
-    const dataResultRef = _declareLocal("data_result", 1, true);
-    dest = dataResultRef;
+  // The stock path raises EXCEPTION_LOAD, which carries the slot as a literal
+  // operand. Whether that reloads the scene is decided engine-side in
+  // src/core/core.c, so a fixed slot stays on the stock path.
+  if (slot !== null) {
+    dataLoad(slot);
+    return;
   }
 
-  _addComment(
-    `Store ${input.variableSource} from save slot ${describeSaveSlot(input)} into ${variableAlias}`
-  );
-
-  _stackPushConst(dest);
-  _stackPushConst(1);
-  _stackPushConst(input.variableSource);
+  checkRuntimeSaveSlot(helpers, "Game Data Load");
+  _addComment(`Load Game Data From Slot ${describeSaveSlot(input)}`);
   pushSaveSlot(helpers, input);
-  _callNative("vm_data_peek_ex");
-  _stackPop(4);
-
-  if (_isIndirectVariable(input.variableDest)) {
-    _setInd(variableAlias, dest);
-  }
-
+  _callNative("vm_data_load_ex");
+  _stackPop(1);
 };
 
 module.exports = {
   id,
-  name: "Store Variable from Game Data In Variable by Index",
-  description: "Store Variable from Game Data In Variable by Index",
+  description: l10n("EVENT_LOAD_DATA_DESC"),
   groups,
-  subGroups,
   fields,
   compile,
 };

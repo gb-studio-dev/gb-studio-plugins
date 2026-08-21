@@ -34,6 +34,8 @@ const EFFECTS = [
   ["fan4", "4-Blade Fan"],
   ["x", "X (cross)"],
   ["mask_grow", "Mask (scene as mask)"],
+  ["shrink", "Shrink (quadrants inward)"],
+  ["split", "Split (quadrants outward)"],
 ];
 // Ids are stable (gaps left where reverse-pair complements were removed).
 const EFFECT_ID = {
@@ -44,13 +46,18 @@ const EFFECT_ID = {
   blinds_h: 15, blinds_v: 16, four_sq: 17,
   diamond_out: 19,
   clock: 20, noise: 21, fan4: 22, x: 23, mask_grow: 24,
+  shrink: 27, split: 28,
 };
 
 const num = (value) => ({ type: "number", value });
 
 // Effects that support an angular start offset / a custom centre point.
 const ANGLE_FX = ["clock", "fan4", "diag_tl", "diag_h"];
-const CENTER_FX = ["iris_out", "diamond_out", "clock", "fan4", "mask_grow"];
+const CENTER_FX = ["iris_out", "diamond_out", "clock", "fan4", "mask_grow", "shrink", "split"];
+// Quadrant-shift effects (Shrink / Split): the centre is the point the
+// region is split into four quadrants at, and the fill tile paints the rim the
+// sliding quadrants uncover.
+const QUAD_FX = ["shrink", "split"];
 
 // Each effect maps to the engine setting (Settings > Engine > Screen Transitions)
 // that must be enabled for it to be compiled into the ROM.
@@ -70,6 +77,8 @@ const EFFECT_SETTING = {
   fan4: "TRANSITION_FAN",
   x: "TRANSITION_X",
   mask_grow: "TRANSITION_MASK",
+  shrink: "TRANSITION_SHRINK",
+  split: "TRANSITION_SPLIT",
 };
 
 export const fields = [
@@ -240,7 +249,7 @@ export const fields = [
     key: "direction",
     label: "Direction",
     description:
-      "Plays the effect in reverse — flips a wipe to the opposite side, an iris close to open, and a clock/fan/spiral to counter-clockwise.",
+      "Plays the effect in reverse — flips a wipe to the opposite side, an iris close to open, a clock/fan/spiral to counter-clockwise, and Shrink/Split from covering the screen to revealing it.",
     type: "select",
     options: [
       ["forward", "Normal / Clockwise"],
@@ -262,7 +271,8 @@ export const fields = [
   {
     key: "customCenter",
     label: "Custom centre point",
-    description: "Move the pivot/centre of the effect off the region centre.",
+    description:
+      "Move the pivot/centre of the effect off the region centre. For Shrink / Split this is where the region is cut into its four quadrants.",
     type: "checkbox",
     defaultValue: false,
     conditions: [{ key: "effect", in: CENTER_FX }],
@@ -291,6 +301,52 @@ export const fields = [
       { key: "customCenter", eq: true },
       { key: "effect", in: CENTER_FX },
     ],
+  },
+  {
+    type: "group",
+    fields: [
+      {
+        key: "rimFill",
+        label: "Rim tile",
+        description: "Tile drawn where a quadrant has slid away from.",
+        type: "select",
+        width: "50%",
+        options: [
+          ["black", "Black"],
+          ["white", "White"],
+          ["custom", "Custom tile id"],
+        ],
+        defaultValue: "black",
+      },
+      {
+        key: "rimPalette",
+        label: "CGB rim palette (0-7)",
+        type: "value",
+        width: "50%",
+        min: 0,
+        max: 7,
+        defaultValue: num(7),
+      },
+    ],
+    conditions: [{ key: "effect", in: QUAD_FX }],
+  },
+  {
+    key: "rimTile",
+    label: "Rim tile id",
+    type: "value",
+    min: 0,
+    max: 255,
+    defaultValue: num(0),
+    conditions: [
+      { key: "effect", in: QUAD_FX },
+      { key: "rimFill", eq: "custom" },
+    ],
+  },
+  {
+    type: "label",
+    label:
+      "Shrink / Split cut the region into four quadrants at the centre point, then re-render each quadrant one tile toward the centre (Shrink) or away from it (Split) every step, covering the strip it vacates with the fill tile. Because they re-render moving content they are much heavier than the other effects, so start around 4-6 in Frames per step. Reversed plays them backwards, so Shrink reversed opens out from the centre and Split reversed closes in from the rim.",
+    conditions: [{ key: "effect", in: QUAD_FX }],
   },
   {
     key: "hideSprites",
@@ -352,6 +408,8 @@ export const compile = (input, helpers) => {
 
   const V = (v, d) =>
     v === undefined || v === null ? num(d) : typeof v === "number" ? num(v) : v;
+  const bAND = (a, b) => ({ type: "bAND", valueA: a, valueB: b });
+  const bOR = (a, b) => ({ type: "bOR", valueA: a, valueB: b });
   const sub = (a, b) => ({ type: "sub", valueA: a, valueB: b });
   const shr = (a, b) => ({ type: "shr", valueA: a, valueB: b });
   const vmin = (a, b) => ({ type: "min", valueA: a, valueB: b });
@@ -489,6 +547,17 @@ export const compile = (input, helpers) => {
   setField("tr_hold", V(input.hold, 1));
   setField16("tr_min", V(input.minFrame, 0)); // start frame
   setField16("tr_max", V(input.maxFrame, 0)); // end frame (0 = full)
+  if (QUAD_FX.includes(input.effect)) {
+    // Shrink / Split paint the rim the quadrants uncover, so they need a fill
+    // tile even in the reveal direction (the other In effects never fill).
+    const rim =
+      input.rimFill === "white" ? num(201)
+      : input.rimFill === "custom" ? V(input.rimTile, 0)
+      : num(202);
+    setField("tr_fill_tile", rim);
+    // fill attr = CGB priority (0x80) | (palette & 7)
+    setField("tr_fill_attr", bOR(num(0x80), bAND(V(input.rimPalette, 7), num(7))));
+  }
   // direction (reverse step order), angle offset, and centre point
   _setConstMemInt8("tr_reverse", input.direction === "reverse" ? 1 : 0);
   if (ANGLE_FX.includes(input.effect)) {

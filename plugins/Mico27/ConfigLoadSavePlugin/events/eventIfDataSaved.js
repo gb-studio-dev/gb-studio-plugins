@@ -1,12 +1,12 @@
 const l10n = require("../helpers/l10n").default;
 
-// Plugin-only event: reads a save point by its position in the Save
-// configuration list, which the built-in peek event cannot express.
-const id = "EVENT_PEEK_DATA_BY_INDEX";
-const groups = ["EVENT_GROUP_SAVE_DATA", "EVENT_GROUP_VARIABLES"];
+// Overrides the built-in If Game Data Saved event: same event ID, so existing
+// scripts keep working and there is no second entry in the Add Event menu.
+const id = "EVENT_IF_SAVED_DATA";
+const groups = ["EVENT_GROUP_SAVE_DATA", "EVENT_GROUP_CONTROL_FLOW"];
 const subGroups = {
-  "EVENT_GROUP_SAVE_DATA": "EVENT_GROUP_VARIABLES",
-  "EVENT_GROUP_VARIABLES": "EVENT_GROUP_SAVE_DATA"
+  "EVENT_GROUP_SAVE_DATA": "EVENT_GROUP_CONTROL_FLOW",
+  "EVENT_GROUP_CONTROL_FLOW": "EVENT_GROUP_SAVE_DATA"
 }
 
 // ---------------------------------------------------------------------------
@@ -202,61 +202,85 @@ const saveSlotFields = [
   },
 ];
 
-const fields = [
+const fields = [].concat(saveSlotFields, [
   {
-    key: "variableDest",
-    label: l10n("FIELD_SET_VARIABLE"),
-    description: l10n("FIELD_VARIABLE_SET_DESC"),
-    type: "variable",
-    defaultValue: "LAST_VARIABLE",
+    label: l10n("FIELD_IF_SAVED_DATA"),
   },
   {
-    type: "group",
-    fields: [
+    key: "true",
+    label: l10n("FIELD_TRUE"),
+    description: l10n("FIELD_TRUE_DESC"),
+    type: "events",
+  },
+  {
+    key: "__collapseElse",
+    label: l10n("FIELD_ELSE"),
+    type: "collapsable",
+    defaultValue: true,
+    conditions: [
       {
-        key: `variableSource`,
-        label: "Saved data index",
-        description:
-          "Index to read. With a Save configuration event this is the 0-based position of the variable in that event's list. With the \"Save all variables only\" engine setting it is the variable's own index instead.",
-        type: "number",
-        defaultValue: 0,
+        key: "__disableElse",
+        ne: true,
       },
-    ].concat(saveSlotFields),
+    ],
   },
-];
+  {
+    key: "false",
+    label: l10n("FIELD_FALSE"),
+    description: l10n("FIELD_FALSE_DESC"),
+    conditions: [
+      {
+        key: "__collapseElse",
+        ne: true,
+      },
+      {
+        key: "__disableElse",
+        ne: true,
+      },
+    ],
+    type: "events",
+  },
+]);
 
 const compile = (input, helpers) => {
+  const { ifDataSaved, _declareLocal, getNextLabel, _addComment, _addNL, _stackPushConst, _callNative, _stackPop, _ifConst, _jump, _label, _compilePath } = helpers;
 
-    const { _declareLocal, getVariableAlias, getNextLabel, _addComment, _ifConst, _setVariableConst, _label, _addNL, _stackPushConst, _callNative, _stackPop, _isIndirectVariable, _setInd } = helpers;
+  const truePath = input.true;
+  const falsePath = input.__disableElse ? [] : input.false;
+  const slot = literalSaveSlot(helpers, input);
 
-  const variableAlias = getVariableAlias(input.variableDest);
-  let dest = variableAlias;
-  if (_isIndirectVariable(input.variableDest)) {
-    const dataResultRef = _declareLocal("data_result", 1, true);
-    dest = dataResultRef;
+  // The stock VM_SAVE_PEEK opcode carries the slot as a literal operand.
+  if (slot !== null) {
+    ifDataSaved(slot, truePath, falsePath);
+    return;
   }
 
-  _addComment(
-    `Store ${input.variableSource} from save slot ${describeSaveSlot(input)} into ${variableAlias}`
-  );
+  const savePeekRef = _declareLocal("save_peek", 1, true);
+  const trueLabel = getNextLabel();
+  const endLabel = getNextLabel();
 
-  _stackPushConst(dest);
-  _stackPushConst(1);
-  _stackPushConst(input.variableSource);
+  _addComment(`If Game Data Saved In Slot ${describeSaveSlot(input)}`);
+
+  // count 0: nothing is copied, the native only reports whether the slot holds
+  // a save this build can read
+  _stackPushConst(savePeekRef);
   pushSaveSlot(helpers, input);
-  _callNative("vm_data_peek_ex");
-  _stackPop(4);
+  _callNative("vm_data_check_ex");
+  _stackPop(2);
 
-  if (_isIndirectVariable(input.variableDest)) {
-    _setInd(variableAlias, dest);
-  }
-
+  _ifConst(".EQ", savePeekRef, 1, trueLabel, 0);
+  _addNL();
+  _compilePath(falsePath);
+  _jump(endLabel);
+  _label(trueLabel);
+  _compilePath(truePath);
+  _label(endLabel);
+  _addNL();
 };
 
 module.exports = {
   id,
-  name: "Store Variable from Game Data In Variable by Index",
-  description: "Store Variable from Game Data In Variable by Index",
+  description: l10n("EVENT_IF_SAVED_DATA_DESC"),
   groups,
   subGroups,
   fields,

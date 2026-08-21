@@ -31,6 +31,8 @@ const EFFECTS = [
   ["fan4", "4-Blade Fan"],
   ["x", "X (cross)"],
   ["mask_grow", "Mask (scene as mask)"],
+  ["shrink", "Shrink (quadrants inward)"],
+  ["split", "Split (quadrants outward)"],
 ];
 // Ids are stable (gaps left where reverse-pair complements were removed).
 const EFFECT_ID = {
@@ -41,13 +43,18 @@ const EFFECT_ID = {
   blinds_h: 15, blinds_v: 16, four_sq: 17,
   diamond_out: 19,
   clock: 20, noise: 21, fan4: 22, x: 23, mask_grow: 24,
+  shrink: 27, split: 28,
 };
 
 const num = (value) => ({ type: "number", value });
 
 // Effects that support an angular start offset / a custom centre point.
 const ANGLE_FX = ["clock", "fan4", "diag_tl", "diag_h"];
-const CENTER_FX = ["iris_out", "diamond_out", "clock", "fan4", "mask_grow"];
+const CENTER_FX = ["iris_out", "diamond_out", "clock", "fan4", "mask_grow", "shrink", "split"];
+// Quadrant-shift effects (Shrink / Split): the centre is the point the
+// region is split into four quadrants at, and the fill tile paints the rim the
+// sliding quadrants uncover.
+const QUAD_FX = ["shrink", "split"];
 
 // Each effect maps to the engine setting (Settings > Engine > Screen Transitions)
 // that must be enabled for it to be compiled into the ROM.
@@ -67,6 +74,8 @@ const EFFECT_SETTING = {
   fan4: "TRANSITION_FAN",
   x: "TRANSITION_X",
   mask_grow: "TRANSITION_MASK",
+  shrink: "TRANSITION_SHRINK",
+  split: "TRANSITION_SPLIT",
 };
 
 export const fields = [
@@ -94,6 +103,7 @@ export const fields = [
       {
         key: "fill",
         label: "Fill",
+        description: "Tile the effect covers the screen with — the rim tile for Shrink / Split.",
         type: "select",
         width: "50%",
         options: [
@@ -169,7 +179,7 @@ export const fields = [
     key: "direction",
     label: "Direction",
     description:
-      "Plays the effect in reverse — flips a wipe to the opposite side, an iris close to open, and a clock/fan/spiral to counter-clockwise.",
+      "Plays the effect in reverse — flips a wipe to the opposite side, an iris close to open, a clock/fan/spiral to counter-clockwise, and Shrink/Split from covering the screen to revealing it.",
     type: "select",
     options: [
       ["forward", "Normal / Clockwise"],
@@ -191,7 +201,8 @@ export const fields = [
   {
     key: "customCenter",
     label: "Custom centre point",
-    description: "Move the pivot/centre of the effect off the region centre.",
+    description:
+      "Move the pivot/centre of the effect off the region centre. For Shrink / Split this is where the region is cut into its four quadrants.",
     type: "checkbox",
     defaultValue: false,
     conditions: [{ key: "effect", in: CENTER_FX }],
@@ -219,6 +230,12 @@ export const fields = [
       { key: "customCenter", eq: true },
       { key: "effect", in: CENTER_FX },
     ],
+  },
+  {
+    type: "label",
+    label:
+      "Shrink / Split cut the region into four quadrants at the centre point, then re-render each quadrant one tile toward the centre (Shrink) or away from it (Split) every step, covering the strip it vacates with the fill tile. Because they re-render moving content they are much heavier than the other effects, so start around 4-6 in Frames per step. Reversed plays them backwards, so Shrink reversed opens out from the centre and Split reversed closes in from the rim.",
+    conditions: [{ key: "effect", in: QUAD_FX }],
   },
   {
     key: "hideSprites",
