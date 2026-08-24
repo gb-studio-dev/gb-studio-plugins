@@ -67,6 +67,14 @@ export const fields = [
     width: "50%",
     defaultValue: { type: "number", value: 0 },
   },
+  {
+    key: "relative_to_scroll",
+    label: "Coordinates relative to camera scroll",
+    description:
+      "When enabled, X/Y are screen coordinates: (0,0) is the top-left tile currently visible and the camera's scroll position is added automatically. When disabled, X/Y are absolute scene tile coordinates.",
+    type: "checkbox",
+    width: "100%",
+  },
 ];
 
 export const compile = (input, helpers) => {
@@ -91,6 +99,7 @@ export const compile = (input, helpers) => {
   const { _callNative, _stackPushScriptValue, _stackPushConst, _stackPop, _addComment } = helpers;
   const dirMap = { up: 0, down: 1, left: 2, right: 3 };
   _addComment("Scroll background rectangle by 1 tile");
+  _stackPushConst(input.relative_to_scroll ? 1 : 0);
   _stackPushScriptValue(input.fill_tile_id);
   _stackPushConst(dirMap[input.direction] || 0);
   _stackPushScriptValue(input.h);
@@ -98,5 +107,5 @@ export const compile = (input, helpers) => {
   _stackPushScriptValue(input.y);
   _stackPushScriptValue(input.x);
   _callNative("vm_scroll_background_rect");
-  _stackPop(6);
+  _stackPop(7);
 };

@@ -5,7 +5,7 @@
   "url": "https://github.com/Mico27/gbs-ScreenTransitionsPlugin",
   "description": "A variety of screen transitions (wipes, curtains, iris, diagonal, checkerboard) that run at runtime as waitable VM functions. Supports background/overlay layers, scroll tracking, revealing the current scene, and copying tiles from another scene at a chosen source offset for seamless scene changes.",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "gbsVersion": ">=4.3.0",
   "engineAltRules": [
     {

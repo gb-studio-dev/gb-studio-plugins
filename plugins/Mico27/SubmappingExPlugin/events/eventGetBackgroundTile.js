@@ -35,7 +35,15 @@ export const fields = [
     description: l10n("FIELD_VARIABLE_DESC"),
     type: "variable",
     defaultValue: "LAST_VARIABLE",
-  }
+  },
+  {
+    key: "relative_to_scroll",
+    label: "Coordinates relative to camera scroll",
+    description:
+      "When enabled, X/Y are screen coordinates: (0,0) is the top-left tile currently visible and the camera's scroll position is added automatically. When disabled, X/Y are absolute scene tile coordinates.",
+    type: "checkbox",
+    width: "100%",
+  },
 ];
 
 export const compile = (input, helpers) => {
@@ -57,16 +65,17 @@ export const compile = (input, helpers) => {
     const index_result = _declareLocal("index_result", 1, true);
     dest = index_result;
   }
-  
+
   _addComment("Get background tile");
 
+  _stackPushConst(input.relative_to_scroll ? 1 : 0);
   _stackPushConst(dest);
   _stackPushScriptValue(input.y);
   _stackPushScriptValue(input.x);
 
   _callNative("vm_get_background_tile");
-  _stackPop(3);
-  
+  _stackPop(4);
+
   if (_isIndirectVariable(input.variable)) {
     _setInd(variableAlias, dest);
   }

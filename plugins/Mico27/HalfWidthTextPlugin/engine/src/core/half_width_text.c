@@ -44,6 +44,18 @@ UBYTE hwt_current_text_speed;
 #endif
 #define HWT_NULL 0xFFu
 
+// HWT_CACHE_ENABLED engine field (Settings -> Half-Width Text): unchecking it
+// compiles the LRU bookkeeping out entirely. Pairs are then composed into the
+// reserved tiles round-robin, which costs no WRAM and no lookup but recomposes
+// every pair on every use, so the reserved range must hold all the pairs
+// visible at once. Without the LRU arrays the entry count is limited by the
+// reserved range alone, not by HWT_CACHE_MAX.
+#ifdef HWT_CACHE_ENABLED
+#define HWT_ENTRY_MAX HWT_CACHE_MAX
+#else
+#define HWT_ENTRY_MAX 254u
+#endif
+
 // where cached tiles live in VRAM (hwt_tile_placement engine field).
 // bank 1 placements only take effect on CGB (color-only or mixed mode on
 // color hardware): the tilemap attribute bit 3 selects the tile data bank,
@@ -61,15 +73,17 @@ static UBYTE hwt_placement_eff;
 // bank-0-only: cache entry i owns VRAM tile (hwt_first_tile + i); alternate
 // placement maps entries 2k/2k+1 onto tile (hwt_first_tile + k) in banks 0
 // and 1 respectively
+#ifdef HWT_CACHE_ENABLED
 static UBYTE hwt_key_l[HWT_CACHE_MAX];   // left character of the pair
 static UBYTE hwt_key_r[HWT_CACHE_MAX];   // right character of the pair
 static UBYTE hwt_next[HWT_CACHE_MAX];    // towards least recently used
 static UBYTE hwt_prev[HWT_CACHE_MAX];    // towards most recently used
 static UBYTE hwt_head;                   // most recently used entry
 static UBYTE hwt_tail;                   // least recently used entry (evicted first)
-static UBYTE hwt_count;                  // entries allocated so far
-static UBYTE hwt_size;                   // usable entries in the reserved range
 static UBYTE hwt_cache_font_idx;         // font the cached tiles were composed with
+#endif
+static UBYTE hwt_count;                  // entries allocated so far (next tile to reuse when uncached)
+static UBYTE hwt_size;                   // usable entries in the reserved range
 static UBYTE hwt_initialized = FALSE;
 
 static UBYTE hwt_tile_buf[16];
@@ -91,24 +105,27 @@ void hwt_cache_reset(void) BANKED {
     hwt_placement_eff = HWT_PLACEMENT_BANK0;
 #endif
     if (hwt_last_tile < hwt_first_tile) {
-        n = HWT_CACHE_MAX;
+        n = HWT_ENTRY_MAX;
     } else {
         UBYTE range = hwt_last_tile - hwt_first_tile + 1u;   // 0 means the full 256 tiles
         if (hwt_placement_eff == HWT_PLACEMENT_ALTERNATE) {
             // one entry per tile per bank; avoid UBYTE overflow before clamping
-            n = (range > (HWT_CACHE_MAX >> 1)) ? HWT_CACHE_MAX : (UBYTE)(range << 1);
+            n = (range > (HWT_ENTRY_MAX >> 1)) ? HWT_ENTRY_MAX : (UBYTE)(range << 1);
         } else {
             n = range;
         }
-        if ((n == 0) || (n > HWT_CACHE_MAX)) n = HWT_CACHE_MAX;
+        if ((n == 0) || (n > HWT_ENTRY_MAX)) n = HWT_ENTRY_MAX;
     }
     hwt_size = n;
     hwt_count = 0;
+#ifdef HWT_CACHE_ENABLED
     hwt_head = hwt_tail = HWT_NULL;
     hwt_cache_font_idx = vwf_current_font_idx;
+#endif
     hwt_initialized = TRUE;
 }
 
+#ifdef HWT_CACHE_ENABLED
 // cached tiles were composed from another font's glyphs: forget them
 static void hwt_check_font(UBYTE font_idx) {
     if (font_idx != hwt_cache_font_idx) {
@@ -116,6 +133,11 @@ static void hwt_check_font(UBYTE font_idx) {
         hwt_cache_font_idx = font_idx;
     }
 }
+#else
+// nothing is retained between characters, so a font change needs no invalidation
+// (and rewinding the round-robin cursor mid-text would overwrite live tiles)
+#define hwt_check_font(font_idx) ((void)(font_idx))
+#endif
 
 // fetch the 8 glyph rows for a character from the current font asset,
 // masked to the left 4px. runs the character through the font's recode
@@ -166,6 +188,7 @@ static void hwt_compose_tile(UBYTE tile, UBYTE bank, UBYTE l, UBYTE r) {
 #endif
 }
 
+#ifdef HWT_CACHE_ENABLED
 // look the pair up in the LRU list; on hit hoist the entry to the head and
 // reuse its tile, on miss allocate a fresh tile (or evict the least recently
 // used one) and render the pair into it.
@@ -212,16 +235,27 @@ static UBYTE hwt_get_pair_entry(UBYTE l, UBYTE r) {
     hwt_compose_tile(hwt_entry_tile(i), hwt_entry_bank(i), l, r);
     return i;
 }
+#else
+// cache disabled: hand the reserved tiles out round-robin and compose the pair
+// every time it is printed
+static UBYTE hwt_get_pair_entry(UBYTE l, UBYTE r) {
+    UBYTE i = hwt_count;
+    if (++hwt_count >= hwt_size) hwt_count = 0;
+    hwt_compose_tile(hwt_entry_tile(i), hwt_entry_bank(i), l, r);
+    return i;
+}
+#endif
+
+// address of the cell n columns right of p, wrapped inside p's 32-cell map row
+static UBYTE * hwt_row_cell(UBYTE * p, UBYTE n) {
+    return (UBYTE *)(((UWORD)p & 0xFFE0u) | (((UWORD)p + n) & 0x1Fu));
+}
 
 static void hwt_emit_pair(UBYTE l, UBYTE r) {
     UBYTE entry = hwt_get_pair_entry(l, r);
     UBYTE tile = hwt_entry_tile(entry);
     UBYTE bank = hwt_entry_bank(entry);
     (void)bank;
-    // wrap around within the 32-tile map row instead of bleeding into the next line
-    if (((UBYTE)hwt_dest_ptr >> 5) != ((UBYTE)hwt_dest_base >> 5)) {
-        hwt_dest_ptr -= 32u;
-    }
 #ifdef CGB
     // the attribute byte carries the palette and the tile data bank (bit 3)
     // the pair tile was composed into
@@ -232,7 +266,7 @@ static void hwt_emit_pair(UBYTE l, UBYTE r) {
     }
 #endif
     set_vram_byte(hwt_dest_ptr, tile);
-    hwt_dest_ptr++;
+    hwt_dest_ptr = hwt_row_cell(hwt_dest_ptr, 1);
 }
 
 // finish an incomplete pair with a half-width space
@@ -488,4 +522,125 @@ void hwt_set_tile_range(SCRIPT_CTX * THIS) OLDCALL BANKED {
     hwt_last_tile       = *(UBYTE *)VM_REF_TO_PTR(FN_ARG1);
     hwt_tile_placement  = *(UBYTE *)VM_REF_TO_PTR(FN_ARG0);
     hwt_cache_reset();
+}
+
+// ---- stock UI replacement -------------------------------------------------
+// With HWT_REPLACE_STOCK_UI set, the plugin's ui.c override leaves
+// ui_draw_text_buffer_char undefined, and this claims the symbol. Everything
+// in the stock engine that drew text -- ui_update(), and through it Display
+// Dialogue, Display Text and ui_run_menu() -- lands here instead, so stock
+// events render with this plugin and the stock renderer costs no ROM.
+#ifdef HWT_REPLACE_STOCK_UI
+UBYTE ui_draw_text_buffer_char(void) BANKED {
+    return hwt_draw_text_buffer_char();
+}
+#endif // HWT_REPLACE_STOCK_UI
+
+// ---- menu ------------------------------------------------------------------
+// A menu whose options are drawn by this plugin rather than by GB Studio's own
+// text renderer. The stock Menu event draws through the stock renderer, so its
+// options come out in the stock font and ignore the tiles this plugin maps to.
+//
+// Unlike the 16px text plugins this one puts a line on a single tilemap row,
+// exactly like stock text, so the cursor needs no scaling -- the stride is kept
+// as a parameter only so the code reads the same as its siblings, and callers
+// pass 1. Nothing here touches the stock ui_run_menu: this plugin does not
+// replace the stock renderer, and stock menus keep working unchanged.
+static void hwt_menu_cursor(const menu_item_t * item, UBYTE tile, UBYTE pitch) {
+    UBYTE y = (item->Y) ? (UBYTE)(((item->Y - 1u) * pitch) + pitch) : 0u;
+#ifdef CGB
+    if (_is_CGB) {
+        VBK_REG = VBK_ATTRIBUTES;
+        set_win_tile_xy(item->X, y, overlay_priority | (text_palette & 0x07u));
+        VBK_REG = VBK_TILES;
+    }
+#endif
+    set_win_tile_xy(item->X, y, tile);
+}
+
+// start_item == NULL means a single-column menu of `count` options, laid out the
+// way this plugin's Menu event draws them, so no menu_item_t table is needed.
+static void hwt_menu_fetch(menu_item_t * out, menu_item_t * start_item, UBYTE bank,
+                              UBYTE index, UBYTE count) {
+    if (start_item == 0) {
+        out->X = 1u;
+        out->Y = index;
+        out->iL = 1u;
+        out->iR = count;
+        out->iU = (index > 1u) ? (UBYTE)(index - 1u) : 0u;
+        out->iD = (index < count) ? (UBYTE)(index + 1u) : 0u;
+    } else {
+        MemcpyBanked(out, start_item + (index - 1u), sizeof(menu_item_t), bank);
+    }
+}
+
+UBYTE hwt_ui_run_menu(menu_item_t * start_item, UBYTE bank, UBYTE options,
+                         UBYTE count, UBYTE start_index, UBYTE pitch) BANKED {
+    menu_item_t current_menu_item;
+    UBYTE current_index = ((options & MENU_SET_START) ? start_index : 1u), next_index = 0u;
+    hwt_menu_fetch(&current_menu_item, start_item, bank, current_index, count);
+
+    hwt_menu_cursor(&current_menu_item, ui_cursor_tile, pitch);
+
+    while (TRUE) {
+        input_update();
+        ui_update();
+
+        toggle_shadow_OAM();
+        camera_update();
+        scroll_update();
+        actors_update();
+        actors_render();
+        projectiles_render();
+        activate_shadow_OAM();
+
+        game_time++;
+        wait_vbl_done();
+
+        if (INPUT_UP_PRESSED) {
+            next_index = current_menu_item.iU;
+        } else if (INPUT_DOWN_PRESSED) {
+            next_index = current_menu_item.iD;
+        } else if (INPUT_LEFT_PRESSED) {
+            next_index = current_menu_item.iL;
+        } else if (INPUT_RIGHT_PRESSED) {
+            next_index = current_menu_item.iR;
+        } else if (INPUT_A_PRESSED) {
+            return ((current_index == count) && (options & MENU_CANCEL_LAST)) ? 0u : current_index;
+        } else if ((INPUT_B_PRESSED) && (options & MENU_CANCEL_B)) {
+            return 0u;
+        } else {
+            continue;
+        }
+
+        if (!next_index) continue;
+
+        current_index = next_index;
+        hwt_menu_cursor(&current_menu_item, ui_bg_tile, pitch);
+        hwt_menu_fetch(&current_menu_item, start_item, bank, current_index, count);
+        hwt_menu_cursor(&current_menu_item, ui_cursor_tile, pitch);
+        next_index = 0;
+    }
+}
+
+// VM native behind this plugin's Menu event. VM_CHOICE is the only instruction
+// that carries a menu and it always calls the stock ui_run_menu, so the event
+// comes through here instead.
+//
+// args (push order): dest, options, count, start_index
+void hwt_menu(SCRIPT_CTX * THIS) OLDCALL BANKED {
+    INT16 dest    = *(INT16 *)VM_REF_TO_PTR(FN_ARG3);
+    UBYTE options = *(UBYTE *)VM_REF_TO_PTR(FN_ARG2);
+    UBYTE count   = *(UBYTE *)VM_REF_TO_PTR(FN_ARG1);
+    UBYTE start   = *(UBYTE *)VM_REF_TO_PTR(FN_ARG0);
+    UBYTE result;
+    INT16 * A;
+    // the options were already drawn, in full, by hwt_display_text; without
+    // this ui_update() in the loop below would render the stock text buffer
+    // straight over them
+    text_drawn = TRUE;
+    result = hwt_ui_run_menu(0, 0, options, count, start, 1u);
+    // negative index = stack-local; step past the four arguments still on the stack
+    A = (dest < 0) ? (INT16 *)(THIS->stack_ptr + dest - 4) : (INT16 *)(script_memory + dest);
+    *A = result;
 }

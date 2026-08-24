@@ -38,6 +38,9 @@
 #if defined(TR_USE_RAY) || defined(TRANSITION_DIAGONAL) || defined(TRANSITION_DIAMOND) || defined(TRANSITION_X)
     #define TR_USE_LINE
 #endif
+#if defined(TRANSITION_SHRINK) || defined(TRANSITION_SPLIT)
+    #define TR_USE_QUAD
+#endif
 
 // --- effects --- (ids are stable; the reverse-pair complements — wipe left/up,
 // curtain close, iris/diamond close, diagonal BR, mask shrink — were dropped and
@@ -62,6 +65,8 @@
 #define E_X           23
 #define E_MASK_GROW   24
 #define E_SPIRAL      26
+#define E_SHRINK      27   // quadrant shift, halves slide inward toward the centre
+#define E_SPLIT       28   // quadrant shift, halves slide outward from the centre
 
 #define BLIND_BAND 3u   // venetian-blind band size (tiles)
 #define NOISE_BINS    32u
@@ -87,6 +92,9 @@ UBYTE tr_src_x, tr_src_y; // source offset in the other scene (copy mode)
 UWORD tr_step, tr_total;
 UWORD tr_min, tr_max; // min frame = initial tr_step; max frame = tr_total (0 = full; clamped to tr_calc_total())
 UBYTE tr_hold_ctr;
+BYTE  tr_sdx, tr_sdy;  // source read offset (quadrant-shift effects; 0 otherwise)
+UBYTE tr_force_fill;   // draw the fill/rim tile whatever the mode says
+UBYTE tr_first;        // TRUE while the first step of a run is being drawn
 UBYTE tr_noise_seed; // per-run seed for the noise dissolve
 UBYTE tr_map_w, tr_mask_w, tr_mask_h;
 const UBYTE * tr_map_ptr, * tr_attr_ptr, * tr_mask_ptr;
@@ -185,38 +193,55 @@ static UWORD tr_calc_total(void) {
 #ifdef TRANSITION_MASK
         case E_MASK_GROW:               return tr_mask_ntiles;
 #endif
+#ifdef TR_USE_QUAD
+        case E_SHRINK: case E_SPLIT: {
+            // A half is fully covered after max(boundary, dim - boundary) steps;
+            // the whole region goes dark as soon as EITHER axis is (the tile is
+            // covered when its x OR its y source has left its half).
+            UBYTE mx = (tr_cx > (UBYTE)(W - tr_cx)) ? tr_cx : (UBYTE)(W - tr_cx);
+            UBYTE my = (tr_cy > (UBYTE)(H - tr_cy)) ? tr_cy : (UBYTE)(H - tr_cy);
+            return (UWORD)((mx < my) ? mx : my) + 1u;   // + the untouched step 0
+        }
+#endif
         default:                        return W;
     }
 }
+
+// Layer-aware VRAM writes: the transition draws into the background tilemap or
+// into the overlay/window tilemap depending on tr_layer.
+static void tr_set_tile(UBYTE vx, UBYTE vy, UBYTE t) {
+    if (tr_layer == L_OVERLAY) set_win_tile_xy(vx, vy, t); else set_bkg_tile_xy(vx, vy, t);
+}
+#ifdef CGB
+static void tr_set_attr(UBYTE vx, UBYTE vy, UBYTE a) {
+    VBK_REG = 1; tr_set_tile(vx, vy, a); VBK_REG = 0;
+}
+#endif
 
 // Draw a single region-local tile (lx,ly) using the current mode/layer.
 static void tr_put(UBYTE lx, UBYTE ly) {
     UBYTE sx = tr_x0 + lx;
     UBYTE sy = tr_y0 + ly;
-    UBYTE vx, vy;
+    // The window write coordinate is region-relative (the window is neither
+    // scrolled nor offset). Tilemap READS are always scene-tile coordinates, so
+    // the live scroll is folded into sx/sy for BOTH layers.
+    UBYTE vx = sx & 31u;
+    UBYTE vy = sy & 31u;
+    sx += (UBYTE)(scroll_x >> 3); sy += (UBYTE)(scroll_y >> 3);
     if (tr_layer == L_BKG) {
-        // logical scene tile (used for tilemap reads) = region + live scroll
-        sx += (UBYTE)(scroll_x >> 3); sy += (UBYTE)(scroll_y >> 3);
         // offset-scroll engines shift the visible VRAM origin by bkg_offset_x/y,
-        // so the VRAM WRITE coordinate adds it (reads stay in logical space).
+        // so the background VRAM WRITE coordinate adds it (reads stay logical).
         vx = (UBYTE)(sx + bkg_offset_x) & 31u;
         vy = (UBYTE)(sy + bkg_offset_y) & 31u;
-    } else {
-        vx = sx & 31u; vy = sy & 31u; // window is not offset
     }
+    // the quadrant-shift effects read their source a few tiles away (0 otherwise)
+    sx += (UBYTE)tr_sdx; sy += (UBYTE)tr_sdy;
 
-    if (tr_mode == M_FILL) {
-        if (tr_layer == L_OVERLAY) {
+    if (tr_force_fill || tr_mode == M_FILL) {
 #ifdef CGB
-            if (_is_CGB) { VBK_REG = 1; set_win_tile_xy(vx, vy, tr_fill_attr); VBK_REG = 0; }
+        if (_is_CGB) tr_set_attr(vx, vy, tr_fill_attr);
 #endif
-            set_win_tile_xy(vx, vy, tr_fill_tile);
-        } else {
-#ifdef CGB
-            if (_is_CGB) { VBK_REG = 1; set_bkg_tile_xy(vx, vy, tr_fill_attr); VBK_REG = 0; }
-#endif
-            set_bkg_tile_xy(vx, vy, tr_fill_tile);
-        }
+        tr_set_tile(vx, vy, tr_fill_tile);
         return;
     }
 
@@ -229,32 +254,25 @@ static void tr_put(UBYTE lx, UBYTE ly) {
                                            TILE_Y_OFFSET(sy) + TILE_X_OFFSET(sx));
             tile = ReadBankedUBYTE(metatile_ptr + tofs, metatile_bank);
 #ifdef CGB
-            if (_is_CGB && metatile_attr_bank) {
-                UBYTE a = ReadBankedUBYTE(metatile_attr_ptr + tofs, metatile_attr_bank);
-                VBK_REG = 1; set_bkg_tile_xy(vx, vy, a); VBK_REG = 0;
-            }
+            if (_is_CGB && metatile_attr_bank)
+                tr_set_attr(vx, vy, ReadBankedUBYTE(metatile_attr_ptr + tofs, metatile_attr_bank));
 #endif
 #else
             UBYTE midx = sram_map_data[METATILE_MAP_OFFSET(sx, sy)];
             tile = ReadBankedUBYTE(metatile_ptr + midx, metatile_bank);
 #ifdef CGB
-            if (_is_CGB && metatile_attr_bank) {
-                UBYTE a = ReadBankedUBYTE(metatile_attr_ptr + midx, metatile_attr_bank);
-                VBK_REG = 1; set_bkg_tile_xy(vx, vy, a); VBK_REG = 0;
-            }
+            if (_is_CGB && metatile_attr_bank)
+                tr_set_attr(vx, vy, ReadBankedUBYTE(metatile_attr_ptr + midx, metatile_attr_bank));
 #endif
 #endif
         } else {
             UWORD off = (UWORD)sy * (UWORD)image_tile_width + sx;
             tile = ReadBankedUBYTE(image_ptr + off, image_bank);
 #ifdef CGB
-            if (_is_CGB) {
-                UBYTE a = ReadBankedUBYTE(image_attr_ptr + off, image_attr_bank);
-                VBK_REG = 1; set_bkg_tile_xy(vx, vy, a); VBK_REG = 0;
-            }
+            if (_is_CGB) tr_set_attr(vx, vy, ReadBankedUBYTE(image_attr_ptr + off, image_attr_bank));
 #endif
         }
-        set_bkg_tile_xy(vx, vy, tile);
+        tr_set_tile(vx, vy, tile);
         return;
     }
 
@@ -263,8 +281,8 @@ static void tr_put(UBYTE lx, UBYTE ly) {
     // (sharing the metatile definitions), so resolve its metatile-index map
     // through metatile_ptr just like the current scene.
     {
-        UBYTE cx = tr_src_x + tr_x0 + lx;
-        UBYTE cy = tr_src_y + tr_y0 + ly;
+        UBYTE cx = tr_src_x + tr_x0 + lx + (UBYTE)tr_sdx;
+        UBYTE cy = tr_src_y + tr_y0 + ly + (UBYTE)tr_sdy;
         UBYTE tile;
 #ifdef CGB
         const UBYTE * a_ptr; UBYTE a_bank; UWORD a_off;
@@ -291,25 +309,38 @@ static void tr_put(UBYTE lx, UBYTE ly) {
             a_ptr = tr_attr_ptr; a_bank = tr_attr_bank; a_off = off;
 #endif
         }
-        if (tr_layer == L_OVERLAY) {
 #ifdef CGB
-            if (_is_CGB && a_ptr) {
-                UBYTE a = ReadBankedUBYTE(a_ptr + a_off, a_bank);
-                VBK_REG = 1; set_win_tile_xy(vx, vy, a); VBK_REG = 0;
-            }
+        if (_is_CGB && a_ptr) tr_set_attr(vx, vy, ReadBankedUBYTE(a_ptr + a_off, a_bank));
 #endif
-            set_win_tile_xy(vx, vy, tile);
-        } else {
-#ifdef CGB
-            if (_is_CGB && a_ptr) {
-                UBYTE a = ReadBankedUBYTE(a_ptr + a_off, a_bank);
-                VBK_REG = 1; set_bkg_tile_xy(vx, vy, a); VBK_REG = 0;
-            }
-#endif
-            set_bkg_tile_xy(vx, vy, tile);
-        }
+        tr_set_tile(vx, vy, tile);
     }
 }
+
+#ifdef TR_USE_QUAD
+// Quadrant shift — the Shrink and Split effects. The region is
+// split into four quadrants at (tr_cx, tr_cy) and each step re-renders every
+// quadrant one tile closer to that centre (Shrink) or one tile further from it
+// (Split), covering the strip the content just vacated with the fill tile.
+//
+// This resolves one axis of one quadrant: `side` 0 = near half (p < h), 1 = far
+// half. Returns the signed source offset (source = destination + offset) and
+// writes the inclusive range of destination tiles whose source is still inside
+// the half — *hi < *lo once that half has been covered completely.
+static BYTE tr_quad_range(UBYTE side, UBYTE h, UBYTE dim, UBYTE k, BYTE * lo, BYTE * hi) {
+    UBYTE outward = FALSE;   // Shrink pulls the halves in, Split pushes them out
+#if defined(TRANSITION_SPLIT) && defined(TRANSITION_SHRINK)
+    outward = (tr_effect == E_SPLIT);
+#elif defined(TRANSITION_SPLIT)
+    outward = TRUE;
+#endif
+    if (outward) {
+        if (!side) { *lo = 0;                          *hi = (BYTE)((int)h - 1 - (int)k);   return (BYTE)k; }
+        *lo = (BYTE)((int)h + (int)k);                 *hi = (BYTE)((int)dim - 1);          return (BYTE)-(BYTE)k;
+    }
+    if (!side) { *lo = (BYTE)k;                        *hi = (BYTE)((int)h - 1);            return (BYTE)-(BYTE)k; }
+    *lo = (BYTE)h;                                     *hi = (BYTE)((int)dim - 1 - (int)k); return (BYTE)k;
+}
+#endif // TR_USE_QUAD
 
 #ifdef TR_USE_LINE
 // Bresenham line between two region-local points (either may lie outside the
@@ -524,6 +555,35 @@ static void tr_draw_step(UWORD k) {
             }
         } break;
 #endif
+#ifdef TR_USE_QUAD
+        case E_SHRINK: case E_SPLIT: {
+            UBYTE q = (UBYTE)k;
+            // The previous step's ranges give the strip that has just been
+            // vacated. On the first drawn step fall back to step 0 (the whole
+            // quadrant) so that a Start step > 0 — and a reversed (reveal) run,
+            // which begins at the last step — still paints the entire rim.
+            UBYTE qp = (tr_first || q == 0u) ? 0u : (UBYTE)(q - 1u);
+            for (UBYTE vside = 0; vside < 2u; vside++) {
+                BYTE ylo, yhi, pylo, pyhi;
+                BYTE dy = tr_quad_range(vside, tr_cy, H, q, &ylo, &yhi);
+                tr_quad_range(vside, tr_cy, H, qp, &pylo, &pyhi);
+                for (UBYTE hside = 0; hside < 2u; hside++) {
+                    BYTE xlo, xhi, pxlo, pxhi;
+                    BYTE dx = tr_quad_range(hside, tr_cx, W, q, &xlo, &xhi);
+                    tr_quad_range(hside, tr_cx, W, qp, &pxlo, &pxhi);
+                    tr_sdx = dx; tr_sdy = dy;                  // the moved content
+                    for (BYTE y = ylo; y <= yhi; y++)
+                        for (BYTE x = xlo; x <= xhi; x++) tr_put((UBYTE)x, (UBYTE)y);
+                    tr_force_fill = TRUE;                      // the vacated strip
+                    for (BYTE y = pylo; y <= pyhi; y++)
+                        for (BYTE x = pxlo; x <= pxhi; x++)
+                            if (y < ylo || y > yhi || x < xlo || x > xhi) tr_put((UBYTE)x, (UBYTE)y);
+                    tr_force_fill = FALSE;
+                }
+            }
+            tr_sdx = 0; tr_sdy = 0;
+        } break;
+#endif
 #ifdef TRANSITION_MASK
         case E_MASK_GROW: { // reveal by the mask scene's tile index, low first (Reversed = high first)
             // Sample so the mask's centre lands on (tr_cx,tr_cy); the mask scene is
@@ -608,6 +668,16 @@ static void tr_begin(void) {
     if (tr_cy == 0xFFu) tr_cy = tr_h >> 1;
     // (custom centres are already clamped into the region by the event)
 
+    tr_sdx = 0; tr_sdy = 0;
+    tr_force_fill = FALSE;
+    tr_first = TRUE;
+#ifdef TR_USE_QUAD
+    // The quadrant-shift effects always RE-RENDER moved content, so a fill
+    // ("Transition Out") run reads the live scene exactly like a refresh and
+    // spends the fill tile only on the rim the sliding halves uncover.
+    if ((tr_effect == E_SHRINK || tr_effect == E_SPLIT) && tr_mode == M_FILL) tr_mode = M_REFRESH;
+#endif
+
     if (tr_layer != L_BKG) tr_overlay_show(); // overlay primes+shows the window; bkg tracks scroll live in tr_put
 
     tr_attr_ptr = 0;
@@ -666,6 +736,7 @@ UBYTE screen_transition_update(void * THIS, UBYTE start, UWORD * stack_frame) OL
         // direction / CW<->CCW) — same steps as forward, just reversed order, so
         // min/max always select the same portion regardless of direction.
         tr_draw_step(tr_reverse ? (UWORD)(tr_total - 1u - tr_step + tr_min) : tr_step);
+        tr_first = FALSE;
         tr_step++;
     }
 

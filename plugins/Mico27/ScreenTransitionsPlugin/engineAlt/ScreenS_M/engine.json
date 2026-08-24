@@ -15,7 +15,9 @@
         { "key": "TRANSITION_NOISE", "label": "Random Noise", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
         { "key": "TRANSITION_FAN", "label": "4-Blade Fan", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
         { "key": "TRANSITION_X", "label": "X (cross)", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
-        { "key": "TRANSITION_MASK", "label": "Mask (scene as mask)", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 }
+        { "key": "TRANSITION_MASK", "label": "Mask (scene as mask)", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_SHRINK", "label": "Shrink (quadrants inward)", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 },
+        { "key": "TRANSITION_SPLIT", "label": "Split (quadrants outward)", "group": "Screen Transitions", "type": "checkbox", "cType": "define", "defaultValue": 1 }
     ],
     "sceneTypes": []
 }

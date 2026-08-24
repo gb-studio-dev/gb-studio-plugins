@@ -34,14 +34,3 @@ Index: src/core/data_manager.c
                      // resolve and set base_tile for each actor
                      UBYTE idx = IndexOfFarPtr(scn.sprites.ptr, scn.sprites.bank, sprites_len, &actor->sprite);
                      actor->base_tile = (idx < sprites_len) ? scene_sprites_base_tiles[idx] : 0;
-@@ -346,9 +354,9 @@
-     // Load triggers
-     if (triggers_len != 0) {
-         MemcpyBanked(&triggers, scn.triggers.ptr, sizeof(trigger_t) * triggers_len, scn.triggers.bank);
-     }
--    scene_transition_reset();
-+
-     scroll_reset();
-     scroll_offset_x = 0;
-     scroll_offset_y = 0;
-     trigger_reset();

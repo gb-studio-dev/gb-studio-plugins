@@ -2,17 +2,7 @@ Index: src/core/data_manager.c
 ===================================================================
 --- src/core/data_manager.c
 +++ src/core/data_manager.c
-@@ -14,9 +14,8 @@
- #include "ui.h"
- #include "palette.h"
- #include "data/spritesheet_none.h"
- #include "data/data_bootstrap.h"
--#include "meta_tiles.h"
- #include "macro.h"
- #include "scene_stack_ex.h"
- 
- #define ALLOC_BKG_TILES_TOWARDS_SPR
-@@ -237,10 +236,16 @@
+@@ -237,10 +237,16 @@
  
      if (scene_type != SCENE_TYPE_LOGO) {
          // Load player
@@ -29,7 +19,7 @@ Index: src/core/data_manager.c
              load_animations(scn.player_sprite.ptr, scn.player_sprite.bank, ANIM_SET_DEFAULT, PLAYER.animations);
              load_bounds(scn.player_sprite.ptr, scn.player_sprite.bank, &PLAYER.bounds);
          }
-@@ -289,10 +294,11 @@
+@@ -289,10 +295,11 @@
              for (i = actors_len - 1; i != 0; i--, actor++) {
                  if (actor->reserve_tiles) {
                      // exclusive sprites allocated separately to avoid overwriting if modified
@@ -42,7 +32,7 @@ Index: src/core/data_manager.c
                      // resolve and set base_tile for each actor
                      UBYTE idx = IndexOfFarPtr(scn.sprites.ptr, scn.sprites.bank, sprites_len, &actor->sprite);
                      actor->base_tile = (idx < sprites_len) ? scene_sprites_base_tiles[idx] : 0;
-@@ -341,11 +347,8 @@
+@@ -341,11 +348,9 @@
      if (triggers_len != 0) {
          MemcpyBanked(&triggers, scn.triggers.ptr, sizeof(trigger_t) * triggers_len, scn.triggers.bank);
      }
@@ -50,6 +40,7 @@ Index: src/core/data_manager.c
 -    if (!vm_pop_scene_stack_state) {
 -        metatile_reset();
 -    }
++    metatile_reset();
      scroll_reset();
      scroll_offset_x = 0;
      scroll_offset_y = 0;

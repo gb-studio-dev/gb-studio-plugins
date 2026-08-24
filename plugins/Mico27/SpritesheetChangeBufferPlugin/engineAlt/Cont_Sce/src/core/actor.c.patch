@@ -27,11 +27,3 @@ Index: src/core/actor.c
              screen_x,
              screen_y
          );
-@@ -549,5 +550,5 @@
-     } else if (player_iframes != 0) {
-         player_iframes--;
-     }
-     player_collision_actor = NULL;
--}
-\ No newline at end of file
-+}

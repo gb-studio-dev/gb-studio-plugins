@@ -56,6 +56,18 @@ UBYTE ttx_current_text_speed;
 #endif
 #define TTX_NULL 0xFFu
 
+// TTX_CACHE_ENABLED engine field (Settings -> Tall Text): unchecking it
+// compiles the LRU bookkeeping out entirely. Characters are then rendered into
+// the reserved tile pairs round-robin, which costs no WRAM and no lookup but
+// re-uploads every character on every use, so the reserved range must hold all
+// the characters visible at once. Without the LRU arrays the entry count is
+// limited by the reserved range alone, not by TTX_CACHE_MAX.
+#ifdef TTX_CACHE_ENABLED
+#define TTX_ENTRY_MAX TTX_CACHE_MAX
+#else
+#define TTX_ENTRY_MAX 254u
+#endif
+
 // where cached tiles live in VRAM (ttx_tile_placement engine field).
 // bank 1 placements only take effect on CGB (color-only or mixed mode on
 // color hardware): the tilemap attribute bit 3 selects the tile data bank,
@@ -73,14 +85,16 @@ static UBYTE ttx_placement_eff;
 // bank-0-only: cache entry i owns VRAM tiles (ttx_first_tile + 2*i) and
 // (+ 2*i + 1); alternate placement maps entries 2k/2k+1 onto the same pair
 // of tile indices in banks 0 and 1 respectively
+#ifdef TTX_CACHE_ENABLED
 static UBYTE ttx_key[TTX_CACHE_MAX];     // character the pair was rendered from
 static UBYTE ttx_next[TTX_CACHE_MAX];    // towards least recently used
 static UBYTE ttx_prev[TTX_CACHE_MAX];    // towards most recently used
 static UBYTE ttx_head;                   // most recently used entry
 static UBYTE ttx_tail;                   // least recently used entry (evicted first)
-static UBYTE ttx_count;                  // entries allocated so far
-static UBYTE ttx_size;                   // usable entries in the reserved range
 static UBYTE ttx_cache_font_idx;         // font the cached tiles were rendered with
+#endif
+static UBYTE ttx_count;                  // entries allocated so far (next pair to reuse when uncached)
+static UBYTE ttx_size;                   // usable entries in the reserved range
 static UBYTE ttx_initialized = FALSE;
 
 // char printer internals
@@ -96,7 +110,7 @@ void ttx_cache_reset(void) BANKED {
     ttx_placement_eff = TTX_PLACEMENT_BANK0;
 #endif
     if (ttx_last_tile < ttx_first_tile) {
-        n = TTX_CACHE_MAX;
+        n = TTX_ENTRY_MAX;
     } else {
         UBYTE range = ttx_last_tile - ttx_first_tile + 1u;   // 0 means the full 256 tiles
         if (ttx_placement_eff == TTX_PLACEMENT_ALTERNATE) {
@@ -104,15 +118,22 @@ void ttx_cache_reset(void) BANKED {
         } else {
             n = range >> 1;
         }
-        if ((n == 0) || (n > TTX_CACHE_MAX)) n = TTX_CACHE_MAX;
+#if TTX_ENTRY_MAX < 254u
+        // only the LRU tables can cap the count below what the range holds
+        if (n > TTX_ENTRY_MAX) n = TTX_ENTRY_MAX;
+#endif
+        if (n == 0) n = TTX_ENTRY_MAX;  // range too small for one tile pair
     }
     ttx_size = n;
     ttx_count = 0;
+#ifdef TTX_CACHE_ENABLED
     ttx_head = ttx_tail = TTX_NULL;
     ttx_cache_font_idx = vwf_current_font_idx;
+#endif
     ttx_initialized = TRUE;
 }
 
+#ifdef TTX_CACHE_ENABLED
 // cached tiles were rendered from another font's glyphs: forget them
 static void ttx_check_font(UBYTE font_idx) {
     if (font_idx != ttx_cache_font_idx) {
@@ -120,6 +141,11 @@ static void ttx_check_font(UBYTE font_idx) {
         ttx_cache_font_idx = font_idx;
     }
 }
+#else
+// nothing is retained between characters, so a font change needs no invalidation
+// (and rewinding the round-robin cursor mid-text would overwrite live tiles)
+#define ttx_check_font(font_idx) ((void)(font_idx))
+#endif
 
 // top-half VRAM tile index owned by cache entry i (bottom half is + 1)
 static UBYTE ttx_entry_tile(UBYTE i) {
@@ -155,6 +181,7 @@ static void ttx_load_glyph_tiles(UBYTE tile, UBYTE bank, UBYTE ch) {
 #endif
 }
 
+#ifdef TTX_CACHE_ENABLED
 // look the character up in the LRU list; on hit hoist the entry to the head
 // and reuse its tile pair, on miss allocate a fresh pair (or evict the least
 // recently used one) and render the character into it.
@@ -200,6 +227,16 @@ static UBYTE ttx_get_char_entry(UBYTE ch) {
     ttx_load_glyph_tiles(ttx_entry_tile(i), ttx_entry_bank(i), ch);
     return i;
 }
+#else
+// cache disabled: hand the reserved tile pairs out round-robin and re-upload
+// the character every time it is printed
+static UBYTE ttx_get_char_entry(UBYTE ch) {
+    UBYTE i = ttx_count;
+    if (++ttx_count >= ttx_size) ttx_count = 0;
+    ttx_load_glyph_tiles(ttx_entry_tile(i), ttx_entry_bank(i), ch);
+    return i;
+}
+#endif
 
 // write one tilemap cell; on CGB the attribute byte carries the palette and
 // the tile data bank (bit 3) the glyph was uploaded to
@@ -215,17 +252,18 @@ inline void ttx_set_tile(UBYTE * addr, UBYTE tile, UBYTE bank) {
     set_vram_byte(addr, tile);
 }
 
+// address of the cell n columns right of p, wrapped inside p's 32-cell map row
+static UBYTE * ttx_row_cell(UBYTE * p, UBYTE n) {
+    return (UBYTE *)(((UWORD)p & 0xFFE0u) | (((UWORD)p + n) & 0x1Fu));
+}
+
 static void ttx_emit_char(UBYTE ch) {
     UBYTE entry = ttx_get_char_entry(ch);
     UBYTE tile = ttx_entry_tile(entry);
     UBYTE bank = ttx_entry_bank(entry);
-    // wrap around within the 32-tile map row instead of bleeding into the next line
-    if (((UBYTE)ttx_dest_ptr >> 5) != ((UBYTE)ttx_dest_base >> 5)) {
-        ttx_dest_ptr -= 32u;
-    }
     ttx_set_tile(ttx_dest_ptr, tile, bank);              // top half
     ttx_set_tile(ttx_dest_ptr + 32u, tile + 1u, bank);   // bottom half, map row below
-    ttx_dest_ptr++;
+    ttx_dest_ptr = ttx_row_cell(ttx_dest_ptr, 1);
 }
 
 // renders one character (or a run of control codes) of ui_text_data.
@@ -466,3 +504,149 @@ void ttx_set_tile_range(SCRIPT_CTX * THIS) OLDCALL BANKED {
     ttx_tile_placement  = *(UBYTE *)VM_REF_TO_PTR(FN_ARG0);
     ttx_cache_reset();
 }
+
+// ---- stock UI replacement -------------------------------------------------
+// With TTX_REPLACE_STOCK_UI set, the plugin's ui.c override leaves
+// ui_draw_text_buffer_char undefined, and this claims the symbol. Everything
+// in the stock engine that drew text -- ui_update(), and through it Display
+// Dialogue, Display Text and ui_run_menu() -- lands here instead, so stock
+// events render with this plugin and the stock renderer costs no ROM.
+#ifdef TTX_REPLACE_STOCK_UI
+UBYTE ui_draw_text_buffer_char(void) BANKED {
+    return ttx_draw_text_buffer_char();
+}
+#endif // TTX_REPLACE_STOCK_UI
+
+// ---- menu ------------------------------------------------------------------
+// The stock menu driver steps its cursor one 8px row per option. A line of this
+// plugin's text is two rows, so the cursor has to move in the same stride as
+// whatever drew the text -- hence this copy, with the stride as a parameter.
+//
+// It is always compiled, under its own name, so the plugin's Menu event can call
+// it whether or not the stock renderer is replaced. When TTX_REPLACE_STOCK_UI
+// does remove the stock ui_run_menu, the symbol is rewired to it further down.
+//
+// start_item == NULL means a single-column menu of `count` options, laid out the
+// way this plugin's Menu event draws them. Synthesising those saves carrying a
+// menu_item_t table in WRAM just to describe previous/next.
+static void ttx_menu_item_at(menu_item_t * out, UBYTE index, UBYTE count) {
+    out->X = 1u;
+    out->Y = index;              // stock row numbering; the stride is applied below
+    out->iL = 1u;
+    out->iR = count;
+    out->iU = (index > 1u) ? (UBYTE)(index - 1u) : 0u;
+    out->iD = (index < count) ? (UBYTE)(index + 1u) : 0u;
+}
+
+static void ttx_menu_fetch(menu_item_t * out, menu_item_t * start_item, UBYTE bank,
+                              UBYTE index, UBYTE count) {
+    if (start_item == 0) {
+        ttx_menu_item_at(out, index, count);
+    } else {
+        MemcpyBanked(out, start_item + (index - 1u), sizeof(menu_item_t), bank);
+    }
+}
+
+// Option n occupies rows (n - 1) * pitch + 1 through + pitch. Which of those the
+// cursor takes is the TTX_MENU_CURSOR_ROW engine setting: 0 the upper tile, 1
+// the lower. Beside a 16px line the upper tile reads as floating above the word
+// and the lower sits level with the baseline, but which looks right depends on
+// the font. At pitch 1 there is only one row and both settings give the stock
+// position, so this is inert for single-row text.
+#ifndef TTX_MENU_CURSOR_ROW
+#define TTX_MENU_CURSOR_ROW 1
+#endif
+
+static void ttx_menu_cursor(const menu_item_t * item, UBYTE tile, UBYTE pitch) {
+    // a compile-time constant either way, so the ternary folds away
+    UBYTE ofs = (TTX_MENU_CURSOR_ROW) ? pitch : 1u;
+    UBYTE y = (item->Y) ? (UBYTE)(((item->Y - 1u) * pitch) + ofs) : 0u;
+#ifdef CGB
+    if (_is_CGB) {
+        VBK_REG = VBK_ATTRIBUTES;
+        set_win_tile_xy(item->X, y, overlay_priority | (text_palette & 0x07u));
+        VBK_REG = VBK_TILES;
+    }
+#endif
+    set_win_tile_xy(item->X, y, tile);
+}
+
+UBYTE ttx_ui_run_menu(menu_item_t * start_item, UBYTE bank, UBYTE options,
+                       UBYTE count, UBYTE start_index, UBYTE pitch) BANKED {
+    menu_item_t current_menu_item;
+    UBYTE current_index = ((options & MENU_SET_START) ? start_index : 1u), next_index = 0u;
+    ttx_menu_fetch(&current_menu_item, start_item, bank, current_index, count);
+
+    ttx_menu_cursor(&current_menu_item, ui_cursor_tile, pitch);
+
+    while (TRUE) {
+        input_update();
+        ui_update();
+
+        toggle_shadow_OAM();
+        camera_update();
+        scroll_update();
+        actors_update();
+        actors_render();
+        projectiles_render();
+        activate_shadow_OAM();
+
+        game_time++;
+        wait_vbl_done();
+
+        if (INPUT_UP_PRESSED) {
+            next_index = current_menu_item.iU;
+        } else if (INPUT_DOWN_PRESSED) {
+            next_index = current_menu_item.iD;
+        } else if (INPUT_LEFT_PRESSED) {
+            next_index = current_menu_item.iL;
+        } else if (INPUT_RIGHT_PRESSED) {
+            next_index = current_menu_item.iR;
+        } else if (INPUT_A_PRESSED) {
+            return ((current_index == count) && (options & MENU_CANCEL_LAST)) ? 0u : current_index;
+        } else if ((INPUT_B_PRESSED) && (options & MENU_CANCEL_B)) {
+            return 0u;
+        } else {
+            continue;
+        }
+
+        if (!next_index) continue;
+
+        current_index = next_index;
+        ttx_menu_cursor(&current_menu_item, ui_bg_tile, pitch);
+        ttx_menu_fetch(&current_menu_item, start_item, bank, current_index, count);
+        ttx_menu_cursor(&current_menu_item, ui_cursor_tile, pitch);
+        next_index = 0;
+    }
+}
+
+// VM native behind this plugin's Menu event. VM_CHOICE is the only instruction
+// that carries a menu, and it always calls the stock ui_run_menu -- so the event
+// calls ttx_ui_run_menu through here instead, and works with the stock renderer
+// left in place.
+//
+// args (push order): dest, options, count, start_index
+void ttx_menu(SCRIPT_CTX * THIS) OLDCALL BANKED {
+    INT16 dest    = *(INT16 *)VM_REF_TO_PTR(FN_ARG3);
+    UBYTE options = *(UBYTE *)VM_REF_TO_PTR(FN_ARG2);
+    UBYTE count   = *(UBYTE *)VM_REF_TO_PTR(FN_ARG1);
+    UBYTE start   = *(UBYTE *)VM_REF_TO_PTR(FN_ARG0);
+    UBYTE result;
+    INT16 * A;
+    // the options were drawn in full before this ran, so stop ui_update() inside
+    // the menu loop from rendering the stock text buffer over the top of them
+    text_drawn = TRUE;
+    result = ttx_ui_run_menu(0, 0, options, count, start, 2u);
+    // negative index = stack-local; step past the four arguments still on the stack
+    A = (dest < 0) ? (INT16 *)(THIS->stack_ptr + dest - 4) : (INT16 *)(script_memory + dest);
+    *A = result;
+}
+
+#ifdef TTX_REPLACE_STOCK_UI
+// The stock renderer is gone, so everything on screen is this plugin's and every
+// menu is two rows per option -- including the stock Menu event's, which reaches
+// here through VM_CHOICE.
+UBYTE ui_run_menu(menu_item_t * start_item, UBYTE bank, UBYTE options, UBYTE count, UBYTE start_index) BANKED {
+    return ttx_ui_run_menu(start_item, bank, options, count, start_index, 2u);
+}
+#endif // TTX_REPLACE_STOCK_UI

@@ -30,23 +30,69 @@
       "group": "Tall Text",
       "type": "select",
       "options": [
-        [0, "Bank 0 only"],
-        [1, "Bank 1 only (Color)"],
-        [2, "Alternate bank 0/1 (Color)"]
+        [
+          0,
+          "Bank 0 only"
+        ],
+        [
+          1,
+          "Bank 1 only (Color)"
+        ],
+        [
+          2,
+          "Alternate bank 0/1 (Color)"
+        ]
       ],
       "cType": "UBYTE",
       "defaultValue": 0
     },
     {
+      "key": "TTX_CACHE_ENABLED",
+      "label": "Enable character tile cache",
+      "description": "When enabled, rendered tile pairs are tracked in an LRU cache so a character that was already drawn reuses its pair instead of consuming a new one. Disable it to compile the cache out: every character is then rendered into the next tile pair of the reserved range, cycling round-robin. That reclaims all of the cache WRAM (3 bytes per entry) and skips the lookup, but each character is re-uploaded on every use and the reserved range must be large enough for all characters visible at once (two tiles each), otherwise tiles still on screen get overwritten.",
+      "group": "Tall Text",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
       "key": "TTX_CACHE_MAX",
       "label": "Character cache capacity (entries)",
-      "description": "Maximum number of characters the tile-pair LRU cache can track. Each entry costs 3 bytes of WRAM and, when in use, two consecutive VRAM tiles from the reserved range. The usable entry count at runtime is the smaller of this value and (reserved tile range / 2). Lower it to reclaim WRAM, raise it only alongside a larger reserved tile range.",
+      "description": "Maximum number of characters the tile-pair LRU cache can track. Each entry costs 3 bytes of WRAM and, when in use, two consecutive VRAM tiles from the reserved range. The usable entry count at runtime is the smaller of this value and (reserved tile range / 2). Lower it to reclaim WRAM, raise it only alongside a larger reserved tile range. Ignored when the character tile cache is disabled: the whole reserved range is then used.",
       "group": "Tall Text",
       "type": "slider",
       "cType": "define",
       "defaultValue": 64,
       "min": 4,
       "max": 128
+    },
+    {
+      "key": "TTX_REPLACE_STOCK_UI",
+      "label": "Replace stock text rendering",
+      "description": "Compile GB Studio's own text renderer out of the ROM and point everything that used it at this plugin instead. The stock Display Dialogue, Display Text and Menu events then draw in 16px-tall text, without being replaced by this plugin's own events. Two things follow. Tiles 204-255, which the stock renderer used as its scratch buffer, are free: they can be added to this plugin's reserved tile range with nothing left to collide with. Menus are handled separately and need none of this: the plugin always supplies the menu driver, so its own Menu event works whether this is on or off.",
+      "group": "Tall Text",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 0
+    },
+    {
+      "key": "TTX_MENU_CURSOR_ROW",
+      "label": "Menu cursor row",
+      "description": "Which tile of a menu line the cursor sits on. A line of this plugin's text is two tilemap rows tall, so the cursor can go beside the top half or the bottom half of it. The lower tile sits level with the baseline; the upper one reads as slightly raised. Which looks right depends on where your font puts its glyphs inside the cell, so try both. Only affects menus drawn by this plugin's Menu event, and by the stock Menu event when 'Replace stock text rendering' is on.",
+      "group": "Tall Text",
+      "type": "select",
+      "options": [
+        [
+          1,
+          "Lower tile of the line"
+        ],
+        [
+          0,
+          "Upper tile of the line"
+        ]
+      ],
+      "cType": "define",
+      "defaultValue": 1
     }
   ]
 }

@@ -33,7 +33,30 @@ const fields = [
   },
 ];
 
+
+const featureEnabled = (helpers, key) => {
+  const value =
+    helpers.engineFieldValues &&
+    helpers.engineFieldValues.find((s) => s.id === key);
+  if (value && value.value !== undefined && value.value !== null) {
+    return !!value.value;
+  }
+  const field = helpers.engineFields && helpers.engineFields[key];
+  return field ? !!field.defaultValue : true;
+};
+
+/** The trigger this event feeds has its own compile time switch. */
+const requireFeature = (helpers) => {
+  if (!featureEnabled(helpers, "DYNPROJ_ENABLE_ACTOR_HIT_SCRIPT")) {
+    throw new Error(
+      'The "Actor Hit" projectile script is disabled. Enable it under Settings -> Engine -> Dynamic Projectiles.'
+    );
+  }
+};
+
 const compile = (input, helpers) => {
+  requireFeature(helpers);
+
   const { appendRaw, _compileSubScript, _addComment } = helpers;
 
   _addComment("Set Projectile Actor Hit Script");

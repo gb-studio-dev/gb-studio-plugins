@@ -25,5 +25,8 @@ void hwt_display_text_speed(SCRIPT_CTX * THIS) OLDCALL BANKED;
 UBYTE hwt_display_dialogue(void * THIS, UBYTE start, UWORD * stack_frame) OLDCALL BANKED;
 void hwt_reset_cache(SCRIPT_CTX * THIS) OLDCALL BANKED;
 void hwt_set_tile_range(SCRIPT_CTX * THIS) OLDCALL BANKED;
+UBYTE hwt_ui_run_menu(menu_item_t * start_item, UBYTE bank, UBYTE options,
+                      UBYTE count, UBYTE start_index, UBYTE pitch) BANKED;
+void hwt_menu(SCRIPT_CTX * THIS) OLDCALL BANKED;
 
 #endif

@@ -97,13 +97,22 @@
 #define BHV_EVENT_ACTIVATE_TRIGGERS 0x80u // fire trigger onEnter/onLeave scripts as this actor
                                           // moves in/out of a trigger (player-style activation)
 
-// Actor behavior states (actor_state)
+// Actor behavior states (actor_state). 4 through 15 are free for your own use.
+// BHV_STATE_KEEP is a "leave it alone" marker for Set Actor Behavior, never a
+// value that reaches the actor.
 #define BHV_STATE_PAUSED    0
 #define BHV_STATE_GROUNDED  1
 #define BHV_STATE_AIRBORNE_Y 2
 #define BHV_STATE_AIRBORNE_Z 3
 #define BHV_STATE_KEEP      255
 
+// Callback slot numbers are part of the plugin's saved project data (the
+// "Attach a Script to a Dynamic Actor Event" event stores the slot number), so
+// they are fixed and must never be renumbered. The slots are grouped so that
+// each compile-time gate switches off a run of slots at the END of the table,
+// which is what lets DYNAMIC_ACTOR_CALLBACK_SIZE shrink without moving any
+// surviving slot: [0] state change, [1..4] tile collision, [5] tile enter,
+// [6..7] activation.
 typedef enum dynamic_actor_event_e {
     DYNAMIC_ACTOR_EVENT_STATE_CHANGE = 0,
     DYNAMIC_ACTOR_EVENT_TILE_COLLISION_TOP = 1,
@@ -111,12 +120,39 @@ typedef enum dynamic_actor_event_e {
     DYNAMIC_ACTOR_EVENT_TILE_COLLISION_BOTTOM = 3,
     DYNAMIC_ACTOR_EVENT_TILE_COLLISION_LEFT = 4,
     DYNAMIC_ACTOR_EVENT_TILE_ENTER = 5,
-#ifdef DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS
     DYNAMIC_ACTOR_EVENT_ACTOR_ACTIVATED = 6,
-    DYNAMIC_ACTOR_EVENT_ACTOR_DEACTIVATED = 7,
-#endif
-    DYNAMIC_ACTOR_CALLBACK_SIZE
+    DYNAMIC_ACTOR_EVENT_ACTOR_DEACTIVATED = 7
 } dynamic_actor_event_e;
+
+// Slots actually allocated, given the gates. Each entry is a script_event_t
+// (5 bytes of RAM). Never zero - a zero length array is not valid C - so the
+// leanest build still pays for slot 0.
+#if defined(DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS)
+#define DYNAMIC_ACTOR_CALLBACK_SIZE 8
+#elif defined(DYNAMIC_ACTOR_ENABLE_TILE_ENTER_EVENT)
+#define DYNAMIC_ACTOR_CALLBACK_SIZE 6
+#elif defined(DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS)
+#define DYNAMIC_ACTOR_CALLBACK_SIZE 5
+#else
+#define DYNAMIC_ACTOR_CALLBACK_SIZE 1
+#endif
+
+// The two tile callback groups share one dispatch helper, so it is compiled
+// whenever either of them is.
+#if defined(DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS) || defined(DYNAMIC_ACTOR_ENABLE_TILE_ENTER_EVENT)
+#define DYNAMIC_ACTOR_USES_TILE_INTERACTION
+#endif
+
+// "Tile enter" granularity, from the engine setting of the same name. The
+// actor's tile is worked out in 8x8 tiles either way; a 16x16 grid is that
+// shifted down once more rather than a second conversion from sub-pixels. Only
+// the change detection is coarsened - the script still receives the real 8x8
+// tile the actor arrived on, so Event tile x/y and the tile collision value
+// keep meaning what they always did.
+#ifndef DYNAMIC_ACTOR_TILE_ENTER_SIZE
+#define DYNAMIC_ACTOR_TILE_ENTER_SIZE 0
+#endif
+#define DYNAMIC_ACTOR_TILE_ENTER_CELL(tile) ((tile) >> DYNAMIC_ACTOR_TILE_ENTER_SIZE)
 
 typedef struct behavior_def_t {
     UBYTE flags;         // BHV_* physics components
@@ -126,9 +162,15 @@ typedef struct behavior_def_t {
     BYTE max_fall_vel;  // max downward velocity in subpixels/frame
     UBYTE bounce;        // energy kept on bounce, 0..255 (255 = perfect reflect)
     UBYTE event_flags;   // BHV_EVENT_* trigger permissions
-    UBYTE reserved;      // pads the slot to 8 bytes so behavior_defs indexing
-                         // compiles to a shift instead of a multiply; free for
-                         // a future field
+    UBYTE override_tile_collision; // Replaces every tile collision mask this
+                         // behavior tests when non-zero, so a behavior can react
+                         // to a fixed set of tile bits regardless of which
+                         // direction it is testing (0 = stock collision, mask
+                         // tested as normal). Only read when
+                         // DYNAMIC_ACTOR_ENABLE_OVERRIDE_TILE_COLLISION is on; the
+                         // byte itself stays either way, since it is the padding
+                         // that keeps the slot at 8 bytes so behavior_defs
+                         // indexing compiles to a shift instead of a multiply.
 } behavior_def_t;
 
 extern script_event_t dynamic_actor_events[DYNAMIC_ACTOR_CALLBACK_SIZE];
