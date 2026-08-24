@@ -6,7 +6,7 @@
   "images": [
     "screenshots/dialogue-test.png",
     "screenshots/dialogue-test2.png",
-    "screenshots/choice-test2.png"
+    "screenshots/choice-test.png"
   ],
   "version": "1.0.0",
   "gbsVersion": ">=4.3.0",
