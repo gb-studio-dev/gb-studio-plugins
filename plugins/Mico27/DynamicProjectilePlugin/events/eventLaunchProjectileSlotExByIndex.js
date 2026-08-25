@@ -2,7 +2,7 @@
 // Run `node tools/gen_by_index_events.js` after changing
 // eventLaunchProjectileSlotEx.js, which this is derived from.
 const id = "DYNPROJ_EVENT_LAUNCH_PROJECTILE_SLOT_BY_INDEX";
-const name = "Launch Projectile From Slot By Index (Extended)";
+const name = "Launch Dynamic Projectile From Slot By Index";
 const groups = ["Projectiles"];
 
 const maxProjectileSlots = (helpers) => {
@@ -24,7 +24,7 @@ const requireSlot = (helpers, slot) => {
     throw new Error(
       `Projectile slot ${slot} is out of range. "Max projectile slots" is ${max}, so slots 0 to ${
         max - 1
-      } are available (Settings -> Engine -> Custom Projectiles).`
+      } are available (Settings -> Engine -> Dynamic Projectiles).`
     );
   }
 };
@@ -87,7 +87,7 @@ const fields = [
   },
   {
     label:
-      "Same as the stock Launch Projectile From Slot event, but the slot is a plain number so it can reach the extra slots added by the Max projectile slots setting. Actors are given as indexes (0 = player, then scene order) so they can come from a variable. The Dynamic projectile tab carries the few values that are per launch rather than per slot.",
+      "Same as the stock Launch Projectile In Slot event, but the slot is a plain number so it can reach the extra slots added by the Max projectile slots setting. Actors are given as indexes (0 = player, then scene order) so they can come from a variable. The Dynamic projectile tab carries the few values that are per launch rather than per slot.",
   },
   {
     key: "slot",
@@ -336,6 +336,17 @@ const fields = [
         conditions: [{ key: "directionType", eq: "targetpos" }],
       },
     ],
+  },
+  {
+    key: "frame",
+    label: "Start Frame",
+    description:
+      "How many frames into the animation this shot starts, counted from the first frame of whichever direction it faces. 0 starts at the beginning. Keep it inside the animation's length - it is added as-is, so an overshoot lands on whatever frame follows.",
+    type: "value",
+    min: 0,
+    max: 255,
+    defaultValue: { type: "number", value: 0 },
+    conditions: [sourceTab],
   },
   {
     label:
@@ -642,6 +653,7 @@ const compile = (input, helpers) => {
     "projectile_actor_index",
     value(input.paramActorIndex, 0)
   );
+  engineFieldSetToScriptValue("projectile_frame", value(input.frame, 0));
 
   if (input.sourceType === "position" && input.directionType === "targetpos") {
     // Neither end is an actor, so both points go into locals and the angle

@@ -82,6 +82,14 @@ export const fields = [
     type: "checkbox",
     defaultValue: false,
   },
+  {
+    key: "relative_to_scroll",
+    label: "Destination relative to camera scroll",
+    description:
+      "When enabled, Destination X/Y are screen coordinates: (0,0) is the top-left tile currently visible and the camera's scroll position is added automatically. When disabled, they are absolute scene tile coordinates.",
+    type: "checkbox",
+    width: "100%",
+  },
 ];
 
 export const compile = (input, helpers) => {
@@ -135,6 +143,10 @@ export const compile = (input, helpers) => {
 
 
 
+  // Pushed first so it lands in the deepest argument slot and every existing
+  // argument index stays where it was.
+  _stackPushConst(input.relative_to_scroll ? 1 : 0);
+
   _stackPushConst(`_${scene.symbol}`);
   _stackPushConst(`___bank_${scene.symbol}`);
   _stackPushConst((input.commit)? 1: 0);
@@ -143,6 +155,6 @@ export const compile = (input, helpers) => {
   _stackPush(tmp0);
 
   _callNative("vm_submap_metatiles");
-  _stackPop(6);
+  _stackPop(7);
 
 };

@@ -1,0 +1,34 @@
+Index: src/states/pointnclick.c
+===================================================================
+--- src/states/pointnclick.c
++++ src/states/pointnclick.c
+@@ -10,8 +10,9 @@
+ #include "game_time.h"
+ #include "input.h"
+ #include "trigger.h"
+ #include "vm.h"
++#include "collision_ex.h"
+ #include "dynamic_actor.h"
+ 
+ #ifndef POINT_N_CLICK_CAMERA_DEADZONE
+ #define POINT_N_CLICK_CAMERA_DEADZONE 24
+@@ -19,8 +20,9 @@
+ 
+ UBYTE last_hit_trigger = MAX_TRIGGERS;
+ 
+ void pointnclick_init(void) BANKED {
++    COLLISION_EX_INIT();
+     camera_offset_x = 0;
+     camera_offset_y = 0;
+     camera_deadzone_x = POINT_N_CLICK_CAMERA_DEADZONE;
+     camera_deadzone_y = POINT_N_CLICK_CAMERA_DEADZONE;
+@@ -29,8 +31,9 @@
+     dynamic_actor_init();
+ }
+ 
+ void pointnclick_update(void) BANKED {
++    COLLISION_EX_UPDATE();
+     UBYTE angle, hit_trigger, is_hover_trigger, is_hover_actor;
+     actor_t *hit_actor;
+ 
+     player_moving = FALSE;

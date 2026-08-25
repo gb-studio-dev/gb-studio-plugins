@@ -349,6 +349,19 @@ export const fields = [
     },
   },
   {
+    key: "overrideTileCollision",
+    label: "Tile Collision Override",
+    description:
+      "Advanced. Requires the 'Enable tile collision override' engine setting; ignored (and rejected if set) without it. Replaces the collision mask this behavior tests against a tile when non-zero, so 0 means stock collision (tested against the direction it is moving, as normal). Tile bits: 1 top, 2 bottom, 4 left, 8 right; then the 16-112 value space (16 ladder, 32-112 the six slopes) and 128, which no engine code reads. A property bit (16 and up) makes tiles carrying it solid from every direction. A direction bit (1-8) makes the behavior react to only that one side, from whichever direction it approaches. An empty tile is never solid whatever the value.",
+    type: "value",
+    min: 0,
+    max: 255,
+    defaultValue: {
+      type: "number",
+      value: 0,
+    },
+  },
+  {
     key: "bounce",
     label: "Bounciness",
     description:
@@ -431,8 +444,37 @@ export const compile = (input, helpers) => {
     eventFlags |= BHV_EVENT_ACTIVATE_TRIGGERS;
   }
 
+  // The engine ignores the override unless its setting is on, so a value that
+  // would silently do nothing is reported here instead of at runtime. A
+  // variable or expression can't be checked at compile time - the setting
+  // alone decides.
+  const overrideTileCollision = input.overrideTileCollision || { type: "number", value: 0 };
+  const overrideIsSet =
+    overrideTileCollision.type !== "number" || Number(overrideTileCollision.value) !== 0;
+  if (overrideIsSet) {
+    const key = "DYNAMIC_ACTOR_ENABLE_OVERRIDE_TILE_COLLISION";
+    const fv =
+      helpers.engineFieldValues && helpers.engineFieldValues.find((s) => s.id === key);
+    const field = helpers.engineFields && helpers.engineFields[key];
+    const enabled =
+      fv && fv.value !== undefined && fv.value !== null
+        ? !!fv.value
+        : field
+        ? !!field.defaultValue
+        : true;
+    if (!enabled) {
+      throw new Error(
+        `"Tile Collision Override" requires the "Enable tile collision override" engine setting to be enabled (Settings → Engine → Dynamic actor), or set it back to 0.`,
+      );
+    }
+  }
+
   _addComment(`Define Actor Behavior (flags: ${flags}, flags2: ${flags2}, collision: ${collisionType}, eventFlags: ${eventFlags})`);
 
+  // Pushed first so the existing arguments keep their FN_ARGn slots. Pushed
+  // whether or not the feature is compiled in, so the argument count always
+  // matches what vm_define_actor_behavior indexes and the VM_POP below.
+  _stackPushScriptValue(overrideTileCollision);
   _stackPushConst(eventFlags);
   _stackPushConst(collisionType);
   _stackPushScriptValue(input.bounce || { type: "number", value: 128 });
@@ -443,5 +485,5 @@ export const compile = (input, helpers) => {
   _stackPushScriptValue(input.behaviorId);
 
   _callNative("vm_define_actor_behavior");
-  _stackPop(8);
+  _stackPop(9);
 };

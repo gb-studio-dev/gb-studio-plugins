@@ -2,7 +2,7 @@ Index: include/projectiles.h
 ===================================================================
 --- include/projectiles.h
 +++ include/projectiles.h
-@@ -2,21 +2,74 @@
+@@ -2,21 +2,82 @@
  #define PROJECTILES_H
  
  #include <gbdk/platform.h>
@@ -20,7 +20,7 @@ Index: include/projectiles.h
 -#define MAX_PROJECTILES 5
 -#define MAX_PROJECTILE_DEFS 5
 +// Size of the live projectile pool, from the "Max concurrent projectiles"
-+// setting under Settings -> Engine -> Custom Projectiles. Each entry is a
++// setting under Settings -> Engine -> Dynamic Projectiles. Each entry is a
 +// projectile_t in WRAM, so raising it costs memory; the fallback keeps this
 +// header usable if the define is ever missing.
 +#ifndef DYNPROJ_MAX_PROJECTILES
@@ -55,8 +55,15 @@ Index: include/projectiles.h
 +// VM native: stores the bank/pointer of the "on removal" script.
 +void vm_define_projectile_behavior(SCRIPT_CTX * THIS) OLDCALL BANKED;
 +void set_removal_script(SCRIPT_CTX * THIS) OLDCALL BANKED;
++#ifdef DYNPROJ_ENABLE_TILE_HIT_SCRIPT
 +void set_tile_hit_script(SCRIPT_CTX * THIS) OLDCALL BANKED;
+ #endif
++#ifdef DYNPROJ_ENABLE_ACTOR_HIT_SCRIPT
 +void set_actor_hit_script(SCRIPT_CTX * THIS) OLDCALL BANKED;
++#endif
++#ifdef DYNPROJ_ENABLE_TILE_ENTER_SCRIPT
++void set_tile_enter_script(SCRIPT_CTX * THIS) OLDCALL BANKED;
++#endif
 +
 +// Engine-field globals (declaration order must match engine.json field order).
 +extern UBYTE projectile_pause;
@@ -66,6 +73,7 @@ Index: include/projectiles.h
 +extern BYTE  projectile_distance;
 +extern BYTE  projectile_distance2;
 +extern UBYTE projectile_phase;
++extern UBYTE projectile_frame;
 +extern UBYTE projectile_hookshot_state;
 +extern UBYTE projectile_hookshot_tile_hit;
 +extern UBYTE projectile_hookshot_actor_hit;
@@ -80,4 +88,4 @@ Index: include/projectiles.h
 +extern UWORD projectile_delta_x;
 +extern UWORD projectile_delta_y;
 +
- #endif
++#endif

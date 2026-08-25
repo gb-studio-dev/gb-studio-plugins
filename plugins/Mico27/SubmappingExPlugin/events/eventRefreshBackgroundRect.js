@@ -45,6 +45,14 @@ export const fields = [
       },
     ],
   },
+  {
+    key: "relative_to_scroll",
+    label: "Coordinates relative to camera scroll",
+    description:
+      "When enabled, X/Y are screen coordinates: (0,0) is the top-left tile currently visible and the camera's scroll position is added automatically. When disabled, X/Y are absolute scene tile coordinates.",
+    type: "checkbox",
+    width: "100%",
+  },
 ];
 
 export const compile = (input, helpers) => {
@@ -58,12 +66,13 @@ export const compile = (input, helpers) => {
     throw new Error("This event requires the \"Refresh background rectangle (reload original scene tiles)\" engine setting to be enabled (Settings → Engine → Submapping Ex).");
   }
 
-  const { _callNative, _stackPushScriptValue, _stackPop, _addComment } = helpers;
+  const { _callNative, _stackPushScriptValue, _stackPushConst, _stackPop, _addComment } = helpers;
   _addComment("Refresh background rectangle");
+  _stackPushConst(input.relative_to_scroll ? 1 : 0);
   _stackPushScriptValue(input.h);
   _stackPushScriptValue(input.w);
   _stackPushScriptValue(input.y);
   _stackPushScriptValue(input.x);
   _callNative("vm_refresh_background_rect");
-  _stackPop(4);
+  _stackPop(5);
 };

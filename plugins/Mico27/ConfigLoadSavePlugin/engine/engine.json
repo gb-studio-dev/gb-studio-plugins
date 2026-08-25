@@ -1,1 +1,51 @@
-{"version": "4.3.0-e1"}
+{
+    "version": "4.3.0-e1",
+    "fields": [
+        {
+            "key": "SAVE_STRUCTURE",
+            "label": "Save structure",
+            "description": "What a save slot holds. Full save-state is GB Studio's own structure: every variable plus the scene, the actors, the music and the running scripts, so loading resumes the game exactly where it was saved. The other two hold variables and nothing else, so loading restores no scene and no running scripts — the game keeps playing where it is with the saved variables in place.",
+            "group": "Configure Load/Save",
+            "type": "select",
+            "options": [
+                [
+                    "SAVE_STRUCTURE_FULL",
+                    "Full save-state (GB Studio default)"
+                ],
+                [
+                    "SAVE_STRUCTURE_VARIABLES",
+                    "All variables only"
+                ],
+                [
+                    "SAVE_STRUCTURE_CUSTOM",
+                    "Custom variable set (Save configuration event)"
+                ]
+            ],
+            "cType": "define",
+            "defaultValue": "SAVE_STRUCTURE_FULL"
+        },
+        {
+            "key": "SAVE_SRAM_START_BANK",
+            "label": "Starting SRAM bank",
+            "description": "First SRAM bank the save slots are written to. Banks below it are left alone for plugins that keep their own data in SRAM. Raised automatically when a compatibility variant is in use. Changing this moves every slot, so existing save data stops being found.",
+            "group": "Configure Load/Save",
+            "type": "slider",
+            "cType": "define",
+            "min": 0,
+            "max": 3,
+            "defaultValue": 1
+        },
+        {
+            "key": "SAVE_SLOT_COUNT",
+            "label": "Save slot count",
+            "description": "How many save slots the game has. Saving to or loading from a slot beyond this does nothing. Slots are packed head to tail from the starting bank onwards, so how many actually fit depends on the size of one save: a slot that would run past the last SRAM bank is refused too.",
+            "group": "Configure Load/Save",
+            "type": "slider",
+            "cType": "define",
+            "min": 1,
+            "max": 255,
+            "defaultValue": 3
+        }
+    ],
+    "sceneTypes": []
+}

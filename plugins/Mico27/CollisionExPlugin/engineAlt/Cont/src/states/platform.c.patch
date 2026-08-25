@@ -1,0 +1,180 @@
+Index: src/states/platform.c
+===================================================================
+--- src/states/platform.c
++++ src/states/platform.c
+@@ -14,8 +14,9 @@
+ #include "math.h"
+ #include "scroll.h"
+ #include "trigger.h"
+ #include "vm.h"
++#include "collision_ex.h"
+ #include "macro.h"
+ #include "continuous_scene.h"
+ 
+ // Feature Flags --------------------------------------------------------------
+@@ -499,8 +500,9 @@
+ // End of Function Definitions ------------------------------------------------
+ 
+ void platform_init(void) BANKED
+ {
++    COLLISION_EX_INIT();
+     plat_callback_reset();
+ 
+     // Initialize Camera
+     camera_offset_x = 0;
+@@ -585,8 +587,9 @@
+ }
+ 
+ void platform_update(void) BANKED
+ {
++    COLLISION_EX_UPDATE();
+     // State transitions
+ 
+     if (plat_state != plat_next_state)
+     {
+@@ -930,11 +933,11 @@
+         UBYTE tile_start = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
+         UBYTE tile_end = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom);
+         UBYTE tile_xl = SUBPX_TO_TILE(new_x + PLAYER.bounds.left);
+         UBYTE tile_xr = SUBPX_TO_TILE(new_x + PLAYER.bounds.right);
+-        UBYTE col = tile_col_test_range_x(COLLISION_ALL, tile_start, tile_xl, tile_xr);
++        UBYTE col = tile_col_test_range_x(PLAYER_TILE_COL(COLLISION_ALL), tile_start, tile_xl, tile_xr);
+         if (!col) {
+-            col = tile_col_test_range_x(COLLISION_ALL, tile_end, tile_xl, tile_xr);
++            col = tile_col_test_range_x(PLAYER_TILE_COL(COLLISION_ALL), tile_end, tile_xl, tile_xr);
+         }
+         if (col) {
+             plat_next_state = FALL_STATE;
+             return;
+@@ -1145,9 +1148,9 @@
+         }
+ 
+         UBYTE tile_x = SUBPX_TO_TILE(new_x + bounds_edge);
+ 
+-        UBYTE tile = tile_col_test_range_y(hit_flag, tile_x, tile_y_start, tile_y_end);
++        UBYTE tile = COLLISION_EX_HIT(tile_col_test_range_y(PLAYER_TILE_COL(hit_flag), tile_x, tile_y_start, tile_y_end), moving_right ? COLLISION_EX_DIR_RIGHT : COLLISION_EX_DIR_LEFT);
+ 
+         if (tile)
+         {
+ #ifdef FEAT_PLATFORM_SLOPES
+@@ -1276,9 +1279,9 @@
+                     plat_slope_y = tile_hit_y;
+                     plat_on_slope = tile;
+                     plat_grounded = TRUE;
+ 
+-                    UBYTE top_tile = tile_col_test_range_x(COLLISION_BOTTOM, slope_top_tile_y, tile_x_start, tile_x_end);
++                    UBYTE top_tile = COLLISION_EX_HIT(tile_col_test_range_x(PLAYER_TILE_COL(COLLISION_BOTTOM), slope_top_tile_y, tile_x_start, tile_x_end), COLLISION_EX_DIR_UP);
+                     if (top_tile) {
+                         plat_vel_y = 0;
+                         plat_vel_x = 0;
+                         PLAYER.pos.x -= plat_delta_x;
+@@ -1308,9 +1311,9 @@
+ #endif
+                 goto finally_update_y;
+             }
+ 
+-            tile = tile_col_test_range_x(COLLISION_TOP, new_tile_y, tile_x_start, tile_x_end);
++            tile = COLLISION_EX_HIT(tile_col_test_range_x(PLAYER_TILE_COL(COLLISION_TOP), new_tile_y, tile_x_start, tile_x_end), COLLISION_EX_DIR_DOWN);
+             if (tile) {
+ #ifdef FEAT_PLATFORM_DROP_THROUGH
+                 // Only drop through platforms without a bottom collision
+                 if (plat_drop_timer && !(tile & COLLISION_BOTTOM))
+@@ -1335,9 +1338,9 @@
+         else if (plat_delta_y < 0)
+         {
+             // Moving Upward
+             UBYTE tile_y = SUBPX_TO_TILE(new_y + PLAYER.bounds.top);
+-            UBYTE tile = tile_col_test_range_x(COLLISION_BOTTOM, tile_y, tile_x_start, tile_x_end);
++            UBYTE tile = COLLISION_EX_HIT(tile_col_test_range_x(PLAYER_TILE_COL(COLLISION_BOTTOM), tile_y, tile_x_start, tile_x_end), COLLISION_EX_DIR_UP);
+ 
+             if (tile)
+             {
+                 // Hit the ceiling
+@@ -2096,9 +2099,9 @@
+         // Check if grounded
+         UWORD p_half_width = DIV_2(PLAYER.bounds.right - PLAYER.bounds.left);
+         UBYTE tile_x_mid = SUBPX_TO_TILE(PLAYER.pos.x + PLAYER.bounds.left + p_half_width);
+         UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1;
+-        plat_grounded = tile_at(tile_x_mid, tile_y) & (COLLISION_TOP | COLLISION_SLOPE);
++        plat_grounded = tile_at(tile_x_mid, tile_y) & PLAYER_TILE_COL(COLLISION_TOP | COLLISION_SLOPE);
+ 
+         if (
+             // Can dash from ground and is grounded (or coyote time)
+             ((plat_dash_jump_from & DASH_FROM_GROUND) && plat_grounded)
+@@ -2151,9 +2154,9 @@
+ 
+         UBYTE tile_start = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.top);
+         UBYTE tile_end = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1;
+         UBYTE tile_x = tile_x_mid + (PLAYER.dir == DIR_LEFT ? -1 : 1);
+-        UBYTE tile_edge = (PLAYER.dir == DIR_LEFT ? COLLISION_RIGHT : COLLISION_LEFT);
++        UBYTE tile_edge = PLAYER_TILE_COL(PLAYER.dir == DIR_LEFT ? COLLISION_RIGHT : COLLISION_LEFT);
+ 
+         while (tile_start != tile_end)
+         {
+             UBYTE tile = tile_at(tile_x, tile_start);
+@@ -2198,9 +2201,9 @@
+             plat_vel_y = -plat_climb_vel;
+         }
+         // If reached the top of ladder and tile just below can be stood on then let go of ladder
+         else if (tile_at(tile_x_mid, SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1) &
+-                    COLLISION_TOP)
++                    PLAYER_TILE_COL(COLLISION_TOP))
+         {
+             plat_next_state = GROUND_STATE;
+             PLAYER.pos.y = TILE_TO_SUBPX(SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1) - PLAYER.bounds.bottom - 1;
+             return;
+@@ -2221,9 +2224,9 @@
+         {
+             plat_vel_y = plat_climb_vel;
+         }
+         // If reached bottom of ladder then let go
+-        else if (tile & COLLISION_TOP)
++        else if (tile & PLAYER_TILE_COL(COLLISION_TOP))
+         {
+             plat_next_state = GROUND_STATE;
+             PLAYER.pos.y = TILE_TO_SUBPX(tile_y) - PLAYER.bounds.bottom - 1;
+             return;
+@@ -2250,9 +2253,9 @@
+ 
+         // If tile below player can be stood on then let go of ladder
+         UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1;
+         UBYTE tile = tile_at(tile_x_mid, tile_y);
+-        if (tile & COLLISION_TOP)
++        if (tile & PLAYER_TILE_COL(COLLISION_TOP))
+         {
+             plat_vel_x = 0;
+             plat_next_state = FALL_STATE;
+             return;
+@@ -2275,9 +2278,9 @@
+                 plat_vel_x = -plat_climb_vel;
+                 return;
+             }
+ #ifdef FEAT_PLATFORM_LADDERS_WALK_OFF
+-            else if (tile & COLLISION_RIGHT)
++            else if (tile & PLAYER_TILE_COL(COLLISION_RIGHT))
+             {
+                 plat_next_state = LADDER_STATE; // If there is a wall, stay on the ladder.
+                 return;
+             }
+@@ -2291,9 +2294,9 @@
+ 
+         // If tile below player can be stood on then let go of ladder
+         UBYTE tile_y = SUBPX_TO_TILE(PLAYER.pos.y + PLAYER.bounds.bottom) + 1;
+         UBYTE tile = tile_at(tile_x_mid, tile_y);
+-        if (tile & COLLISION_TOP)
++        if (tile & PLAYER_TILE_COL(COLLISION_TOP))
+         {
+             plat_vel_x = 0;
+             plat_next_state = FALL_STATE;
+             return;
+@@ -2317,9 +2320,9 @@
+                 plat_vel_x = plat_climb_vel;
+                 return;
+             }
+ #ifdef FEAT_PLATFORM_LADDERS_WALK_OFF
+-            else if (tile & COLLISION_LEFT)
++            else if (tile & PLAYER_TILE_COL(COLLISION_LEFT))
+             {
+                 plat_next_state = LADDER_STATE;
+                 return;
+             }

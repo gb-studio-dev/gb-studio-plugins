@@ -1,5 +1,5 @@
 const id = "DYNPROJ_EVENT_LOAD_PROJECTILE_SLOT";
-const name = "Define Projectile Slot";
+const name = "Load Dynamic Projectile Into Slot";
 const groups = ["Projectiles"];
 
 // Behaviour ids (must match projectile_state in projectiles.c).
@@ -24,33 +24,39 @@ const CHAIN_LOOSE = "1";
 // Component flags (must match projectiles.c). The field is 5 bits and all five
 // are in use, so a new flag means finding a bit elsewhere in the definition.
 const EXECUTE_SCRIPT = 1 << 0;
-const INFINITE_LIFETIME = 1 << 1;
+const TILE_ENTER_SCRIPT = 1 << 1;
 const IGNORE_PLAYER = 1 << 2;
 const TILE_HIT_SCRIPT = 1 << 3;
 const ACTOR_HIT_SCRIPT = 1 << 4;
 
-// Tile collision behaviour (projectile_def_t.collision, 2 bits).
+// Tile collision behaviour (projectile_def_t.collision, 2 bits). Bounce
+// reflects the velocity exactly and Stay drops it, so neither needs a rebound
+// strength - which is what freed the definition's old bounce byte to become the
+// tile collision override below.
 const COLLISION_NONE = "0";
 const COLLISION_REMOVE = "1";
 const COLLISION_BOUNCE = "2";
-const COLLISION_BOUNCE_FLOOR = "3";
+const COLLISION_STAY = "3";
 
+// overrideTileCollision is the definition byte shared by the tile collision
+// override and (for a chain, which never tests tiles) the link catch-up speed.
 const PRESETS = {
-  bullet: { type: TYPE.default, collision: COLLISION_REMOVE, gravity: 0, bounce: 0, amplitude: 0, frequency: 0 },
-  lob: { type: TYPE.arc, collision: COLLISION_REMOVE, gravity: 6, bounce: 0, amplitude: 0, frequency: 0 },
-  grenade: { type: TYPE.default, collision: COLLISION_BOUNCE, gravity: 4, bounce: 60, amplitude: 0, frequency: 0 },
-  boomerang: { type: TYPE.boomerang, collision: COLLISION_NONE, gravity: 0, bounce: 0, amplitude: 0, frequency: 0 },
-  wave: { type: TYPE.sine, collision: COLLISION_REMOVE, gravity: 0, bounce: 0, amplitude: 30, frequency: 10 },
-  orbiter: { type: TYPE.orbit, collision: COLLISION_NONE, gravity: 0, bounce: 0, amplitude: 100, frequency: 16 },
-  grapple: { type: TYPE.hookshot, collision: COLLISION_REMOVE, gravity: 0, bounce: 0, amplitude: 0, frequency: 0 },
-  held: { type: TYPE.anchor, collision: COLLISION_NONE, gravity: 0, bounce: 0, amplitude: 0, frequency: 0 },
-  scripted: { type: TYPE.custom, collision: COLLISION_REMOVE, gravity: 0, bounce: 0, amplitude: 0, frequency: 0 },
+  bullet: { type: TYPE.default, collision: COLLISION_REMOVE, gravity: 0, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
+  lob: { type: TYPE.arc, collision: COLLISION_REMOVE, gravity: 6, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
+  grenade: { type: TYPE.default, collision: COLLISION_BOUNCE, gravity: 4, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
+  boomerang: { type: TYPE.boomerang, collision: COLLISION_NONE, gravity: 0, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
+  wave: { type: TYPE.sine, collision: COLLISION_REMOVE, gravity: 0, overrideTileCollision: 0, amplitude: 30, frequency: 10 },
+  orbiter: { type: TYPE.orbit, collision: COLLISION_NONE, gravity: 0, overrideTileCollision: 0, amplitude: 100, frequency: 16 },
+  grapple: { type: TYPE.hookshot, collision: COLLISION_REMOVE, gravity: 0, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
+  held: { type: TYPE.anchor, collision: COLLISION_NONE, gravity: 0, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
+  scripted: { type: TYPE.custom, collision: COLLISION_REMOVE, gravity: 0, overrideTileCollision: 0, amplitude: 0, frequency: 0 },
   // A taut chain: six links spread evenly between the two actors.
-  tether: { type: TYPE.chain, collision: CHAIN_STRAIGHT, gravity: 0, bounce: 0, amplitude: 0, frequency: 6 },
+  tether: { type: TYPE.chain, collision: CHAIN_STRAIGHT, gravity: 0, overrideTileCollision: 0, amplitude: 0, frequency: 6 },
   // A chain that hangs and drags: 7 pixels of slack against a 2 pixel catch-up.
-  leash: { type: TYPE.chain, collision: CHAIN_LOOSE, gravity: 0, bounce: 2, amplitude: 7, frequency: 6 },
-  // Four tail sprites four samples apart, hopping under light gravity.
-  firetrail: { type: TYPE.trail, collision: COLLISION_BOUNCE_FLOOR, gravity: 3, bounce: 24, amplitude: 4, frequency: 4 },
+  leash: { type: TYPE.chain, collision: CHAIN_LOOSE, gravity: 0, overrideTileCollision: 2, amplitude: 7, frequency: 6 },
+  // Four tail sprites four samples apart, hopping under light gravity. Bounce is
+  // all faces now, so it rebounds off walls as well as floors.
+  firetrail: { type: TYPE.trail, collision: COLLISION_BOUNCE, gravity: 3, overrideTileCollision: 0, amplitude: 4, frequency: 4 },
 };
 
 const num = (value) => ({ type: "number", value });
@@ -131,7 +137,7 @@ const autoLabel = (fetchArg, input) => {
     firetrail: "Fire trail",
     custom: "Custom",
   };
-  return `Define Projectile Slot ${fetchArg("slot")} : ${
+  return `Load Dynamic Projectile Into Slot ${fetchArg("slot")} : ${
     labels[input.preset] || "Custom"
   }`;
 };
@@ -150,7 +156,7 @@ const fields = [
     key: "slot",
     label: "Projectile Slot",
     description:
-      "Slot this definition goes into (0 to Max projectile slots - 1). Fire it with Launch Projectile From Slot.",
+      "Slot this definition goes into (0 to Max projectile slots - 1). Fire it with Launch Dynamic Projectile From Slot.",
     type: "number",
     min: 0,
     max: 19,
@@ -205,6 +211,8 @@ const fields = [
       {
         key: "lifeTime",
         label: "Life Time",
+        description:
+          "Seconds before the projectile expires on its own. 0 means it never does - it then only goes away by hitting something, leaving the screen, or a script removing it.",
         type: "number",
         min: 0,
         max: 4,
@@ -314,13 +322,14 @@ const fields = [
   {
     key: "collision",
     label: "Tile Collision Behaviour",
-    description: "What happens when one of these meets a solid tile.",
+    description:
+      "What happens when one of these meets a solid tile. Bounce reflects its velocity exactly; Stop on impact drops the velocity so it halts where it struck and lives out its lifetime there. Both act on velocity, so they only apply to the behaviours that travel by it - Orbit, Held and Scripted are placed by other means, and for those only Remove projectile reacts to tiles.",
     type: "select",
     options: [
       [COLLISION_NONE, "Pass through"],
       [COLLISION_REMOVE, "Remove projectile"],
-      [COLLISION_BOUNCE, "Bounce"],
-      [COLLISION_BOUNCE_FLOOR, "Bounce (only floor)"],
+      [COLLISION_BOUNCE, "Bounce (perfect reflect)"],
+      [COLLISION_STAY, "Stop on impact"],
     ],
     defaultValue: COLLISION_REMOVE,
     conditions: forTypes(
@@ -356,14 +365,15 @@ const fields = [
     ),
   },
   {
-    key: "bounce",
-    label: "Bounce",
-    description: "How hard it rebounds off a surface.",
+    key: "overrideTileCollision",
+    label: "Tile Collision Override",
+    description:
+      "Advanced. Requires the 'Enable tile collision override' engine setting; ignored (and rejected if set) without it. Replaces the collision mask this projectile tests against a tile when non-zero, so 0 means stock collision (tested against the direction it is travelling, as normal). Tile bits: 1 top, 2 bottom, 4 left, 8 right; then the 16-112 value space (16 ladder, 32-112 the six slopes) and 128, which no engine code reads. A property bit (16 and up) makes tiles carrying it solid from every direction. A direction bit (1-8) makes the projectile react to only that one side, from whichever direction it approaches. An empty tile is never solid whatever the value.",
     type: "value",
     min: 0,
-    max: 128,
+    max: 255,
     defaultValue: { type: "number", value: 0 },
-    conditions: [behaviorTab, customBehaviour, { key: "collision", gte: COLLISION_BOUNCE }],
+    conditions: [behaviorTab, customBehaviour, { key: "collision", ne: COLLISION_NONE }],
   },
   {
     key: "amplitude",
@@ -444,7 +454,7 @@ const fields = [
     key: "bounce",
     label: "Catch-Up Speed",
     description:
-      "How fast a link closes the gap once it is past the slack, in pixels per update. 0 makes the chain rigid, closing it in one step.",
+      "How fast a link closes the gap once it is past the slack, in pixels per update. 0 makes the chain rigid, closing it in one step. (A chain never tests tiles, so this shares the definition byte other behaviours use for their tile collision override.)",
     type: "value",
     min: 0,
     max: 32,
@@ -566,9 +576,10 @@ const fields = [
     conditions: forTypes(TYPE.custom),
   },
   {
-    key: "compInfiniteLifetime",
-    label: "Infinite lifetime",
-    description: "Ignore the life time above so these never expire on their own.",
+    key: "compTileEnterScript",
+    label: "Run Tile Enter script",
+    description:
+      'Trigger the script set by "Set Projectile Tile Enter Script" when one of these crosses into a new tile.',
     type: "checkbox",
     defaultValue: false,
     conditions: [behaviorTab],
@@ -629,7 +640,7 @@ const compile = (input, helpers) => {
     throw new Error(
       `Projectile slot ${slot} is out of range. "Max projectile slots" is ${maxSlots}, so slots 0 to ${
         maxSlots - 1
-      } are available (Settings -> Engine -> Custom Projectiles).`
+      } are available (Settings -> Engine -> Dynamic Projectiles).`
     );
   }
 
@@ -648,25 +659,65 @@ const compile = (input, helpers) => {
   const required = typeDefines[type];
   if (required && !featureEnabled(helpers, required[0])) {
     throw new Error(
-      `The "${required[1]}" projectile behaviour is disabled. Enable it under Settings -> Engine -> Custom Projectiles, or pick another behaviour.`
+      `The "${required[1]}" projectile behaviour is disabled. Enable it under Settings -> Engine -> Dynamic Projectiles, or pick another behaviour.`
     );
   }
 
+  // The three shared triggers each have a compile time switch. A slot that
+  // ticks one while it is off gets the bit cleared rather than an error: the
+  // checkbox cannot be hidden (field conditions cannot read engine settings),
+  // and the flag would be dead weight the engine no longer looks at anyway.
+  // Turning the switch back on restores the tick without touching the slot.
   let flags = 0;
-  if (input.compInfiniteLifetime) flags |= INFINITE_LIFETIME;
+  if (
+    input.compTileEnterScript &&
+    featureEnabled(helpers, "DYNPROJ_ENABLE_TILE_ENTER_SCRIPT")
+  ) {
+    flags |= TILE_ENTER_SCRIPT;
+  }
   if (input.compIgnorePlayer) flags |= IGNORE_PLAYER;
   if (input.compRemoveScript !== false) flags |= EXECUTE_SCRIPT;
-  if (input.compTileHitScript !== false) flags |= TILE_HIT_SCRIPT;
-  if (input.compActorHitScript !== false) flags |= ACTOR_HIT_SCRIPT;
+  if (
+    input.compTileHitScript !== false &&
+    featureEnabled(helpers, "DYNPROJ_ENABLE_TILE_HIT_SCRIPT")
+  ) {
+    flags |= TILE_HIT_SCRIPT;
+  }
+  if (
+    input.compActorHitScript !== false &&
+    featureEnabled(helpers, "DYNPROJ_ENABLE_ACTOR_HIT_SCRIPT")
+  ) {
+    flags |= ACTOR_HIT_SCRIPT;
+  }
 
   const value = (v, fallback) =>
     v === undefined || v === null ? { type: "number", value: fallback } : v;
   const gravity = preset
     ? { type: "number", value: preset.gravity }
     : value(input.gravity, 0);
-  const bounce = preset
-    ? { type: "number", value: preset.bounce }
-    : value(input.bounce, 0);
+  // One definition byte, two meanings. A chain never reaches the tile tests, so
+  // it borrows the byte for its link catch-up speed - the same trick it plays
+  // with collision - and keeps its own field key. Everything else uses it as the
+  // tile collision override.
+  const isChain = type === TYPE.chain;
+  const overrideTileCollision = preset
+    ? { type: "number", value: preset.overrideTileCollision }
+    : isChain
+    ? value(input.bounce, 2)
+    : value(input.overrideTileCollision, 0);
+  // A mask the engine was not compiled to read would silently do nothing, so it
+  // is reported here instead. Only a constant can be checked; a variable is left
+  // to the setting.
+  if (
+    !isChain &&
+    overrideTileCollision.type === "number" &&
+    Number(overrideTileCollision.value) !== 0 &&
+    !featureEnabled(helpers, "DYNPROJ_ENABLE_OVERRIDE_TILE_COLLISION")
+  ) {
+    throw new Error(
+      `"Tile Collision Override" requires the "Enable tile collision override" engine setting to be enabled (Settings -> Engine -> Dynamic Projectiles), or set it back to 0.`
+    );
+  }
   // Amplitude and frequency mean something different for every behaviour that
   // reads them, so the fallback for a field the input never carried has to
   // follow the behaviour too.
@@ -695,7 +746,7 @@ const compile = (input, helpers) => {
     if (type === TYPE.chain) {
       if (links !== null && (links < 2 || links > budget)) {
         throw new Error(
-          `A chain of ${links} links does not fit: it needs 2 to ${budget} points, and "Points per chain / trail" is ${budget} (Settings -> Engine -> Custom Projectiles).`
+          `A chain of ${links} links does not fit: it needs 2 to ${budget} points, and "Points per chain / trail" is ${budget} (Settings -> Engine -> Dynamic Projectiles).`
         );
       }
     } else if (links !== null && spacing !== null) {
@@ -708,7 +759,7 @@ const compile = (input, helpers) => {
         throw new Error(
           `A trail of ${links} segments spaced ${spacing} apart needs ${
             links * spacing
-          } points, but "Points per chain / trail" is ${budget}. Raise it under Settings -> Engine -> Custom Projectiles, or use fewer or closer segments.`
+          } points, but "Points per chain / trail" is ${budget}. Raise it under Settings -> Engine -> Dynamic Projectiles, or use fewer or closer segments.`
         );
       }
     }
@@ -735,7 +786,7 @@ const compile = (input, helpers) => {
   );
   _stackPushScriptValue(frequency);
   _stackPushScriptValue(amplitude);
-  _stackPushScriptValue(bounce);
+  _stackPushScriptValue(overrideTileCollision);
   _stackPushScriptValue(gravity);
   // Numbers from here on: these become raw operands in the instruction.
   _stackPushConst(Number(collision));

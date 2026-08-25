@@ -1,0 +1,10 @@
+{
+  "type": "eventsPlugin",
+  "name": "Attach script to input extended Plugin",
+  "author": "Mico27",
+  "url": "https://github.com/Mico27/gbs-AttachScriptToInputExPlugin",
+  "description": "Adds on hold and on release input scripts, button combinations, double tap detection and input sequence detection to the attach script to input event.",
+  "license": "MIT",
+  "version": "1.2.0",
+  "gbsVersion": ">=4.3.0"
+}

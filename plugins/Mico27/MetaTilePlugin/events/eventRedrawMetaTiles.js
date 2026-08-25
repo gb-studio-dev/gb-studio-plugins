@@ -47,12 +47,24 @@ export const fields = [
       value: 1,
     },
   },
+  {
+    key: "relative_to_scroll",
+    label: "Position relative to camera scroll",
+    description:
+      "When enabled, X/Y are screen coordinates: (0,0) is the top-left tile currently visible and the camera's scroll position is added automatically. When disabled, they are absolute scene tile coordinates.",
+    type: "checkbox",
+    width: "100%",
+  },
 ];
 
 export const compile = (input, helpers) => {
-  const { _callNative, _stackPushScriptValue, _stackPop, _addComment } = helpers;
+  const { _callNative, _stackPushConst, _stackPushScriptValue, _stackPop, _addComment } = helpers;
 
   _addComment("Redraw meta tiles");
+
+  // Pushed first so it lands in the deepest argument slot and every existing
+  // argument index stays where it was.
+  _stackPushConst(input.relative_to_scroll ? 1 : 0);
 
   _stackPushScriptValue(input.height);
   _stackPushScriptValue(input.width);
@@ -60,5 +72,5 @@ export const compile = (input, helpers) => {
   _stackPushScriptValue(input.x);
 
   _callNative("vm_redraw_metatiles");
-  _stackPop(4);
+  _stackPop(5);
 };

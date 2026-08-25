@@ -12,7 +12,7 @@ Index: src/states/topdown.c
  
  #ifndef INPUT_TOPDOWN_INTERACT
  #define INPUT_TOPDOWN_INTERACT INPUT_A
-@@ -34,11 +35,14 @@
+@@ -33,11 +34,14 @@
      } else {
          PLAYER.pos.x = SUBPX_SNAP_TILE(PLAYER.pos.x);
          PLAYER.pos.y = SUBPX_SNAP_TILE(PLAYER.pos.y);

@@ -16,7 +16,7 @@ Index: include/camera.h
  #define SCREEN_HEIGHT 144
  #define SCREEN_WIDTH_HALF 80
  #define SCREEN_HEIGHT_HALF 72
-@@ -30,9 +35,10 @@
+@@ -30,8 +35,9 @@
  void camera_init(void) BANKED;
  
  inline void camera_reset(void) {
@@ -26,6 +26,3 @@ Index: include/camera.h
  
  void camera_update(void) BANKED;
  
-\ No newline at end of file
--#endif
-+#endif

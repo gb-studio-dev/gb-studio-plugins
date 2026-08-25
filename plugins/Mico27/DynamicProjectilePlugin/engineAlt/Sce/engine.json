@@ -4,7 +4,7 @@
     {
       "key": "projectile_pause",
       "label": "Pause All Projectiles",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -27,7 +27,7 @@
     {
       "key": "projectile_hide",
       "label": "Hide All Projectiles",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -46,7 +46,7 @@
     {
       "key": "projectile_no_lifetime",
       "label": "Infinite Lifetime",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -65,7 +65,7 @@
     {
       "key": "projectile_actor_index",
       "label": "Actor Index",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "UBYTE",
       "defaultValue": 0,
@@ -74,7 +74,7 @@
     {
       "key": "projectile_distance",
       "label": "Distance Parameter",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "BYTE",
       "defaultValue": 0,
@@ -83,7 +83,7 @@
     {
       "key": "projectile_distance2",
       "label": "Second Distance Parameter",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "BYTE",
       "defaultValue": 0,
@@ -92,7 +92,16 @@
     {
       "key": "projectile_phase",
       "label": "Phase",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
+      "type": "number",
+      "cType": "UBYTE",
+      "defaultValue": 0,
+      "runtimeOnly": true
+    },
+    {
+      "key": "projectile_frame",
+      "label": "Start Frame",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "UBYTE",
       "defaultValue": 0,
@@ -101,7 +110,7 @@
     {
       "key": "projectile_hookshot_state",
       "label": "Hookshot State",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -132,7 +141,7 @@
     {
       "key": "projectile_hookshot_tile_hit",
       "label": "Hookshot Tile Hit",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -159,7 +168,7 @@
     {
       "key": "projectile_hookshot_actor_hit",
       "label": "Hookshot Actor Hit",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -194,7 +203,7 @@
     {
       "key": "projectile_hit_actor",
       "label": "Last Hit: Actor",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "UBYTE",
       "defaultValue": 0,
@@ -203,7 +212,7 @@
     {
       "key": "projectile_hit_x",
       "label": "Last Hit: X",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "UWORD",
       "defaultValue": 0,
@@ -212,7 +221,7 @@
     {
       "key": "projectile_hit_y",
       "label": "Last Hit: Y",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "number",
       "cType": "UWORD",
       "defaultValue": 0,
@@ -221,7 +230,7 @@
     {
       "key": "projectile_hit_type",
       "label": "Last Hit: Behaviour",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -272,7 +281,7 @@
     {
       "key": "DYNPROJ_MAX_PROJECTILES",
       "label": "Max concurrent projectiles",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "slider",
       "min": 1,
       "max": 20,
@@ -282,7 +291,7 @@
     {
       "key": "DYNPROJ_MAX_PROJECTILE_DEFS",
       "label": "Max projectile slots",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "slider",
       "min": 5,
       "max": 20,
@@ -292,7 +301,7 @@
     {
       "key": "DYNPROJ_CLIP_EXT",
       "label": "Off-screen margin (tiles)",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "slider",
       "min": 0,
       "max": 10,
@@ -302,7 +311,7 @@
     {
       "key": "DYNPROJ_TILE_COLLISION",
       "label": "Tile collision detection",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -318,9 +327,82 @@
       "defaultValue": 0
     },
     {
+      "key": "DYNPROJ_ENABLE_OVERRIDE_TILE_COLLISION",
+      "label": "Enable tile collision override",
+      "description": "Compile the per-definition 'Tile Collision Override', which replaces the mask a projectile tests against a tile with a fixed value instead of the direction it is travelling, so a slot can react to an extra tile property bit or ignore direction entirely. Unchecked, every tile collision test a projectile makes compiles exactly as it did without the feature and the field is ignored. Tile bits: 1 top, 2 bottom, 4 left, 8 right; then the 16-112 value space (16 ladder, 32-112 the six slopes) and 128, which no engine code reads.",
+      "group": "Dynamic Projectiles",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 0
+    },
+    {
+      "key": "DYNPROJ_ENABLE_TILE_HIT_SCRIPT",
+      "label": "Enable script: Tile Hit",
+      "group": "Dynamic Projectiles",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
+      "key": "DYNPROJ_TILE_HIT_BY_FACE",
+      "label": "Tile hit script per face",
+      "group": "Dynamic Projectiles",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1,
+      "indent": 1,
+      "conditions": [
+        {
+          "key": "DYNPROJ_ENABLE_TILE_HIT_SCRIPT",
+          "truthy": true
+        }
+      ]
+    },
+    {
+      "key": "DYNPROJ_ENABLE_ACTOR_HIT_SCRIPT",
+      "label": "Enable script: Actor Hit",
+      "group": "Dynamic Projectiles",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
+      "key": "DYNPROJ_ENABLE_TILE_ENTER_SCRIPT",
+      "label": "Enable script: Tile Enter",
+      "group": "Dynamic Projectiles",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
+      "key": "DYNPROJ_TILE_ENTER_SIZE",
+      "label": "Tile enter grid",
+      "group": "Dynamic Projectiles",
+      "type": "select",
+      "options": [
+        [
+          0,
+          "8x8 tiles"
+        ],
+        [
+          1,
+          "16x16 tiles"
+        ]
+      ],
+      "cType": "define",
+      "defaultValue": 0,
+      "indent": 1,
+      "conditions": [
+        {
+          "key": "DYNPROJ_ENABLE_TILE_ENTER_SCRIPT",
+          "truthy": true
+        }
+      ]
+    },
+    {
       "key": "DYNPROJ_ENABLE_ARC",
       "label": "Enable behaviour: Arc",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -328,7 +410,7 @@
     {
       "key": "DYNPROJ_ENABLE_BOOMERANG",
       "label": "Enable behaviour: Boomerang",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -336,7 +418,7 @@
     {
       "key": "DYNPROJ_ENABLE_SINE",
       "label": "Enable behaviour: Sine Wave",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -344,7 +426,7 @@
     {
       "key": "DYNPROJ_ENABLE_ORBIT",
       "label": "Enable behaviour: Orbit",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -352,7 +434,7 @@
     {
       "key": "DYNPROJ_ENABLE_HOOKSHOT",
       "label": "Enable behaviour: Hookshot",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -360,7 +442,7 @@
     {
       "key": "DYNPROJ_HOOKSHOT_PULL_GRID",
       "label": "Hookshot pull realigns to grid",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "select",
       "options": [
         [
@@ -389,7 +471,7 @@
     {
       "key": "DYNPROJ_HOOKSHOT_PULL_COLLISION",
       "label": "Hookshot pulls stop at obstacles",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1,
@@ -404,7 +486,7 @@
     {
       "key": "DYNPROJ_ENABLE_ANCHOR",
       "label": "Enable behaviour: Anchor",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -412,7 +494,7 @@
     {
       "key": "DYNPROJ_ENABLE_CUSTOM",
       "label": "Enable behaviour: Custom",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -420,7 +502,7 @@
     {
       "key": "DYNPROJ_ENABLE_CHAIN",
       "label": "Enable behaviour: Chain",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -428,7 +510,7 @@
     {
       "key": "DYNPROJ_ENABLE_TRAIL",
       "label": "Enable behaviour: Trail",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "checkbox",
       "cType": "define",
       "defaultValue": 1
@@ -436,7 +518,7 @@
     {
       "key": "DYNPROJ_MAX_STRANDS",
       "label": "Max chains + trails",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "slider",
       "min": 1,
       "max": 8,
@@ -466,7 +548,7 @@
     {
       "key": "DYNPROJ_STRAND_POINTS",
       "label": "Points per chain / trail",
-      "group": "Custom Projectiles",
+      "group": "Dynamic Projectiles",
       "type": "slider",
       "min": 2,
       "max": 32,
@@ -490,6 +572,835 @@
               }
             ]
           ]
+        }
+      ]
+    }
+  ],
+  "sceneTypes": [
+    {
+      "key": "TOPDOWN",
+      "collisionTiles": [
+        {
+          "key": "solid",
+          "color": "#FA2828FF",
+          "mask": 15,
+          "flag": 15,
+          "name": "FIELD_SOLID",
+          "icon": "FFFFFFFFFFFFFFFF"
+        },
+        {
+          "key": "top",
+          "color": "#2828FAFF",
+          "mask": 15,
+          "flag": 1,
+          "name": "FIELD_COLLISION_TOP",
+          "icon": "FFFFFF0000000000",
+          "multi": true
+        },
+        {
+          "key": "bottom",
+          "color": "#FFFA28FF",
+          "mask": 15,
+          "flag": 2,
+          "name": "FIELD_COLLISION_BOTTOM",
+          "icon": "0000000000FFFFFF",
+          "multi": true
+        },
+        {
+          "key": "left",
+          "color": "#FA28FAFF",
+          "mask": 15,
+          "flag": 4,
+          "name": "FIELD_COLLISION_LEFT",
+          "icon": "E0E0E0E0E0E0E0E0",
+          "multi": true
+        },
+        {
+          "key": "right",
+          "color": "#28FAFAFF",
+          "mask": 15,
+          "flag": 8,
+          "name": "FIELD_COLLISION_RIGHT",
+          "icon": "0707070707070707",
+          "multi": true
+        },
+        {
+          "key": "prop_16",
+          "color": "#F2616177",
+          "mask": 240,
+          "flag": 16,
+          "name": "Extra 16 (0x10)",
+          "icon": "E0E0E00000000000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_32",
+          "color": "#61F28B77",
+          "mask": 240,
+          "flag": 32,
+          "name": "Extra 32 (0x20)",
+          "icon": "0E0E0E0000000000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_48",
+          "color": "#B661F277",
+          "mask": 240,
+          "flag": 48,
+          "name": "Extra 48 (0x30)",
+          "icon": "EEEEEE0000000000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_64",
+          "color": "#F2E06177",
+          "mask": 240,
+          "flag": 64,
+          "name": "Extra 64 (0x40)",
+          "icon": "00000000E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_80",
+          "color": "#61DAF277",
+          "mask": 240,
+          "flag": 80,
+          "name": "Extra 80 (0x50)",
+          "icon": "E0E0E000E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_96",
+          "color": "#F261B077",
+          "mask": 240,
+          "flag": 96,
+          "name": "Extra 96 (0x60)",
+          "icon": "0E0E0E00E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_112",
+          "color": "#85F26177",
+          "mask": 240,
+          "flag": 112,
+          "name": "Extra 112 (0x70)",
+          "icon": "EEEEEE00E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_128",
+          "color": "#6761F277",
+          "mask": 240,
+          "flag": 128,
+          "name": "Extra 128 (0x80)",
+          "icon": "000000000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_144",
+          "color": "#F2926177",
+          "mask": 240,
+          "flag": 144,
+          "name": "Extra 144 (0x90)",
+          "icon": "E0E0E0000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_160",
+          "color": "#61F2BC77",
+          "mask": 240,
+          "flag": 160,
+          "name": "Extra 160 (0xA0)",
+          "icon": "0E0E0E000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_176",
+          "color": "#E661F277",
+          "mask": 240,
+          "flag": 176,
+          "name": "Extra 176 (0xB0)",
+          "icon": "EEEEEE000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_192",
+          "color": "#D4F26177",
+          "mask": 240,
+          "flag": 192,
+          "name": "Extra 192 (0xC0)",
+          "icon": "00000000EEEEEE00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_208",
+          "color": "#61A9F277",
+          "mask": 240,
+          "flag": 208,
+          "name": "Extra 208 (0xD0)",
+          "icon": "E0E0E000EEEEEE00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_224",
+          "color": "#F2617F77",
+          "mask": 240,
+          "flag": 224,
+          "name": "Extra 224 (0xE0)",
+          "icon": "0E0E0E00EEEEEE00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_240",
+          "color": "#61F26D77",
+          "mask": 240,
+          "flag": 240,
+          "name": "Extra 240 (0xF0)",
+          "icon": "EEEEEE00EEEEEE00",
+          "group": "prop"
+        }
+      ]
+    },
+    {
+      "key": "SHMUP",
+      "collisionTiles": [
+        {
+          "key": "solid",
+          "color": "#FA2828FF",
+          "mask": 15,
+          "flag": 15,
+          "name": "FIELD_SOLID",
+          "icon": "FFFFFFFFFFFFFFFF"
+        },
+        {
+          "key": "top",
+          "color": "#2828FAFF",
+          "mask": 15,
+          "flag": 1,
+          "name": "FIELD_COLLISION_TOP",
+          "icon": "FFFFFF0000000000",
+          "multi": true
+        },
+        {
+          "key": "bottom",
+          "color": "#FFFA28FF",
+          "mask": 15,
+          "flag": 2,
+          "name": "FIELD_COLLISION_BOTTOM",
+          "icon": "0000000000FFFFFF",
+          "multi": true
+        },
+        {
+          "key": "left",
+          "color": "#FA28FAFF",
+          "mask": 15,
+          "flag": 4,
+          "name": "FIELD_COLLISION_LEFT",
+          "icon": "E0E0E0E0E0E0E0E0",
+          "multi": true
+        },
+        {
+          "key": "right",
+          "color": "#28FAFAFF",
+          "mask": 15,
+          "flag": 8,
+          "name": "FIELD_COLLISION_RIGHT",
+          "icon": "0707070707070707",
+          "multi": true
+        },
+        {
+          "key": "prop_16",
+          "color": "#F2616177",
+          "mask": 240,
+          "flag": 16,
+          "name": "Extra 16 (0x10)",
+          "icon": "E0E0E00000000000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_32",
+          "color": "#61F28B77",
+          "mask": 240,
+          "flag": 32,
+          "name": "Extra 32 (0x20)",
+          "icon": "0E0E0E0000000000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_48",
+          "color": "#B661F277",
+          "mask": 240,
+          "flag": 48,
+          "name": "Extra 48 (0x30)",
+          "icon": "EEEEEE0000000000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_64",
+          "color": "#F2E06177",
+          "mask": 240,
+          "flag": 64,
+          "name": "Extra 64 (0x40)",
+          "icon": "00000000E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_80",
+          "color": "#61DAF277",
+          "mask": 240,
+          "flag": 80,
+          "name": "Extra 80 (0x50)",
+          "icon": "E0E0E000E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_96",
+          "color": "#F261B077",
+          "mask": 240,
+          "flag": 96,
+          "name": "Extra 96 (0x60)",
+          "icon": "0E0E0E00E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_112",
+          "color": "#85F26177",
+          "mask": 240,
+          "flag": 112,
+          "name": "Extra 112 (0x70)",
+          "icon": "EEEEEE00E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_128",
+          "color": "#6761F277",
+          "mask": 240,
+          "flag": 128,
+          "name": "Extra 128 (0x80)",
+          "icon": "000000000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_144",
+          "color": "#F2926177",
+          "mask": 240,
+          "flag": 144,
+          "name": "Extra 144 (0x90)",
+          "icon": "E0E0E0000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_160",
+          "color": "#61F2BC77",
+          "mask": 240,
+          "flag": 160,
+          "name": "Extra 160 (0xA0)",
+          "icon": "0E0E0E000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_176",
+          "color": "#E661F277",
+          "mask": 240,
+          "flag": 176,
+          "name": "Extra 176 (0xB0)",
+          "icon": "EEEEEE000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_192",
+          "color": "#D4F26177",
+          "mask": 240,
+          "flag": 192,
+          "name": "Extra 192 (0xC0)",
+          "icon": "00000000EEEEEE00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_208",
+          "color": "#61A9F277",
+          "mask": 240,
+          "flag": 208,
+          "name": "Extra 208 (0xD0)",
+          "icon": "E0E0E000EEEEEE00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_224",
+          "color": "#F2617F77",
+          "mask": 240,
+          "flag": 224,
+          "name": "Extra 224 (0xE0)",
+          "icon": "0E0E0E00EEEEEE00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_240",
+          "color": "#61F26D77",
+          "mask": 240,
+          "flag": 240,
+          "name": "Extra 240 (0xF0)",
+          "icon": "EEEEEE00EEEEEE00",
+          "group": "prop"
+        }
+      ]
+    },
+    {
+      "key": "PLATFORM",
+      "collisionTiles": [
+        {
+          "key": "solid",
+          "color": "#FA2828FF",
+          "mask": 15,
+          "flag": 15,
+          "name": "FIELD_SOLID",
+          "icon": "FFFFFFFFFFFFFFFF"
+        },
+        {
+          "key": "top",
+          "color": "#2828FAFF",
+          "mask": 15,
+          "flag": 1,
+          "name": "FIELD_COLLISION_TOP",
+          "icon": "FFFFFF0000000000",
+          "multi": true
+        },
+        {
+          "key": "bottom",
+          "color": "#FFFA28FF",
+          "mask": 15,
+          "flag": 2,
+          "name": "FIELD_COLLISION_BOTTOM",
+          "icon": "0000000000FFFFFF",
+          "multi": true
+        },
+        {
+          "key": "left",
+          "color": "#FA28FAFF",
+          "mask": 15,
+          "flag": 4,
+          "name": "FIELD_COLLISION_LEFT",
+          "icon": "E0E0E0E0E0E0E0E0",
+          "multi": true
+        },
+        {
+          "key": "right",
+          "color": "#28FAFAFF",
+          "mask": 15,
+          "flag": 8,
+          "name": "FIELD_COLLISION_RIGHT",
+          "icon": "0707070707070707",
+          "multi": true
+        },
+        {
+          "key": "ladder",
+          "color": "#008000FF",
+          "mask": 112,
+          "flag": 16,
+          "name": "FIELD_LADDER",
+          "icon": "667E7E66667E7E66",
+          "group": "prop"
+        },
+        {
+          "key": "slope_45_right",
+          "color": "#0000FFFF",
+          "mask": 112,
+          "flag": 32,
+          "name": "FIELD_COLLISION_SLOPE_45_RIGHT",
+          "icon": "0103070F1F3F7FFF",
+          "extra": 10,
+          "group": "slope"
+        },
+        {
+          "key": "slope_45_left",
+          "color": "#0000FFFF",
+          "mask": 112,
+          "flag": 48,
+          "name": "FIELD_COLLISION_SLOPE_45_LEFT",
+          "icon": "80C0E0F0F8FCFEFF",
+          "extra": 6,
+          "group": "slope"
+        },
+        {
+          "key": "slope_22_right_bot",
+          "color": "#0000FFFF",
+          "mask": 112,
+          "flag": 64,
+          "name": "FIELD_COLLISION_SLOPE_22_RIGHT_BOT",
+          "icon": "00000000030F3FFF",
+          "extra": 2,
+          "group": "slope"
+        },
+        {
+          "key": "slope_22_right_top",
+          "color": "#0000FFFF",
+          "mask": 112,
+          "flag": 96,
+          "name": "FIELD_COLLISION_SLOPE_22_RIGHT_TOP",
+          "icon": "030F3FFF00000000",
+          "extra": 10,
+          "group": "slope"
+        },
+        {
+          "key": "slope_22_left_top",
+          "color": "#0000FFFF",
+          "mask": 112,
+          "flag": 112,
+          "name": "FIELD_COLLISION_SLOPE_22_LEFT_TOP",
+          "icon": "C0F0FCFF00000000",
+          "extra": 6,
+          "group": "slope"
+        },
+        {
+          "key": "slope_22_left_bot",
+          "color": "#0000FFFF",
+          "mask": 112,
+          "flag": 80,
+          "name": "FIELD_COLLISION_SLOPE_22_LEFT_BOT",
+          "icon": "00000000C0F0FCFF",
+          "extra": 2,
+          "group": "slope"
+        },
+        {
+          "key": "prop_128",
+          "color": "#F2616177",
+          "mask": 128,
+          "flag": 128,
+          "name": "Extra 128 (0x80)",
+          "icon": "000000000E0E0E00",
+          "group": "prop"
+        }
+      ]
+    },
+    {
+      "key": "ADVENTURE",
+      "collisionTiles": [
+        {
+          "key": "solid",
+          "color": "#FA2828FF",
+          "mask": 31,
+          "flag": 15,
+          "name": "FIELD_SOLID",
+          "icon": "FFFFFFFFFFFFFFFF"
+        },
+        {
+          "key": "top",
+          "color": "#2828FAFF",
+          "mask": 31,
+          "flag": 1,
+          "name": "FIELD_COLLISION_TOP",
+          "icon": "FFFFFF0000000000",
+          "multi": true
+        },
+        {
+          "key": "bottom",
+          "color": "#FFFA28FF",
+          "mask": 31,
+          "flag": 2,
+          "name": "FIELD_COLLISION_BOTTOM",
+          "icon": "0000000000FFFFFF",
+          "multi": true
+        },
+        {
+          "key": "left",
+          "color": "#FA28FAFF",
+          "mask": 31,
+          "flag": 4,
+          "name": "FIELD_COLLISION_LEFT",
+          "icon": "E0E0E0E0E0E0E0E0",
+          "multi": true
+        },
+        {
+          "key": "right",
+          "color": "#28FAFAFF",
+          "mask": 31,
+          "flag": 8,
+          "name": "FIELD_COLLISION_RIGHT",
+          "icon": "0707070707070707",
+          "multi": true
+        },
+        {
+          "key": "slope_tl",
+          "color": "#0000FFFF",
+          "mask": 31,
+          "flag": 21,
+          "name": "FIELD_COLLISION_SLOPE_TOP_LEFT",
+          "icon": "0F3F7F7FFCF8F0F0",
+          "group": "corner"
+        },
+        {
+          "key": "slope_tr",
+          "color": "#0000FFFF",
+          "mask": 31,
+          "flag": 25,
+          "name": "FIELD_COLLISION_SLOPE_TOP_RIGHT",
+          "icon": "F0FCFEFE3F1F0F0F",
+          "group": "corner"
+        },
+        {
+          "key": "slope_bl",
+          "color": "#0000FFFF",
+          "mask": 31,
+          "flag": 22,
+          "name": "FIELD_COLLISION_SLOPE_BOTTOM_LEFT",
+          "icon": "F0F0F8FC7F7F3F0F",
+          "group": "corner"
+        },
+        {
+          "key": "slope_br",
+          "color": "#0000FFFF",
+          "mask": 31,
+          "flag": 26,
+          "name": "FIELD_COLLISION_SLOPE_BOTTOM_RIGHT",
+          "icon": "0F0F1F3FFEFEFCF0",
+          "group": "corner"
+        },
+        {
+          "key": "prop_32",
+          "color": "#F2616177",
+          "mask": 224,
+          "flag": 32,
+          "name": "Extra 32 (0x20)",
+          "icon": "0E0E0E0000000000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_64",
+          "color": "#61F28B77",
+          "mask": 224,
+          "flag": 64,
+          "name": "Extra 64 (0x40)",
+          "icon": "00000000E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_96",
+          "color": "#B661F277",
+          "mask": 224,
+          "flag": 96,
+          "name": "Extra 96 (0x60)",
+          "icon": "0E0E0E00E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_128",
+          "color": "#F2E06177",
+          "mask": 224,
+          "flag": 128,
+          "name": "Extra 128 (0x80)",
+          "icon": "000000000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_160",
+          "color": "#61DAF277",
+          "mask": 224,
+          "flag": 160,
+          "name": "Extra 160 (0xA0)",
+          "icon": "0E0E0E000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_192",
+          "color": "#F261B077",
+          "mask": 224,
+          "flag": 192,
+          "name": "Extra 192 (0xC0)",
+          "icon": "00000000EEEEEE00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_224",
+          "color": "#85F26177",
+          "mask": 224,
+          "flag": 224,
+          "name": "Extra 224 (0xE0)",
+          "icon": "0E0E0E00EEEEEE00",
+          "group": "prop"
+        }
+      ]
+    },
+    {
+      "key": "POINTNCLICK",
+      "collisionTiles": [
+        {
+          "key": "solid",
+          "color": "#FA2828FF",
+          "mask": 15,
+          "flag": 15,
+          "name": "FIELD_SOLID",
+          "icon": "FFFFFFFFFFFFFFFF"
+        },
+        {
+          "key": "top",
+          "color": "#2828FAFF",
+          "mask": 15,
+          "flag": 1,
+          "name": "FIELD_COLLISION_TOP",
+          "icon": "FFFFFF0000000000",
+          "multi": true
+        },
+        {
+          "key": "bottom",
+          "color": "#FFFA28FF",
+          "mask": 15,
+          "flag": 2,
+          "name": "FIELD_COLLISION_BOTTOM",
+          "icon": "0000000000FFFFFF",
+          "multi": true
+        },
+        {
+          "key": "left",
+          "color": "#FA28FAFF",
+          "mask": 15,
+          "flag": 4,
+          "name": "FIELD_COLLISION_LEFT",
+          "icon": "E0E0E0E0E0E0E0E0",
+          "multi": true
+        },
+        {
+          "key": "right",
+          "color": "#28FAFAFF",
+          "mask": 15,
+          "flag": 8,
+          "name": "FIELD_COLLISION_RIGHT",
+          "icon": "0707070707070707",
+          "multi": true
+        },
+        {
+          "key": "prop_16",
+          "color": "#F2616177",
+          "mask": 240,
+          "flag": 16,
+          "name": "Extra 16 (0x10)",
+          "icon": "E0E0E00000000000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_32",
+          "color": "#61F28B77",
+          "mask": 240,
+          "flag": 32,
+          "name": "Extra 32 (0x20)",
+          "icon": "0E0E0E0000000000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_48",
+          "color": "#B661F277",
+          "mask": 240,
+          "flag": 48,
+          "name": "Extra 48 (0x30)",
+          "icon": "EEEEEE0000000000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_64",
+          "color": "#F2E06177",
+          "mask": 240,
+          "flag": 64,
+          "name": "Extra 64 (0x40)",
+          "icon": "00000000E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_80",
+          "color": "#61DAF277",
+          "mask": 240,
+          "flag": 80,
+          "name": "Extra 80 (0x50)",
+          "icon": "E0E0E000E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_96",
+          "color": "#F261B077",
+          "mask": 240,
+          "flag": 96,
+          "name": "Extra 96 (0x60)",
+          "icon": "0E0E0E00E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_112",
+          "color": "#85F26177",
+          "mask": 240,
+          "flag": 112,
+          "name": "Extra 112 (0x70)",
+          "icon": "EEEEEE00E0E0E000",
+          "group": "prop"
+        },
+        {
+          "key": "prop_128",
+          "color": "#6761F277",
+          "mask": 240,
+          "flag": 128,
+          "name": "Extra 128 (0x80)",
+          "icon": "000000000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_144",
+          "color": "#F2926177",
+          "mask": 240,
+          "flag": 144,
+          "name": "Extra 144 (0x90)",
+          "icon": "E0E0E0000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_160",
+          "color": "#61F2BC77",
+          "mask": 240,
+          "flag": 160,
+          "name": "Extra 160 (0xA0)",
+          "icon": "0E0E0E000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_176",
+          "color": "#E661F277",
+          "mask": 240,
+          "flag": 176,
+          "name": "Extra 176 (0xB0)",
+          "icon": "EEEEEE000E0E0E00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_192",
+          "color": "#D4F26177",
+          "mask": 240,
+          "flag": 192,
+          "name": "Extra 192 (0xC0)",
+          "icon": "00000000EEEEEE00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_208",
+          "color": "#61A9F277",
+          "mask": 240,
+          "flag": 208,
+          "name": "Extra 208 (0xD0)",
+          "icon": "E0E0E000EEEEEE00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_224",
+          "color": "#F2617F77",
+          "mask": 240,
+          "flag": 224,
+          "name": "Extra 224 (0xE0)",
+          "icon": "0E0E0E00EEEEEE00",
+          "group": "prop"
+        },
+        {
+          "key": "prop_240",
+          "color": "#61F26D77",
+          "mask": 240,
+          "flag": 240,
+          "name": "Extra 240 (0xF0)",
+          "icon": "EEEEEE00EEEEEE00",
+          "group": "prop"
         }
       ]
     }

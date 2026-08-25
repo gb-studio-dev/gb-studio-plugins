@@ -1,0 +1,208 @@
+{
+  "type": "enginePlugin",
+  "name": "Collision Ex Plugin",
+  "author": "Mico27",
+  "description": "Collision extras: a Player tile collision mask XOR engine field that changes which tile bits count as solid for the player in every scene type, a Get Tile Collision event, and paint swatches for every collision tile value each scene type leaves spare.",
+  "license": "MIT",
+  "url": "https://github.com/gb-studio-dev/gb-studio-plugins",
+  "version": "4.3.10",
+  "gbsVersion": ">=4.3.0",
+  "filename": "CollisionExPlugin",
+  "order": -5,
+  "engineAltRules": [
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/MetaTilePlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_M_DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "MetaTilePlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_M_DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/MetaTilePlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "ScreenS_M_DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "MetaTilePlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "ScreenS_M_DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "Cont_DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/MetaTilePlugin"
+        ]
+      },
+      "use": "Cont_M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "MetaTilePlugin"
+        ]
+      },
+      "use": "Cont_M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/MetaTilePlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "M_DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "MetaTilePlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "M_DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "ScreenS_DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "ScreenS_DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/MetaTilePlugin"
+        ]
+      },
+      "use": "ScreenS_M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "MetaTilePlugin"
+        ]
+      },
+      "use": "ScreenS_M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin"
+        ]
+      },
+      "use": "Cont"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin"
+        ]
+      },
+      "use": "Cont"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/DynamicActorPlugin"
+        ]
+      },
+      "use": "DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "DynamicActorPlugin"
+        ]
+      },
+      "use": "DynamicA"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/MetaTilePlugin"
+        ]
+      },
+      "use": "M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "MetaTilePlugin"
+        ]
+      },
+      "use": "M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin"
+        ]
+      },
+      "use": "ScreenS"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin"
+        ]
+      },
+      "use": "ScreenS"
+    }
+  ]
+}

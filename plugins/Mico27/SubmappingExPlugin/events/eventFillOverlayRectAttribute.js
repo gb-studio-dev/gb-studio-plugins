@@ -1,9 +1,46 @@
+// CGB background/window tile attribute layout:
+//   bits 0-2 palette, bit 3 tile VRAM bank, bit 5 X flip, bit 6 Y flip,
+//   bit 7 BG priority over sprites.
+// "raw" (mask 0xFF, shift 0) replaces the whole byte; every other part is a
+// read-modify-write that preserves the bits outside its mask. The engine
+// receives this as one packed value: (shift << 8) | mask.
+const ATTR_PART_BITS = {
+  raw: [0xff, 0],
+  palette: [0x07, 0],
+  bank: [0x08, 3],
+  flip_x: [0x20, 5],
+  flip_y: [0x40, 6],
+  priority: [0x80, 7],
+};
+
+const ATTR_PART_OPTIONS = [
+  ["raw", "Whole attribute value"],
+  ["palette", "Palette (0-7)"],
+  ["bank", "Tile VRAM bank (0-1)"],
+  ["flip_x", "Flip horizontally (0-1)"],
+  ["flip_y", "Flip vertically (0-1)"],
+  ["priority", "Priority over sprites (0-1)"],
+];
+
+const attrPartArg = (part) => {
+  const bits = ATTR_PART_BITS[part] || ATTR_PART_BITS.raw;
+  return (bits[1] << 8) | bits[0];
+};
+
+const attrPartLabel = (part) => {
+  const option = ATTR_PART_OPTIONS.find((o) => o[0] === part);
+  return option && part && part !== "raw" ? option[1] : "";
+};
+
 export const id = "EVENT_FILL_OVERLAY_RECT_ATTR";
 export const name = "Fill overlay rectangle with tile attribute";
 export const groups = ["EVENT_GROUP_SCREEN"];
 
-export const autoLabel = (fetchArg) => {
-  return `Fill overlay rectangle with tile attribute`;
+export const autoLabel = (fetchArg, input) => {
+  const part = attrPartLabel(input && input.attribute_part);
+  return part
+    ? `Fill overlay rectangle with tile attribute: ${part}`
+    : `Fill overlay rectangle with tile attribute`;
 };
 
 export const fields = [
@@ -46,8 +83,20 @@ export const fields = [
     ],
   },
   {
+    key: "attribute_part",
+    label: "Attribute part",
+    description:
+      "Which part of the tile attribute to write. Anything other than the whole value leaves the remaining bits of each tile untouched.",
+    type: "select",
+    width: "100%",
+    options: ATTR_PART_OPTIONS,
+    defaultValue: "raw",
+  },
+  {
     key: `tile_attribute`,
-    label: "Tile attribute",
+    label: "Value",
+    description:
+      "Value written into the selected attribute part (the whole attribute byte when \"Whole attribute value\" is selected).",
     type: "value",
     defaultValue: { type: "number", value: 0 },
   },
@@ -64,13 +113,14 @@ export const compile = (input, helpers) => {
     throw new Error("This event requires the \"Fill overlay rectangle (tile and attribute)\" engine setting to be enabled (Settings → Engine → Submapping Ex).");
   }
 
-  const { _callNative, _stackPushScriptValue, _stackPop, _addComment } = helpers;
+  const { _callNative, _stackPushScriptValue, _stackPushConst, _stackPop, _addComment } = helpers;
   _addComment("Fill overlay rectangle with tile attribute");
+  _stackPushConst(attrPartArg(input.attribute_part));
   _stackPushScriptValue(input.tile_attribute);
   _stackPushScriptValue(input.h);
   _stackPushScriptValue(input.w);
   _stackPushScriptValue(input.y);
   _stackPushScriptValue(input.x);
   _callNative("vm_fill_overlay_attribute_rect");
-  _stackPop(5);
+  _stackPop(6);
 };

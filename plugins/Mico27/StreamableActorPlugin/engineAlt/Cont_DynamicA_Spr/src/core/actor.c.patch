@@ -1,0 +1,28 @@
+Index: src/core/actor.c
+===================================================================
+--- src/core/actor.c
++++ src/core/actor.c
+@@ -19,8 +19,12 @@
+ #include "macro.h"
+ #include "data/states_defines.h"
+ #include "dynamic_actor.h"
+ #include "continuous_scene.h"
++// StreamableActorPlugin: brings streamed actors' tiles in at the end of the
++// update pass, before anything is drawn from them. Expands to nothing outside
++// VRAM buffer mode.
++#include "streamable_actor.h"
+ 
+ #ifdef STRICT
+     #include <gb/bgb_emu.h>
+     #include <gb/crash_handler.h>
+@@ -166,8 +170,10 @@
+         }
+ 
+         actor = actor->prev;
+     }
++
++    STREAMABLE_ACTOR_SYNC_ALL();
+ }
+ 
+ void actors_render(void) NONBANKED {
+     UBYTE _save = CURRENT_BANK;

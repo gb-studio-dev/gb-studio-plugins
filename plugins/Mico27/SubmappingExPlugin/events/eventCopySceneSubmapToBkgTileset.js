@@ -188,6 +188,14 @@ export const fields = [
         },
     ]
 },
+{
+    key: "relative_to_scroll",
+    label: "Destination relative to camera scroll",
+    description:
+      "When enabled, Destination X/Y are screen coordinates: (0,0) is the top-left tile currently visible and the camera's scroll position is added automatically. When disabled, they are absolute scene tile coordinates. Overlay X/Y are never affected.",
+    type: "checkbox",
+    width: "100%",
+},
 ];
 
 export const compile = (input, helpers) => {
@@ -205,15 +213,26 @@ export const compile = (input, helpers) => {
 
   _addComment("Copy scene submap to background tileset");
 
+  // Resolve the scene before pushing anything, so the "scene not found" bail
+  // out cannot leave the stack unbalanced.
+  let scene;
+  if (!input.use_far_ptr) {
+    const { scenes } = options;
+    scene = scenes.find((s) => s.id === input.sceneId);
+    if (!scene) {
+        return;
+    }
+  }
+
+  // Pushed first so it lands in the deepest argument slot: the .ARGn indices
+  // used by the packing RPN below are relative to the top of the stack and so
+  // are unaffected, and it ends up as the native's last argument.
+  _stackPushConst(input.relative_to_scroll ? 1 : 0);
+
   if (input.use_far_ptr){
     _stackPushScriptValue(input.scene_ptr);
     _stackPushScriptValue(input.scene_bank);
   } else {
-    const { scenes } = options;
-    const scene = scenes.find((s) => s.id === input.sceneId);
-    if (!scene) {
-        return;
-    }
     _stackPushConst(`_${scene.symbol}`);
     _stackPushConst(`___bank_${scene.symbol}`);
   }
@@ -258,6 +277,6 @@ export const compile = (input, helpers) => {
 
   _stackPop(4);
   _callNative("copy_background_submap_to_tileset");
-  _stackPop(7);
+  _stackPop(8);
 
 };

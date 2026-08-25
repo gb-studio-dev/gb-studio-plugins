@@ -23,6 +23,11 @@
 
 extern behavior_def_t behavior_defs[DYNAMIC_ACTOR_MAX_BEHAVIORS + 1];
 
+// vm.h only names the first eight stack arguments.
+#ifndef FN_ARG8
+#define FN_ARG8 -9
+#endif
+
 #ifdef DYNAMIC_ACTOR_ENABLE_HIT_ACTORS
 // On collision, run every overlapping collidable actor's onHit script - the same
 // script the engine fires when the player touches that actor, but driven by this
@@ -110,6 +115,12 @@ void vm_define_actor_behavior(SCRIPT_CTX * THIS) OLDCALL BANKED {
     def->gravity      = *(uint8_t *)VM_REF_TO_PTR(FN_ARG3);
     def->max_fall_vel = *(uint8_t *)VM_REF_TO_PTR(FN_ARG4);
     def->bounce       = *(uint8_t *)VM_REF_TO_PTR(FN_ARG5);
+#ifdef DYNAMIC_ACTOR_ENABLE_OVERRIDE_TILE_COLLISION
+    // Pushed first by the event so FN_ARG0..7 keep their meaning. The event
+    // pushes it whether or not the feature is compiled in - the argument count
+    // has to match the VM_POP the event emits, so only the read is gated.
+    def->override_tile_collision = *(uint8_t *)VM_REF_TO_PTR(FN_ARG8);
+#endif
 #ifdef DYNAMIC_ACTOR_ENABLE_PARENT
     if (CHK_FLAG(def->flags, BHV_PLATFORM)) {
         dynamic_actor_mark_parenting_used();
@@ -120,10 +131,10 @@ void vm_define_actor_behavior(SCRIPT_CTX * THIS) OLDCALL BANKED {
 void vm_set_actor_behavior(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
     actor_t * actor = actors + *(uint8_t *)VM_REF_TO_PTR(FN_ARG0);
-    actor->actor_behavior_id = *(uint8_t *)VM_REF_TO_PTR(FN_ARG1);
+    actor->actor_behavior_id = (*(uint8_t *)VM_REF_TO_PTR(FN_ARG1) & 0x0F);
     UBYTE state = *(uint8_t *)VM_REF_TO_PTR(FN_ARG2);
     if (state != BHV_STATE_KEEP) {
-        actor->actor_state = state;
+        actor->actor_state = (state & 0x0F);
     }
 }
 
@@ -138,7 +149,7 @@ void vm_get_actor_behavior(SCRIPT_CTX * THIS) OLDCALL BANKED {
 void vm_set_actor_state(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
     actor_t * actor = actors + *(uint8_t *)VM_REF_TO_PTR(FN_ARG0);
-    actor->actor_state = *(uint8_t *)VM_REF_TO_PTR(FN_ARG1);
+    actor->actor_state = (*(uint8_t *)VM_REF_TO_PTR(FN_ARG1) & 0x0F);
 }
 
 void vm_get_actor_state(SCRIPT_CTX * THIS) OLDCALL BANKED {
@@ -152,8 +163,16 @@ void vm_get_actor_state(SCRIPT_CTX * THIS) OLDCALL BANKED {
 void vm_assign_dynamic_actor_event_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
     UBYTE slot = *(uint8_t *)VM_REF_TO_PTR(FN_ARG2);
+    // Slots the callback gates compiled out are ignored rather than written
+    // past the end of the table (10 is the "any tile collision" alias).
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS
+    if ((slot >= DYNAMIC_ACTOR_CALLBACK_SIZE) && (slot != 10)) return;
+#else
+    if (slot >= DYNAMIC_ACTOR_CALLBACK_SIZE) return;
+#endif
     UBYTE *bank = VM_REF_TO_PTR(FN_ARG1);
     UBYTE **ptr = VM_REF_TO_PTR(FN_ARG0);
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS
     if (slot == 10){ //Any collision
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_TOP].script_bank = *bank;
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_TOP].script_addr = *ptr;
@@ -163,7 +182,9 @@ void vm_assign_dynamic_actor_event_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_BOTTOM].script_addr = *ptr;
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_LEFT].script_bank = *bank;
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_LEFT].script_addr = *ptr;
-    } else {
+    } else
+#endif
+    {
         dynamic_actor_events[slot].script_bank = *bank;
         dynamic_actor_events[slot].script_addr = *ptr;
     }
@@ -172,6 +193,12 @@ void vm_assign_dynamic_actor_event_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
 void vm_clear_dynamic_actor_event_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
     UBYTE slot = *(uint8_t *)VM_REF_TO_PTR(FN_ARG0);
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS
+    if ((slot >= DYNAMIC_ACTOR_CALLBACK_SIZE) && (slot != 10)) return;
+#else
+    if (slot >= DYNAMIC_ACTOR_CALLBACK_SIZE) return;
+#endif
+#ifdef DYNAMIC_ACTOR_ENABLE_TILE_COLLISION_EVENTS
     if (slot == 10){ //Any collision
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_TOP].script_bank = 0;
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_TOP].script_addr = NULL;
@@ -181,7 +208,9 @@ void vm_clear_dynamic_actor_event_script(SCRIPT_CTX * THIS) OLDCALL BANKED {
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_BOTTOM].script_addr = NULL;
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_LEFT].script_bank = 0;
         dynamic_actor_events[DYNAMIC_ACTOR_EVENT_TILE_COLLISION_LEFT].script_addr = NULL;
-    } else {
+    } else
+#endif
+    {
         dynamic_actor_events[slot].script_bank = 0;
         dynamic_actor_events[slot].script_addr = NULL;
     }
@@ -278,16 +307,7 @@ void vm_get_actor_parent(SCRIPT_CTX * THIS) OLDCALL BANKED {
 }
 #endif
 
-void vm_get_tile_collision(SCRIPT_CTX * THIS) OLDCALL BANKED {
-    (void)THIS;
-    uint8_t tile_x = *(uint8_t *)VM_REF_TO_PTR(FN_ARG0);
-    uint8_t tile_y = *(uint8_t *)VM_REF_TO_PTR(FN_ARG1);
-    int16_t idx = *(int16_t*)VM_REF_TO_PTR(FN_ARG2);
-    int16_t * A;
-    if (idx < 0) A = THIS->stack_ptr + idx - 3; else A = script_memory + idx;
-    *A = tile_at(tile_x, tile_y);
-}
-
+#ifdef DYNAMIC_ACTOR_ENABLE_VM_GET_ACTOR_COLLISION
 void vm_get_actor_collision(SCRIPT_CTX * THIS) OLDCALL BANKED {
     (void)THIS;
     uint16_t point_x = PX_TO_SUBPX(*(uint16_t *)VM_REF_TO_PTR(FN_ARG0));
@@ -312,6 +332,7 @@ void vm_get_actor_collision(SCRIPT_CTX * THIS) OLDCALL BANKED {
     }
     *A = -1;
 }
+#endif
 
 #ifdef DYNAMIC_ACTOR_ENABLE_VM_MOTION_CHASE_ACTOR
 UBYTE vm_actor_chase_actor(void * THIS, UBYTE start, UWORD * stack_frame) OLDCALL BANKED {
@@ -629,7 +650,9 @@ UBYTE vm_wait_for_actor_state(void * THIS, UBYTE start, UWORD * stack_frame) OLD
             return TRUE;
         }
     }
-    UBYTE match = (actor->actor_state == (UBYTE)stack_frame[1]);
+    // Masked like Set Actor State masks on the way in, so waiting for a state
+    // that overflows the 4 bit field matches whatever setting it stored.
+    UBYTE match = (actor->actor_state == ((UBYTE)stack_frame[1] & 0x0F));
     if (stack_frame[2]) {
         match = !match;
     }

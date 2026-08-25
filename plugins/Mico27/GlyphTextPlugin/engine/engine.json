@@ -1,0 +1,138 @@
+{
+  "version": "4.3.0-e1",
+  "fields": [
+    {
+      "key": "gtx_first_tile",
+      "label": "First VRAM tile reserved for 16x16 text",
+      "description": "First background tile index (0-255) reserved for 16x16 character quads. Each cached character uses four consecutive tiles from this range. Must not overlap the scene background tiles (0 upward, how many depends on the scene), the dialogue frame and fill tiles (192-202) or the menu cursor (203). Tiles 204-255 are GB Studio's variable-width-font scratch buffer, which this plugin's renderer never uses: they can be reserved too, as long as nothing on the same screen is drawn with the stock Display Dialogue, Display Text or Menu events.",
+      "group": "Glyph Text",
+      "type": "slider",
+      "cType": "UBYTE",
+      "defaultValue": 64,
+      "min": 0,
+      "max": 255
+    },
+    {
+      "key": "gtx_last_tile",
+      "label": "Last VRAM tile reserved for 16x16 text",
+      "description": "Last background tile index (inclusive) reserved for 16x16 character quads. The cache holds (range size / 4) characters, at most 128. A two-line dialogue can show up to 18 distinct characters, so reserve at least 72 tiles. This can go up to 255 in a project that draws all of its text with this plugin: tiles 204-255 are only scratch space for the stock text renderer, which is not used here.",
+      "group": "Glyph Text",
+      "type": "slider",
+      "cType": "UBYTE",
+      "defaultValue": 191,
+      "min": 0,
+      "max": 255
+    },
+    {
+      "key": "gtx_tile_placement",
+      "label": "Tile placement (VRAM bank)",
+      "description": "Which VRAM tile data bank the cached character tiles are uploaded to. 'Bank 1 only' and 'Alternate' are Game Boy Color features (Color Only mode, or Color modes running on GBC): they free up or double the bank 0 budget by storing glyphs in bank 1, selected per tilemap cell through attribute bit 3. On DMG hardware the plugin always falls back to bank 0. Alternate placement doubles the characters a given tile range can hold.",
+      "group": "Glyph Text",
+      "type": "select",
+      "options": [
+        [
+          0,
+          "Bank 0 only"
+        ],
+        [
+          1,
+          "Bank 1 only (Color)"
+        ],
+        [
+          2,
+          "Alternate bank 0/1 (Color)"
+        ]
+      ],
+      "cType": "UBYTE",
+      "defaultValue": 0
+    },
+    {
+      "key": "GTX_VWF_ENABLED",
+      "label": "Variable width glyphs (VWF)",
+      "description": "Advance every character by its own width instead of by a whole 16px cell, so a 12px font really takes 12px and proportional Latin closes up. Text is then composed pixel by pixel into tile columns, which means a glyph's tiles depend on the pixel offset it starts at -- the character tile cache cannot express that, so it is compiled out in this mode. Each screen column of text costs its own pair of VRAM tiles: reserve at least 2 x (columns per line) x (visible lines), roughly 72 tiles for a standard two-line dialogue. Needs a width table registered with the Set Width Table event; without one every character falls back to its full cell. Single-byte characters always use the 8x16 font layout here, whatever the half-width setting says.",
+      "group": "Glyph Text",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 0
+    },
+    {
+      "key": "GTX_NARROW_HALFWIDTH",
+      "label": "Half-width single-byte characters",
+      "description": "Draw single-byte characters (ASCII, drawn from the current font asset rather than a glyph sheet) at half width: one 8x16 cell, two tiles, advancing one column. The font asset is then a plain 16px-tall font -- 128px wide, 8x16 cells, 16 characters per row, exactly what the TallTextPlugin uses. Uncheck it to make them full width instead: the font PNG becomes 256px wide with 16x16 cells, and every character occupies a full square. Wide (two-byte) characters are always full width.",
+      "group": "Glyph Text",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
+      "key": "GTX_CACHE_ENABLED",
+      "label": "Enable character tile cache",
+      "description": "When enabled, rendered tile quads are tracked in an LRU cache so a character that was already drawn reuses its quad instead of consuming a new one. Disable it to compile the cache out: every character is then rendered into the next tile quad of the reserved range, cycling round-robin. That reclaims all of the cache WRAM (4 bytes per entry) and skips the lookup, but each character is re-uploaded on every use and the reserved range must be large enough for all characters visible at once (four tiles each), otherwise tiles still on screen get overwritten.",
+      "group": "Glyph Text",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 1
+    },
+    {
+      "key": "GTX_CACHE_MAX",
+      "label": "Character cache capacity (entries)",
+      "description": "Maximum number of characters the tile-quad LRU cache can track. Each entry costs 4 bytes of WRAM and, when in use, four consecutive VRAM tiles from the reserved range. The usable entry count at runtime is the smaller of this value and (reserved tile range / 4). Lower it to reclaim WRAM, raise it only alongside a larger reserved tile range. Ignored when the character tile cache is disabled: the whole reserved range is then used.",
+      "group": "Glyph Text",
+      "type": "slider",
+      "cType": "define",
+      "defaultValue": 32,
+      "min": 4,
+      "max": 128
+    },
+    {
+      "key": "GTX_GROUP_MAX",
+      "label": "Font group slots",
+      "description": "How many main fonts can carry a group of extended fonts at the same time. A group is attached to one main font, so switching font mid-text switches its extended fonts too -- this is how many such fonts a scene can use before one has to be re-registered. Each slot costs 4 bytes of WRAM.",
+      "group": "Glyph Text",
+      "type": "slider",
+      "cType": "define",
+      "defaultValue": 4,
+      "min": 1,
+      "max": 8
+    },
+    {
+      "key": "GTX_LEAD_MIN",
+      "label": "Wide character lead byte",
+      "description": "Lowest byte value that starts a two-byte wide character code. Bytes below it are drawn as single-byte characters from the current font asset's 16x16 grid. The default 128 matches the encoding tools/make_glyph_fonts.js writes into the font mapping (lead 0x80 + glyph >> 7, trail 0x80 + glyph & 0x7F); only change it if you build your own encoding.",
+      "group": "Glyph Text",
+      "type": "slider",
+      "cType": "define",
+      "defaultValue": 128,
+      "min": 128,
+      "max": 255
+    },
+    {
+      "key": "GTX_REPLACE_STOCK_UI",
+      "label": "Replace stock text rendering",
+      "description": "Compile GB Studio's own text renderer out of the ROM and point everything that used it at this plugin instead. The stock Display Dialogue, Display Text and Menu events then draw in 16x16 glyph text, without being replaced by this plugin's own events. Two things follow. Tiles 204-255, which the stock renderer used as its scratch buffer, are free: they can be added to this plugin's reserved tile range with nothing left to collide with. Menus are handled separately and need none of this: the plugin always supplies the menu driver, so its own Menu event works whether this is on or off.",
+      "group": "Glyph Text",
+      "type": "checkbox",
+      "cType": "define",
+      "defaultValue": 0
+    },
+    {
+      "key": "GTX_MENU_CURSOR_ROW",
+      "label": "Menu cursor row",
+      "description": "Which tile of a menu line the cursor sits on. A line of this plugin's text is two tilemap rows tall, so the cursor can go beside the top half or the bottom half of it. The lower tile sits level with the baseline; the upper one reads as slightly raised. Which looks right depends on where your font puts its glyphs inside the cell, so try both. Only affects menus drawn by this plugin's Menu event, and by the stock Menu event when 'Replace stock text rendering' is on.",
+      "group": "Glyph Text",
+      "type": "select",
+      "options": [
+        [
+          1,
+          "Lower tile of the line"
+        ],
+        [
+          0,
+          "Upper tile of the line"
+        ]
+      ],
+      "cType": "define",
+      "defaultValue": 1
+    }
+  ]
+}

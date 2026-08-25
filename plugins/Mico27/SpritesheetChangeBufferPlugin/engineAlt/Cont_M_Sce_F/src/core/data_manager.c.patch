@@ -43,7 +43,7 @@ Index: src/core/data_manager.c
 -        metatile_reset();
 -    }
 +    metatile_reset();
+     scene_transition_reset();
      scroll_reset();
      scroll_offset_x = 0;
      scroll_offset_y = 0;
-     trigger_reset();
