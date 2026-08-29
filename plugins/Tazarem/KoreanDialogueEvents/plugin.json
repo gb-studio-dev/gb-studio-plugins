@@ -1,0 +1,14 @@
+{
+  "type": "eventsPlugin",
+  "name": "Korean Dialogue Events",
+  "author": "Tazarem",
+  "description": "GB Studio 대화 관련 이벤트에 한글을 그대로 입력할 수 있게 해주는 플러그인입니다. 기본 Text / Draw Text / Text Choice / Display Menu 이벤트와 대응하는 한글 버전 이벤트 4개(대화창(한글), 텍스트 그리기(한글), 선택(한글), 메뉴(한글))를 추가하며, 입력한 한글은 컴파일 시점에 자동으로 폰트 시트 escape 코드로 변환됩니다. Galmuri9(Lee Minseo, SIL Open Font License 1.1) 기반의 한글 폰트 타일시트가 함께 포함되어 있습니다.\n\nAdds Korean-language versions of GB Studio's core dialogue events (Text, Draw Text, Text Choice, Display Menu) so you can type real Hangul directly into the text fields instead of pre-escaped placeholder characters. Includes bundled Korean font tilesheets based on Galmuri9 (Lee Minseo, SIL Open Font License 1.1).",
+  "images": [
+    "screenshots/dialogue-test.png",
+    "screenshots/dialogue-test2.png",
+    "screenshots/choice-test.png"
+  ],
+  "version": "1.0.0",
+  "gbsVersion": ">=4.3.0",
+  "license": "MIT"
+}
