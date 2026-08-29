@@ -2,7 +2,7 @@ Index: src/core/load_save.c
 ===================================================================
 --- src/core/load_save.c
 +++ src/core/load_save.c
-@@ -1,87 +1,158 @@
+@@ -1,94 +1,158 @@
  #pragma bank 255
  
 -// RpgMaker2KPlugin override of the stock load_save.c.
@@ -171,6 +171,13 @@ Index: src/core/load_save.c
 -// contexts, input and timer hooks, music state, the scene and scene stack, and
 -// the actor table, is deliberately left out, so that loading changes what the
 -// party *has* without changing where the game *is*.
+-//
+-// engineAlt-omits: scene_stack_count -- SceneStackExPlugin adds that savepoint
+-// to the stock list, and this list drops every scene savepoint there is:
+-// current_scene, scene_stack and scene_stack_ptr are all gone for the reason
+-// above. Restoring its count for a stack that was never saved would describe
+-// a state the game was never in. The count carries on as it stands, which is
+-// what loading in place means.
  const save_point_t save_points[] = {
 -    // variables (must be first, data_peek reads from the first block)
 +#if SAVE_STRUCTURE == SAVE_STRUCTURE_VARIABLES
@@ -206,7 +213,7 @@ Index: src/core/load_save.c
  #ifdef BATTERYLESS
      extern void _start_save;
  #endif
-@@ -118,28 +189,46 @@
+@@ -125,28 +189,46 @@
  }
  
  void data_init(void) BANKED {
@@ -258,7 +265,7 @@ Index: src/core/load_save.c
          }
      }
      *bank = res_bank;
-@@ -156,8 +245,26 @@
+@@ -163,8 +245,26 @@
      save_data += sizeof(save_signature);
      // size of the save blob
      *(size_t*)save_data = save_blob_size;
@@ -285,7 +292,7 @@ Index: src/core/load_save.c
          // size of the block
          *(size_t*)save_data = point->size;
          save_data += sizeof(point->size);
-@@ -167,39 +274,66 @@
+@@ -174,39 +274,66 @@
          // block data
          memcpy(save_data, point->target, point->size);
          save_data += point->size;
@@ -356,7 +363,7 @@ Index: src/core/load_save.c
              return FALSE;
          } else {
              save_data += sizeof(point->id);
-@@ -207,14 +341,22 @@
+@@ -214,14 +341,22 @@
          // copy chunk data
          memcpy(point->target, save_data, point->size);
          save_data += point->size;
@@ -380,7 +387,7 @@ Index: src/core/load_save.c
  }
  
  void data_clear(UBYTE slot) BANKED {
-@@ -223,28 +365,70 @@
+@@ -230,28 +365,70 @@
      SWITCH_RAM_BANK(data_bank, RAM_BANKS_ONLY);
      SIGN_BY_PTR(save_data) = 0;
  #ifdef BATTERYLESS
@@ -454,7 +461,7 @@ Index: src/core/load_save.c
  // A save menu has to show what is in a file before deciding whether to open
  // it, and none of that is in the variables: the party block is written after
  // them, which is why data_peek cannot reach it. This walks past the blocks to
-@@ -265,13 +449,24 @@
+@@ -272,13 +449,24 @@
          return 1;
      }
  

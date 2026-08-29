@@ -5,7 +5,7 @@
   "url": "https://github.com/Mico27/gbs-ConfigLoadSavePlugin",
   "description": "Allows configuration of the game saving structure.",
   "license": "MIT",
-  "version": "4.3.14",
+  "version": "4.3.15",
   "gbsVersion": ">=4.3.0",
   "order": -2,
   "engineAltRules": [
