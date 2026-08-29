@@ -58,7 +58,7 @@
     {
       "key": "GTX_NARROW_HALFWIDTH",
       "label": "Half-width single-byte characters",
-      "description": "Draw single-byte characters (ASCII, drawn from the current font asset rather than a glyph sheet) at half width: one 8x16 cell, two tiles, advancing one column. The font asset is then a plain 16px-tall font -- 128px wide, 8x16 cells, 16 characters per row, exactly what the TallTextPlugin uses. Uncheck it to make them full width instead: the font PNG becomes 256px wide with 16x16 cells, and every character occupies a full square. Wide (two-byte) characters are always full width.",
+      "description": "Draws ordinary Latin letters and digits, which come from the current font rather than an extended one, at half width: one 8 by 16 cell advancing one column. The font image is then a plain tall font, 128 pixels wide with 8 by 16 cells, 16 characters per row, exactly what the TallText plugin uses. Untick it to make them full width instead, in which case the font image becomes 256 pixels wide with 16 by 16 cells. Wide characters are always full width.",
       "group": "Glyph Text",
       "type": "checkbox",
       "cType": "define",
@@ -98,7 +98,7 @@
     {
       "key": "GTX_LEAD_MIN",
       "label": "Wide character lead byte",
-      "description": "Lowest byte value that starts a two-byte wide character code. Bytes below it are drawn as single-byte characters from the current font asset's 16x16 grid. The default 128 matches the encoding tools/make_glyph_fonts.js writes into the font mapping (lead 0x80 + glyph >> 7, trail 0x80 + glyph & 0x7F); only change it if you build your own encoding.",
+      "description": "Lowest byte value that starts a two-byte wide character code. Bytes below it are drawn as single-byte characters from the current font asset's 16x16 grid. The default of 128 matches what the bundled font generator writes into the font mapping. Only change it if you build your own encoding.",
       "group": "Glyph Text",
       "type": "slider",
       "cType": "define",

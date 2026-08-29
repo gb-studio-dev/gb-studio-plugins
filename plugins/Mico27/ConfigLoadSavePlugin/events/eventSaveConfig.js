@@ -150,7 +150,7 @@ const compile = (input, helpers) => {
     );
     if (layout.slotCount > fits) {
       warnings(
-        `Save configuration: "Save slot count" is ${layout.slotCount} but only ${fits} slot(s) of ${blobSize} bytes fit from SRAM bank ${layout.startBank} onwards. Slots ${fits} and above will do nothing — lower the slot count, save fewer variables, or lower "Starting SRAM bank".`
+        `Save configuration: "Save slot count" is ${layout.slotCount} but only ${fits} slot(s) of ${blobSize} bytes fit from SRAM bank ${layout.startBank} onwards. Slots ${fits} and above will do nothing. Lower the slot count, save fewer variables, or lower "Starting SRAM bank".`
       );
     }
   }

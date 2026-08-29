@@ -22,7 +22,17 @@ Index: include/scroll.h
  #define SCREEN_OOB_TOP (255 - SCREEN_TILE_REFRES_H)
  #define SCREEN_OOB_LEFT_PX TILE_TO_PX(255 - SCREEN_TILE_REFRES_W)
  #define SCREEN_OOB_TOP_PX TILE_TO_PX(255 - SCREEN_TILE_REFRES_H)
-@@ -60,11 +60,11 @@
+@@ -32,9 +32,8 @@
+ extern BYTE scroll_offset_x;
+ extern BYTE scroll_offset_y;
+ extern UBYTE bkg_scroll_x;
+ extern UBYTE bkg_scroll_y;
+-extern UBYTE DISABLE_SCROLL_LIMITS;
+ extern BYTE bkg_offset_x;
+ extern BYTE bkg_offset_y;
+ extern UINT8 pending_w_i;
+ extern UINT8 pending_h_i;
+@@ -61,11 +60,11 @@
   */
  void scroll_repaint(void) BANKED;
  

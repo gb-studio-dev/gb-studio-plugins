@@ -153,7 +153,7 @@ export const fields = [
     key: "compTileCollision",
     label: "Tile collision",
     description:
-      "Collide with collision tiles while moving. Untick to pass through walls and floors (ghosts, flying pickups) — turning, bouncing, ledge stop and landing are skipped too.",
+      "Stops on solid tiles while moving. Untick it to pass through walls and floors, for ghosts and flying pickups. Turning, bouncing, ledge stops and landing are skipped too.",
     type: "checkbox",
     defaultValue: true,
     conditions: [{ key: "preset", eq: "custom" }],
@@ -352,7 +352,7 @@ export const fields = [
     key: "overrideTileCollision",
     label: "Tile Collision Override",
     description:
-      "Advanced. Requires the 'Enable tile collision override' engine setting; ignored (and rejected if set) without it. Replaces the collision mask this behavior tests against a tile when non-zero, so 0 means stock collision (tested against the direction it is moving, as normal). Tile bits: 1 top, 2 bottom, 4 left, 8 right; then the 16-112 value space (16 ladder, 32-112 the six slopes) and 128, which no engine code reads. A property bit (16 and up) makes tiles carrying it solid from every direction. A direction bit (1-8) makes the behavior react to only that one side, from whichever direction it approaches. An empty tile is never solid whatever the value.",
+      "Advanced. Needs the 'Enable tile collision override' engine setting, and is refused without it. Changes what this behaviour treats as solid. 0 is normal collision, testing the side it is moving into. Values: 1 top, 2 bottom, 4 left, 8 right, then 16 ladder, 32 to 112 the six slopes, and 128, which nothing reads. A value of 16 or above makes tiles carrying it solid from every direction. A value of 1 to 8 makes the behaviour react only to that side, from wherever it touches. An empty tile is never solid.",
     type: "value",
     min: 0,
     max: 255,
@@ -469,7 +469,7 @@ export const compile = (input, helpers) => {
     }
   }
 
-  _addComment(`Define Actor Behavior (flags: ${flags}, flags2: ${flags2}, collision: ${collisionType}, eventFlags: ${eventFlags})`);
+  _addComment(`Define Actor Behavior: slot ${input.behaviorId}`);
 
   // Pushed first so the existing arguments keep their FN_ARGn slots. Pushed
   // whether or not the feature is compiled in, so the argument count always

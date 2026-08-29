@@ -1664,7 +1664,7 @@ Index: src/core/projectiles.c
 +            }
          }
 +
-+        // Off-screen removal (bounds check only — actual drawing happens in
++        // Off-screen removal (bounds check only; the drawing happens in
 +        // projectiles_render, which core.c calls right after this). Tested in
 +        // tiles against the clip window computed above, the way stock does it.
 +        UBYTE tile_x = SUBPX_TO_TILE(projectile->pos.x),

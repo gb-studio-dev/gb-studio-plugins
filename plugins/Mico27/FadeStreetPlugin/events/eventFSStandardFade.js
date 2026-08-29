@@ -105,7 +105,7 @@ const fields = [
         fields: [
             {
                 label: "Starting palettes - background:",
-                description: "Background palettes at the beginning of the colour fade. These should usually match the palettes that are already loaded.",
+                description: "Background palettes at the start of the fade. These usually match the palettes already loaded.",
             },
             {
                 label: "Final palettes - background:",
@@ -383,7 +383,7 @@ const fields = [
         fields: [
             {
                 label: "Starting palettes - sprites:",
-                description: "Sprite palettes at the beginning of the colour fade. These should usually match the palettes that are already loaded.",
+                description: "Sprite palettes at the start of the fade. These usually match the palettes already loaded.",
             },
             {
                 label: "Final palettes - sprites:",
@@ -918,31 +918,7 @@ const compile = (input, helpers) => {
         }
     }
 
-    _addComment(`      ___      ___        _____        ___`);
-    _addComment(`     /  /\\    /  /\\      /  /::\\      /  /\\`);
-    _addComment(`    /  /:/_  /  /::\\    /  /:/\\:\\    /  /:/_`);
-    _addComment(`   /  /:/ /\\/  /:/\\:\\  /  /:/  \\:\\  /  /:/ /\\`);
-    _addComment(`  /  /:/ /:/  /:/~/::\\/__/:/ \\__\\:|/  /:/ /:/_`);
-    _addComment(` /__/:/ /:/__/:/ /:/\\:\\  \\:\\ /  /:/__/:/ /:/ /\\`);
-    _addComment(` \\  \\:\\/:/\\  \\:\\/:/__\\/\\  \\:\\  /:/\\  \\:\\/:/ /:/`);
-    _addComment(`  \\  \\::/  \\  \\::/      \\  \\:\\/:/  \\  \\::/ /:/`);
-    _addComment(`   \\  \\:\\   \\  \\:\\       \\  \\::/    \\  \\:\\/:/`);
-    _addComment(`    \\  \\:\\   \\  \\:\\       \\__\\/      \\  \\::/`);
-    _addComment(`     \\___/    \\__\\/       ___         ___\\/       ___`);
-    _addComment(`     /  /\\        ___    /  /\\       /  /\\       /  /\\        ___`);
-    _addComment(`    /  /:/_      /  /\\  /  /::\\     /  /:/_     /  /:/_      /  /\\`);
-    _addComment(`   /  /:/ /\\    /  /:/ /  /:/\\:\\   /  /:/ /\\   /  /:/ /\\    /  /:/`);
-    _addComment(`  /  /:/ /::\\  /  /:/ /  /:/~/:/  /  /:/ /:/_ /  /:/ /:/_  /  /:/`);
-    _addComment(` /__/:/ /:/\\:\\/  /::\\/__/:/ /:/__/__/:/ /:/ //__/:/ /:/ /\\/  /::\\`);
-    _addComment(` \\  \\:\\/:/~/:/__/:/\\:\\  \\:\\/:::::\\  \\:\\/:/ /:\\  \\:\\/:/ /:/__/:/\\:\\`);
-    _addComment(`  \\  \\::/ /:/\\__\\/  \\:\\  \\::/~~~~ \\  \\::/ /:/ \\  \\::/ /:/\\__\\/  \\:\\`);
-    _addComment(`   \\__\\/ /:/      \\  \\:\\  \\:\\      \\  \\:\\/:/   \\  \\:\\/:/      \\  \\:\\`);
-    _addComment(`     /__/:/        \\__\\/\\  \\:\\      \\  \\::/     \\  \\::/        \\__\\/`);
-    _addComment(`     \\__\\/               \\__\\/       \\__\\/       \\__\\/`);
-    _addComment(`     `);
     _addComment(`                    Standard Fade`);
-    _addComment(`               [GF_EVENT_FADE_STREET]`);
-    _addComment(`     `);
     _addComment(`    Parameters:`);
     _addComment(`        Steps: ${steps}`);
     _addComment(`        Frames per step: ${wait_frames}`);
@@ -969,7 +945,7 @@ const compile = (input, helpers) => {
     }
 
     appendRaw(gbvm);
-    _addComment(`~~~ End of Standard Fade block ~~~\n\n`);
+    _addComment(`End of Standard Fade`);
 };
 
 module.exports = {

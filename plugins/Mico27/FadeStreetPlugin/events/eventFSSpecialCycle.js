@@ -489,7 +489,7 @@ const fields = [
         fields: [
             {
                 label: "BKG start pals:",
-                description: "Background palettes at the beginning of the colour fade. These should usually match the palettes that are already loaded.",
+                description: "Background palettes at the start of the fade. These usually match the palettes already loaded.",
             },
             {
                 label: "BKG end pals:",
@@ -497,7 +497,7 @@ const fields = [
             },
             {
                 label: "Cycle Colours:",
-                description: "Selected colour slots are part of the colour cycle. That means that the colours in these slots rotate through each slot. At every step of the cycle, the colours move along by one slot. The slots are ordered from top to bottom and left to right in this list. Background palette 1 comes before background palette 8, which comes before sprite palette 1, and within each palette, colour 0 comes before colour 1.",
+                description: "The slots you tick take part in the cycle: their colours move along by one slot at every step. The order is top to bottom and left to right in this list, so background palette 1 comes before background palette 8, which comes before sprite palette 1, and colour 0 comes before colour 1 within each palette.",
             },
         ]
     },
@@ -1142,7 +1142,7 @@ const fields = [
         fields: [
             {
                 label: "Sprite start pals:",
-                description: "Sprite palettes at the beginning of the colour fade. These should usually match the palettes that are already loaded.",
+                description: "Sprite palettes at the start of the fade. These usually match the palettes already loaded.",
             },
             {
                 label: "Sprite end pals:",
@@ -1150,7 +1150,7 @@ const fields = [
             },
             {
                 label: "Cycle Colours:",
-                description: "Selected colour slots are part of the colour cycle. That means that the colours in these slots rotate through each slot. At every step of the cycle, the colours move along by one slot. The slots are ordered from top to bottom and left to right in this list. Background palette 1 comes before background palette 8, which comes before sprite palette 1, and within each palette, colour 0 comes before colour 1.",
+                description: "The slots you tick take part in the cycle: their colours move along by one slot at every step. The order is top to bottom and left to right in this list, so background palette 1 comes before background palette 8, which comes before sprite palette 1, and colour 0 comes before colour 1 within each palette.",
             },
         ]
     },
@@ -2286,31 +2286,7 @@ const compile = (input, helpers) => {
 
     // Write GBVM output:
     _addComment("");
-    _addComment(`      ___      ___        _____        ___`);
-    _addComment(`     /  /\\    /  /\\      /  /::\\      /  /\\`);
-    _addComment(`    /  /:/_  /  /::\\    /  /:/\\:\\    /  /:/_`);
-    _addComment(`   /  /:/ /\\/  /:/\\:\\  /  /:/  \\:\\  /  /:/ /\\`);
-    _addComment(`  /  /:/ /:/  /:/~/::\\/__/:/ \\__\\:|/  /:/ /:/_`);
-    _addComment(` /__/:/ /:/__/:/ /:/\\:\\  \\:\\ /  /:/__/:/ /:/ /\\`);
-    _addComment(` \\  \\:\\/:/\\  \\:\\/:/__\\/\\  \\:\\  /:/\\  \\:\\/:/ /:/`);
-    _addComment(`  \\  \\::/  \\  \\::/      \\  \\:\\/:/  \\  \\::/ /:/`);
-    _addComment(`   \\  \\:\\   \\  \\:\\       \\  \\::/    \\  \\:\\/:/`);
-    _addComment(`    \\  \\:\\   \\  \\:\\       \\__\\/      \\  \\::/`);
-    _addComment(`     \\___/    \\__\\/       ___         ___\\/       ___`);
-    _addComment(`     /  /\\        ___    /  /\\       /  /\\       /  /\\        ___`);
-    _addComment(`    /  /:/_      /  /\\  /  /::\\     /  /:/_     /  /:/_      /  /\\`);
-    _addComment(`   /  /:/ /\\    /  /:/ /  /:/\\:\\   /  /:/ /\\   /  /:/ /\\    /  /:/`);
-    _addComment(`  /  /:/ /::\\  /  /:/ /  /:/~/:/  /  /:/ /:/_ /  /:/ /:/_  /  /:/`);
-    _addComment(` /__/:/ /:/\\:\\/  /::\\/__/:/ /:/__/__/:/ /:/ //__/:/ /:/ /\\/  /::\\`);
-    _addComment(` \\  \\:\\/:/~/:/__/:/\\:\\  \\:\\/:::::\\  \\:\\/:/ /:\\  \\:\\/:/ /:/__/:/\\:\\`);
-    _addComment(`  \\  \\::/ /:/\\__\\/  \\:\\  \\::/~~~~ \\  \\::/ /:/ \\  \\::/ /:/\\__\\/  \\:\\`);
-    _addComment(`   \\__\\/ /:/      \\  \\:\\  \\:\\      \\  \\:\\/:/   \\  \\:\\/:/      \\  \\:\\`);
-    _addComment(`     /__/:/        \\__\\/\\  \\:\\      \\  \\::/     \\  \\::/        \\__\\/`);
-    _addComment(`     \\__\\/               \\__\\/       \\__\\/       \\__\\/`);
-    _addComment(`     `);
     _addComment(`                  Special Fade with Colour Cycle`);
-    _addComment(`               [GF_EVENT_FADE_STREET_SPECIAL_CYCLE]`);
-    _addComment(`     `);
     _addComment(`    Parameters:`);
     _addComment(`        Start point: ${startpoint_str}`);
     _addComment(`        End point:   ${endpoint_str}`);

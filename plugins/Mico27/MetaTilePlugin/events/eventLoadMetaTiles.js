@@ -47,7 +47,12 @@ export const compile = (input, helpers) => {
             metatileSizeValue = {id: metatileSizeDefault.key, value: metatileSizeDefault.defaultValue};
         }
     }
-    if (!background_cache[scene.backgroundId]){
+    // A tilemap scene has no backgroundId of its own - GB Studio uses the
+    // scene's id as its background - so keying the cache on backgroundId
+    // alone would give every tilemap scene the same empty key, and only the
+    // first would be transformed.
+    const background_key = scene.backgroundId || scene.id;
+    if (!background_cache[background_key]){
         const newTilemapData = [];
         const oldTilemapData = scene.background.tilemap.data;
         const oldTilemapAttrData = scene.background.tilemapAttr?.data;
@@ -159,7 +164,7 @@ export const compile = (input, helpers) => {
         scene.background.tilemap.data = newTilemapData;
         scene.background.tilemapAttr.data = [0];
         scene.collisions = [0];
-        background_cache[scene.backgroundId] = true;
+        background_cache[background_key] = true;
     }
     _addComment("Load meta tiles");
 

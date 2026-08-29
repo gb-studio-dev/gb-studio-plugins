@@ -4186,15 +4186,15 @@ const fields = [
         fields: [
             {
                 label: "BKG start pals:",
-                description: "Background palettes at the beginning of the colour fade. These should usually match the palettes that are already loaded. N.B. A single palette slot can only be updated by one on the 8 fade/cycle tabs. If you try to change the same palette in different tabs, the lower number tab will \"win\" and control that slot. However, cycles take precedence over fades. e.g. If background palette 1 is faded in tab 2 and tab 3, the fade in tab 3 is ignored. But if colour 2 of palette 1 is part of a cycle in tab 5, then that colour alone will be controlled by tab 5. The other colours in palette 1 will be controlled by the fade in tab 2.",
+                description: "Background palettes at the start of the fade. These usually match the palettes already loaded.\nOne slot can only be driven by one of the eight tabs. When two tabs claim the same slot the lower numbered tab wins, except that a cycle always beats a fade.",
             },
             {
                 label: "BKG end pals:",
-                description: "Background palettes at the end of the colour fade. N.B. A single palette slot can only be updated by one on the 8 fade/cycle tabs. If you try to change the same palette in different tabs, the lower number tab will \"win\" and control that slot. However, cycles take precedence over fades. e.g. If background palette 1 is faded in tab 2 and tab 3, the fade in tab 3 is ignored. But if colour 2 of palette 1 is part of a cycle in tab 5, then that colour alone will be controlled by tab 5. The other colours in palette 1 will be controlled by the fade in tab 2.",
+                description: "Background palettes at the end of the colour fade.\nOne slot can only be driven by one of the eight tabs. When two tabs claim the same slot the lower numbered tab wins, except that a cycle always beats a fade.",
             },
             {
                 label: "Cycle Colours:",
-                description: "Selected colour slots are part of the colour cycle. That means that the colours in these slots rotate through each slot. At every step of the cycle, the colours move along by one slot. The slots are ordered from top to bottom and left to right in this list. Background palette 1 comes before background palette 8, which comes before sprite palette 1, and within each palette, colour 0 comes before colour 1. N.B. A single palette slot can only be updated by one on the 8 fade/cycle tabs. If you try to change the same palette in different tabs, the lower number tab will \"win\" and control that slot. However, cycles take precedence over fades. e.g. If background palette 1 is faded in tab 2 and tab 3, the fade in tab 3 is ignored. But if colour 2 of palette 1 is part of a cycle in tab 5, then that colour alone will be controlled by tab 5. The other colours in palette 1 will be controlled by the fade in tab 2.",
+                description: "The slots you tick take part in the cycle: their colours move along by one slot at every step. The order is top to bottom and left to right in this list, so background palette 1 comes before background palette 8, which comes before sprite palette 1, and colour 0 comes before colour 1 within each palette.\nOne slot can only be driven by one of the eight tabs. When two tabs claim the same slot the lower numbered tab wins, except that a cycle always beats a fade. So a palette faded in tabs 2 and 3 takes tab 2, but a colour of it cycled in tab 5 takes tab 5 while the rest of the palette stays on tab 2.",
             },
         ]
     },
@@ -9644,15 +9644,15 @@ const fields = [
         fields: [
             {
                 label: "Sprite start pals:",
-                description: "Sprite palettes at the beginning of the colour fade. These should usually match the palettes that are already loaded. N.B. A single palette slot can only be updated by one on the 8 fade/cycle tabs. If you try to change the same palette in different tabs, the lower number tab will \"win\" and control that slot. However, cycles take precedence over fades. e.g. If sprite palette 1 is faded in tab 2 and tab 3, the fade in tab 3 is ignored. But if colour 0 of palette 1 is part of a cycle in tab 5, then that colour alone will be controlled by tab 5. The other colours in palette 1 will be controlled by the fade in tab 2.",
+                description: "Sprite palettes at the start of the fade. These usually match the palettes already loaded.\nOne slot can only be driven by one of the eight tabs. When two tabs claim the same slot the lower numbered tab wins, except that a cycle always beats a fade.",
             },
             {
                 label: "Sprite end pals:",
-                description: "Sprite palettes at the end of the colour fade. N.B. A single palette slot can only be updated by one on the 8 fade/cycle tabs. If you try to change the same palette in different tabs, the lower number tab will \"win\" and control that slot. However, cycles take precedence over fades. e.g. If sprite palette 1 is faded in tab 2 and tab 3, the fade in tab 3 is ignored. But if colour 0 of palette 1 is part of a cycle in tab 5, then that colour alone will be controlled by tab 5. The other colours in palette 1 will be controlled by the fade in tab 2.",
+                description: "Sprite palettes at the end of the colour fade.\nOne slot can only be driven by one of the eight tabs. When two tabs claim the same slot the lower numbered tab wins, except that a cycle always beats a fade.",
             },
             {
                 label: "Cycle Colours:",
-                description: "Selected colour slots form part of the colour cycle. N.B. A single palette slot can only be updated by one on the 8 fade/cycle tabs. If you try to change the same palette in different tabs, the lower number tab will \"win\" and control that slot. However, cycles take precedence over fades. e.g. If sprite palette 1 is faded in tab 2 and tab 3, the fade in tab 3 is ignored. But if colour 0 of palette 1 is part of a cycle in tab 5, then that colour alone will be controlled by tab 5. The other colours in palette 1 will be controlled by the fade in tab 2.",
+                description: "Selected colour slots form part of the colour cycle.\nOne slot can only be driven by one of the eight tabs. When two tabs claim the same slot the lower numbered tab wins, except that a cycle always beats a fade.",
             },
         ]
     },
@@ -16568,31 +16568,7 @@ const compile = (input, helpers) => {
 
     // Write GBVM output:
     _addComment("");
-    _addComment(`      ___      ___        _____        ___`);
-    _addComment(`     /  /\\    /  /\\      /  /::\\      /  /\\`);
-    _addComment(`    /  /:/_  /  /::\\    /  /:/\\:\\    /  /:/_`);
-    _addComment(`   /  /:/ /\\/  /:/\\:\\  /  /:/  \\:\\  /  /:/ /\\`);
-    _addComment(`  /  /:/ /:/  /:/~/::\\/__/:/ \\__\\:|/  /:/ /:/_`);
-    _addComment(` /__/:/ /:/__/:/ /:/\\:\\  \\:\\ /  /:/__/:/ /:/ /\\`);
-    _addComment(` \\  \\:\\/:/\\  \\:\\/:/__\\/\\  \\:\\  /:/\\  \\:\\/:/ /:/`);
-    _addComment(`  \\  \\::/  \\  \\::/      \\  \\:\\/:/  \\  \\::/ /:/`);
-    _addComment(`   \\  \\:\\   \\  \\:\\       \\  \\::/    \\  \\:\\/:/`);
-    _addComment(`    \\  \\:\\   \\  \\:\\       \\__\\/      \\  \\::/`);
-    _addComment(`     \\___/    \\__\\/       ___         ___\\/       ___`);
-    _addComment(`     /  /\\        ___    /  /\\       /  /\\       /  /\\        ___`);
-    _addComment(`    /  /:/_      /  /\\  /  /::\\     /  /:/_     /  /:/_      /  /\\`);
-    _addComment(`   /  /:/ /\\    /  /:/ /  /:/\\:\\   /  /:/ /\\   /  /:/ /\\    /  /:/`);
-    _addComment(`  /  /:/ /::\\  /  /:/ /  /:/~/:/  /  /:/ /:/_ /  /:/ /:/_  /  /:/`);
-    _addComment(` /__/:/ /:/\\:\\/  /::\\/__/:/ /:/__/__/:/ /:/ //__/:/ /:/ /\\/  /::\\`);
-    _addComment(` \\  \\:\\/:/~/:/__/:/\\:\\  \\:\\/:::::\\  \\:\\/:/ /:\\  \\:\\/:/ /:/__/:/\\:\\`);
-    _addComment(`  \\  \\::/ /:/\\__\\/  \\:\\  \\::/~~~~ \\  \\::/ /:/ \\  \\::/ /:/\\__\\/  \\:\\`);
-    _addComment(`   \\__\\/ /:/      \\  \\:\\  \\:\\      \\  \\:\\/:/   \\  \\:\\/:/      \\  \\:\\`);
-    _addComment(`     /__/:/        \\__\\/\\  \\:\\      \\  \\::/     \\  \\::/        \\__\\/`);
-    _addComment(`     \\__\\/               \\__\\/       \\__\\/       \\__\\/`);
-    _addComment(`     `);
     _addComment(`                Multiple Fades with Colour Cycles`);
-    _addComment(`                [GF_EVENT_FADE_STREET_MULTI_CYCLE]`);
-    _addComment(`     `);
     _addComment(`    Parameters:`);
     _addComment(`        Palette fade steps:           ${fade_steps}`);
     _addComment(`        Palette fade frames per step: ${fade_wait_frames}`);
