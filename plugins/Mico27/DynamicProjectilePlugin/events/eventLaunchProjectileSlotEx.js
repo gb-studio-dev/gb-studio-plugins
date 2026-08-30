@@ -607,8 +607,13 @@ const compile = (input, helpers) => {
   const slot = Number(input.slot);
   requireSlot(helpers, slot);
 
-  // projectile_launch() copies these into the projectile, so they have to be
-  // in place before the launch instruction.
+  // These have to be in place before the launch instruction. The launch copies
+  // some of them into the projectile, but others stay live: handle_boomerang()
+  // reads projectile_distance and projectiles_update() reads
+  // projectile_actor_index on every pass, for every projectile in flight. So a
+  // launch that wrote all five would retune the shots already flying - fire a
+  // sine wave and the boomerang crossing the screen changes its range. Only
+  // the parameters the chosen behaviour actually uses are written.
   const value = (v, fallback) =>
     v === undefined || v === null ? { type: "number", value: fallback } : v;
   // Anchor and Trail name their actor with a picker here and with an index in
@@ -627,21 +632,41 @@ const compile = (input, helpers) => {
       ? { type: "number", value: Number(v.value) + 1 }
       : { type: "add", valueA: v, valueB: { type: "number", value: 1 } };
 
-  engineFieldSetToScriptValue(
-    "projectile_distance",
-    input.paramTrailHead === "actor"
-      ? biasedByOne(actorValue(input.paramTrailActor, 0))
-      : value(input.paramX, 0)
-  );
-  engineFieldSetToScriptValue("projectile_distance2", value(input.paramY, 0));
-  engineFieldSetToScriptValue(
-    "projectile_phase",
-    actorValue(input.paramPhase, 64)
-  );
-  engineFieldSetToScriptValue(
-    "projectile_actor_index",
-    value(input.paramActorIndex, 0)
-  );
+  // The same pairing the field conditions use to decide what to show: a
+  // parameter this behaviour never displays is one the user never set, so
+  // leave the global holding whatever an earlier launch put there. An event
+  // saved before this selector existed has no behaviour and defaults to "any",
+  // which shows every parameter and so still writes all of them.
+  const behaviour = input.paramBehaviour || "any";
+  const usedBy = (...behaviours) => behaviours.includes(behaviour);
+
+  if (
+    usedBy("any", "boomerang", "orbit", "anchor", "hookshot", "chain", "trail")
+  ) {
+    engineFieldSetToScriptValue(
+      "projectile_distance",
+      input.paramTrailHead === "actor"
+        ? biasedByOne(actorValue(input.paramTrailActor, 0))
+        : value(input.paramX, 0)
+    );
+  }
+  if (usedBy("any", "arc", "orbit", "anchor", "hookshot", "chain")) {
+    engineFieldSetToScriptValue("projectile_distance2", value(input.paramY, 0));
+  }
+  if (usedBy("any", "sine", "orbit", "anchor")) {
+    engineFieldSetToScriptValue(
+      "projectile_phase",
+      actorValue(input.paramPhase, 64)
+    );
+  }
+  if (usedBy("any", "orbit")) {
+    engineFieldSetToScriptValue(
+      "projectile_actor_index",
+      value(input.paramActorIndex, 0)
+    );
+  }
+  // Start Frame sits on the Source tab, so it is always shown, always set, and
+  // only ever copied into the projectile at launch - never read back later.
   engineFieldSetToScriptValue("projectile_frame", value(input.frame, 0));
 
   if (input.sourceType === "position" && input.directionType === "targetpos") {
