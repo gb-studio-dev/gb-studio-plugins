@@ -112,7 +112,7 @@ const literalSaveSlot = (helpers, input) => {
 
 // A runtime slot cannot go through the stock save/load path, so those events
 // call the plugin’s native from inside the running script instead. That native
-// runs on the VM contexts, so it cannot restore them — which is exactly what the
+// runs on the script contexts, so it cannot restore them, which is exactly what the
 // full save-state structure needs it to do. Only save and load restore state;
 // peeking or checking a runtime slot is always safe.
 const checkRuntimeSaveSlot = (helpers, what) => {

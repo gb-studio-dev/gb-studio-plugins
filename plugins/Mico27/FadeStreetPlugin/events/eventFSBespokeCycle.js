@@ -448,7 +448,7 @@ const fields = [
         fields: [
             {
                 label: "Starting palettes - background:",
-                description: "Background palettes at the beginning of the colour fade. These should usually match the palettes that are already loaded.",
+                description: "Background palettes at the start of the fade. These usually match the palettes already loaded.",
             },
             {
                 label: "Final palettes - background:",
@@ -726,7 +726,7 @@ const fields = [
         fields: [
             {
                 label: "Starting palettes - sprites:",
-                description: "Sprite palettes at the beginning of the colour fade. These should usually match the palettes that are already loaded.",
+                description: "Sprite palettes at the start of the fade. These usually match the palettes already loaded.",
             },
             {
                 label: "Final palettes - sprites:",
@@ -1039,12 +1039,12 @@ const fields = [
         type: "textarea",
         key:  "cycle_text",
         label: "Palette Slots For Cycle:",
-        description: "Enter a comma separated list of integers indicating which palette colours should be included in the cycle.\nBackground slots are numbered 0-31, starting at the first colour of palette 1, and ending at the last colour of palette 8. Palette #1 comprises colours 0, 1, 2, and 3, palette #2 comprises colours 4, 5, 6, and 7, etc.\nSprite slots are number 32-63, starting at the first colour of palette 1, and ending at the last colour of palette 8. There are FOUR slots per sprite palette, and the first slot is invisible/unused. Sprite palette #1 comprises colours 32, 33, 34, and 35, with colour 32 is invisible. 33, 34, and 35 are the three visible colours in palette #1, corresponding to white, light grey, and black, respectively, in GB Studio.\nEach slot may appear no more that one time in the list. Slots may be listed in any order and colours will cycle through the slots in the given order.",
+        description: "A comma separated list of the palette slots in the cycle.\nBackground slots run 0 to 31, four per palette: 0 to 3 are palette 1, 4 to 7 are palette 2, and so on to palette 8.\nSprite slots run 32 to 63, also four per palette, and the first of each four is the transparent one. Sprite palette 1 is 32 to 35, where 32 is transparent and 33, 34 and 35 are white, light grey and black.\nList each slot at most once. The order is the order the colours travel in.",
     },
     {
         type: "select",
         key: "colour_format",
-        description: "The format you'll use to enter colours. Choose \"GBS representative hex\" if and only if you are copying a hex value from the Palettes screen of GB Studio. If you're not sure if your colours are sRGB or linear RGB, try both and find out. One option will look correct, and the other won't.",
+        description: "How you will type the colours. Pick \"GBS representative hex\" when copying a value from GB Studio's Palettes screen. If you do not know whether your colours are sRGB or linear RGB, try both: one will look right.",
         label: "Colour Format:",
         default: "gbs",
         options: [
@@ -1849,31 +1849,7 @@ const compile = (input, helpers) => {
 
     // Write GBVM output:
     _addComment("");
-    _addComment(`      ___      ___        _____        ___`);
-    _addComment(`     /  /\\    /  /\\      /  /::\\      /  /\\`);
-    _addComment(`    /  /:/_  /  /::\\    /  /:/\\:\\    /  /:/_`);
-    _addComment(`   /  /:/ /\\/  /:/\\:\\  /  /:/  \\:\\  /  /:/ /\\`);
-    _addComment(`  /  /:/ /:/  /:/~/::\\/__/:/ \\__\\:|/  /:/ /:/_`);
-    _addComment(` /__/:/ /:/__/:/ /:/\\:\\  \\:\\ /  /:/__/:/ /:/ /\\`);
-    _addComment(` \\  \\:\\/:/\\  \\:\\/:/__\\/\\  \\:\\  /:/\\  \\:\\/:/ /:/`);
-    _addComment(`  \\  \\::/  \\  \\::/      \\  \\:\\/:/  \\  \\::/ /:/`);
-    _addComment(`   \\  \\:\\   \\  \\:\\       \\  \\::/    \\  \\:\\/:/`);
-    _addComment(`    \\  \\:\\   \\  \\:\\       \\__\\/      \\  \\::/`);
-    _addComment(`     \\___/    \\__\\/       ___         ___\\/       ___`);
-    _addComment(`     /  /\\        ___    /  /\\       /  /\\       /  /\\        ___`);
-    _addComment(`    /  /:/_      /  /\\  /  /::\\     /  /:/_     /  /:/_      /  /\\`);
-    _addComment(`   /  /:/ /\\    /  /:/ /  /:/\\:\\   /  /:/ /\\   /  /:/ /\\    /  /:/`);
-    _addComment(`  /  /:/ /::\\  /  /:/ /  /:/~/:/  /  /:/ /:/_ /  /:/ /:/_  /  /:/`);
-    _addComment(` /__/:/ /:/\\:\\/  /::\\/__/:/ /:/__/__/:/ /:/ //__/:/ /:/ /\\/  /::\\`);
-    _addComment(` \\  \\:\\/:/~/:/__/:/\\:\\  \\:\\/:::::\\  \\:\\/:/ /:\\  \\:\\/:/ /:/__/:/\\:\\`);
-    _addComment(`  \\  \\::/ /:/\\__\\/  \\:\\  \\::/~~~~ \\  \\::/ /:/ \\  \\::/ /:/\\__\\/  \\:\\`);
-    _addComment(`   \\__\\/ /:/      \\  \\:\\  \\:\\      \\  \\:\\/:/   \\  \\:\\/:/      \\  \\:\\`);
-    _addComment(`     /__/:/        \\__\\/\\  \\:\\      \\  \\::/     \\  \\::/        \\__\\/`);
-    _addComment(`     \\__\\/               \\__\\/       \\__\\/       \\__\\/`);
-    _addComment(`     `);
     _addComment(`                       Bespoke Colour Cycle`);
-    _addComment(`               [GF_EVENT_FADE_STREET_BESPOKE_CYCLE]`);
-    _addComment(`     `);
     _addComment(`    Fade parameters:`);
     _addComment(`        Start point: ${startpoint_str}`);
     _addComment(`        End point:   ${endpoint_str}`);

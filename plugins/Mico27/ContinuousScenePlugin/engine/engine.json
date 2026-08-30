@@ -31,10 +31,10 @@
         {
             "key": "DISABLE_SCROLL_LIMITS",
             "label": "Disable scroll limits",
-            "description": "Disable scroll limits",
+            "description": "Disable scroll limits. Can be changed at runtime with the Engine Field Update event.",
             "group": "Continuous Scene",
             "type": "checkbox",
-            "cType": "define",
+            "cType": "UBYTE",
             "defaultValue": 1
         },
         {

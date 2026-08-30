@@ -5,7 +5,7 @@
   "url": "https://github.com/Mico27/gbs-DynamicActorPlugin",
   "description": "Allows dynamic actor behaviors that requires smooth perpixel movements such as gravity, velocity, actor attached to other actors, etc. Also provides extended actor tooling: iterate actors in an area, get/set actor fields no stock event exposes, force an actor script to run, and actor activated/deactivated callbacks.",
   "license": "MIT",
-  "version": "4.3.20",
+  "version": "4.3.21",
   "gbsVersion": ">=4.3.0",
   "order": -7,
   "engineAltRules": [

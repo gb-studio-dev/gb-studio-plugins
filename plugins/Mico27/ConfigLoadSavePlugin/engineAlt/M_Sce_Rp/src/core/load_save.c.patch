@@ -1,0 +1,489 @@
+Index: src/core/load_save.c
+===================================================================
+--- src/core/load_save.c
++++ src/core/load_save.c
+@@ -1,94 +1,158 @@
+ #pragma bank 255
+ 
+-// RpgMaker2KPlugin override of the stock load_save.c.
+-//
+-// Four changes:
+-//
+-//   1. A save slot holds only the game's **variables and RPG state**: the
+-//      script_memory block and rpg_persist_t. The stock engine also saves the
+-//      VM contexts, the current scene, the scene stack and every actor, which
+-//      is what makes a stock load jump the player back to where they saved.
+-//      Dropping those means loading restores the party, inventory, money and
+-//      variables *in place*: the current scene keeps running and the script
+-//      that called Load carries on. This is how ConfigLoadSavePlugin behaves.
+-//
+-//      The consequence to be aware of is the other half of the same coin:
+-//      loading does **not** return the player to the saved location. A project
+-//      that wants that should store the destination in a variable and change
+-//      scene itself after loading.
+-//
+-//   2. Save slots start at the bank *after* RPG_SRAM_BANK, so a slot can never
+-//      land on top of the live RPG state.
+-//
+-//   3. Every one of these functions leaves SRAM bank 0 mapped when it
+-//      returns, rather than the plugin's own. Bank 0 is where MetaTilePlugin
+-//      keeps its metatile map and SceneStackExPlugin its scene stack, and
+-//      both read theirs without selecting a bank first; this plugin's code
+-//      maps the bank it needs on every entry, so it is the one that can
+-//      afford to hand it back. With the bank left at its default of 0 the two
+-//      are the same thing and nothing changes.
+-//
+-//   4. rpg_persist_t is copied in and out of the slot. That copy is
+-//      SRAM-to-SRAM across two different banks, which the CPU cannot do
+-//      directly: only one SRAM bank is mapped at a time. It goes in
+-//      RPG_BOUNCE_SIZE chunks through a small WRAM buffer, switching banks per
+-//      chunk. Saving is rare, so the bank thrashing costs nothing that matters.
+-
+ #include <string.h>
+ 
+ #include "load_save.h"
+ 
++#include "system.h"
++#include "actor.h"
++#include "vm.h"
++#include "events.h"
++#include "music_manager.h"
+ #include "data_manager.h"
++#include "data/game_globals.h"
++#include "data/states_defines.h"
++
+ #include "rpg_data.h"
+ #include "rpg_ram.h"
+ #include "rpg_save.h"
+-#include "system.h"
+-#include "vm.h"
++
+ #ifdef BATTERYLESS
+     #include "bankdata.h"
+     #include "flasher.h"
+ #endif
+ 
++// ---------------------------------------------------------------------------
++// Configure Load/Save engine settings (Settings > Engine > Configure Load/Save)
++//
++//   SAVE_STRUCTURE        what a save slot holds. FULL is GB Studio's own
++//                         structure, scene and running scripts included; the
++//                         other two hold variables and nothing else.
++//   SAVE_SRAM_START_BANK  first SRAM bank the save slots are written to.
++//   SAVE_SLOT_COUNT       how many save slots the game has.
++// ---------------------------------------------------------------------------
++#define SAVE_STRUCTURE_FULL      0
++#define SAVE_STRUCTURE_VARIABLES 1
++#define SAVE_STRUCTURE_CUSTOM    2
++
++#ifndef SAVE_STRUCTURE
++#define SAVE_STRUCTURE SAVE_STRUCTURE_FULL
++#endif
++
++#ifndef SAVE_SRAM_START_BANK
++#define SAVE_SRAM_START_BANK 1
++#endif
++#ifndef SAVE_SLOT_COUNT
++#define SAVE_SLOT_COUNT 3
++#endif
++
++// SRAM banks another plugin owns, counted from bank 0. RPG Maker 2000 holds
++// its party and battle state in RPG_SRAM_BANK and nothing may share it, so the
++// save slots start at the bank after that one however low "Starting SRAM bank"
++// is set. That plugin refuses to build unless the bank is set high enough to
++// clear anything else installed alongside it, so this covers those too.
++//
++// engineAlt-replaces: RPG_SAVE_FIRST_BANK -- that plugin's own macro for this,
++// by another name. It was a file-local #define with two uses, mapping the bank
++// in data_init and starting the slots in data_slot_address, and
++// SAVE_SRAM_FIRST_BANK does both - never lower, since it is clamped up to the
++// reserved count below.
++#define SAVE_SRAM_RESERVED_BANKS (RPG_SRAM_BANK + 1)
++
++// The starting bank is only a request: it is clamped up so a project can never
++// be built with save slots sitting on top of another plugin's SRAM.
++#if (SAVE_SRAM_START_BANK < SAVE_SRAM_RESERVED_BANKS)
++#define SAVE_SRAM_FIRST_BANK SAVE_SRAM_RESERVED_BANKS
++#else
++#define SAVE_SRAM_FIRST_BANK SAVE_SRAM_START_BANK
++#endif
++
++// Slots are packed head to tail, so N slots can never span more than N banks.
++// GB Studio links every ROM with 4 SRAM banks (-Wm-ya4), so banks 0..3 exist
++// and that is where the slots have to stop whatever the settings ask for.
++#if ((SAVE_SRAM_FIRST_BANK + SAVE_SLOT_COUNT) > 4)
++#define SAVE_SRAM_END_BANK 4
++#else
++#define SAVE_SRAM_END_BANK (SAVE_SRAM_FIRST_BANK + SAVE_SLOT_COUNT)
++#endif
++
++// Does a save blob carry the VM contexts, and with them the scene the save was
++// taken in? Only the full save-state structure does. Kept in step with
++// src/core/core.c, which uses it to decide whether a load reloads the scene.
++#if SAVE_STRUCTURE == SAVE_STRUCTURE_FULL
++#define SAVE_KEEPS_CONTEXTS 1
++#else
++#define SAVE_KEEPS_CONTEXTS 0
++#endif
++
++// The custom structure is spelled out by a Save configuration event, which
++// generates data/save_points.h when the project is built.
++#if SAVE_STRUCTURE == SAVE_STRUCTURE_CUSTOM
++#if !__has_include ("data/save_points.h")
++#error Configure Load/Save: "Save structure" is set to "Custom variable set", but no Save configuration event was found. Add one to a script, or pick another save structure in Settings > Engine > Configure Load/Save.
++#endif
++#endif
++
+ #define SIGN_BY_PTR(ptr) *((UINT32 *)(ptr))
+ extern const UINT32 save_signature;
+ 
+-// Staging buffer for the cross-bank copy of rpg_persist_t. Bigger is faster
+-// and costs WRAM; 64 bytes keeps the switch count reasonable either way.
++// RPG Maker 2000 keeps its state in its own SRAM bank, and a save slot is in
++// another; the CPU maps only one at a time, so the party block travels through
++// this buffer a chunk at a time. Saving is rare, so the bank thrashing costs
++// nothing that matters.
+ #define RPG_BOUNCE_SIZE 64
+ static UBYTE rpg_bounce[RPG_BOUNCE_SIZE];
+ 
+-// The first SRAM bank save slots may use.
+-#define RPG_SAVE_FIRST_BANK (RPG_SRAM_BANK + 1)
++#if SAVE_STRUCTURE == SAVE_STRUCTURE_CUSTOM
++#include "data/save_points.h"
++#else
+ 
+ typedef struct save_point_t {
+     void * target;
+     size_t size;
+     uint8_t id;
+ } save_point_t;
+ 
+ #define SAVEPOINT(A, ID) {&(A), sizeof(A), (ID)}
++// Only the global variables, not the VM context stacks that sit behind them in
++// script_memory[]: those belong to the scripts running right now, and the load
++// happens from inside one of them.
++#define SAVEPOINT_VARIABLES(ID) {script_memory, (VM_HEAP_SIZE * sizeof(UWORD)), (ID)}
+ #define SAVEPOINTS_END {0, 0}
+ 
+ extern uint16_t __rand_seed;
+ 
+-// Variables only. Everything else the stock engine saves, meaning the VM
+-// contexts, input and timer hooks, music state, the scene and scene stack, and
+-// the actor table, is deliberately left out, so that loading changes what the
+-// party *has* without changing where the game *is*.
+-//
+-// engineAlt-omits: scene_stack_count -- SceneStackExPlugin adds that savepoint
+-// to the stock list, and this list drops every scene savepoint there is:
+-// current_scene, scene_stack and scene_stack_ptr are all gone for the reason
+-// above. Restoring its count for a stack that was never saved would describe
+-// a state the game was never in. The count carries on as it stands, which is
+-// what loading in place means.
+ const save_point_t save_points[] = {
+-    // variables (must be first, data_peek reads from the first block)
++#if SAVE_STRUCTURE == SAVE_STRUCTURE_VARIABLES
++    // variables and nothing else
++    SAVEPOINT_VARIABLES(0),
++#else
++    // variables (must be first, need for peeking)
+     SAVEPOINT(script_memory, 0),
++    // VM contexts
++    SAVEPOINT(CTXS, 1),
++    SAVEPOINT(first_ctx, 2), SAVEPOINT(free_ctxs, 3), SAVEPOINT(old_executing_ctx, 4), SAVEPOINT(executing_ctx, 5), SAVEPOINT(vm_lock_state, 6),
++    // intupt events
++    SAVEPOINT(input_events, 7), SAVEPOINT(input_slots, 8),
++    // timers
++    SAVEPOINT(timer_events, 9), SAVEPOINT(timer_values, 10),
++    // music
++    SAVEPOINT(music_current_track_bank, 11),
++    SAVEPOINT(music_current_track, 12),
++    SAVEPOINT(music_events, 13),
++    // scene
++    SAVEPOINT(current_scene, 14), SAVEPOINT(scene_stack_ptr, 15), SAVEPOINT(scene_stack, 16), SAVEPOINT(scene_stack_count, 17),
++    // actors
++    SAVEPOINT(actors, 18),
++    SAVEPOINT(actors_active_head, 19), SAVEPOINT(actors_inactive_head, 20), SAVEPOINT(player_moving, 21), SAVEPOINT(player_collision_actor, 22),
++    // system
++    SAVEPOINT(__rand_seed, 23),
++#endif
+     // terminator
+     SAVEPOINTS_END
+ };
++#endif
+ 
+ #ifdef BATTERYLESS
+     extern void _start_save;
+ #endif
+@@ -125,28 +189,46 @@
+ }
+ 
+ void data_init(void) BANKED {
+     ENABLE_RAM_MBC5;
+-    SWITCH_RAM_BANK(RPG_SAVE_FIRST_BANK, RAM_BANKS_ONLY);
+-    // calculate save blob size, with room for the party block on the end
++    SWITCH_RAM_BANK(SAVE_SRAM_FIRST_BANK, RAM_BANKS_ONLY);
++    // calculate save blob size
+     save_blob_size = sizeof(save_signature) + sizeof(save_blob_size);
++    #if SAVE_STRUCTURE == SAVE_STRUCTURE_CUSTOM
++    save_point_t point_ref;
++    const save_point_t * point_ptr = save_points;
++    MemcpyBanked(&point_ref, point_ptr, sizeof(save_point_t), BANK(save_points));
++    while(point_ref.target){
++        save_blob_size += sizeof(point_ref.size) + sizeof(point_ref.id) + point_ref.size;
++        point_ptr++;
++        MemcpyBanked(&point_ref, point_ptr, sizeof(save_point_t), BANK(save_points));
++    }
++    #else
+     for(const save_point_t * point = save_points; (point->target); point++) {
+         save_blob_size += sizeof(point->size) + sizeof(point->id) + point->size;
+     }
++    #endif
+     save_blob_size += sizeof(rpg_persist_t);
+ #ifdef BATTERYLESS
+     // load from FLASH ROM
+-    for (UBYTE i = 0; i < SRAM_BANKS_TO_SAVE; i++) restore_sram_bank(i);
++    for (UBYTE i = 0; i < SAVE_SRAM_END_BANK; i++) restore_sram_bank(i);
+ #endif
+     SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
+ }
+ 
+ UBYTE * data_slot_address(UBYTE slot, UBYTE *bank) {
+-    UWORD res = 0, res_bank = RPG_SAVE_FIRST_BANK;
++    UWORD res = 0;
++    UBYTE res_bank = SAVE_SRAM_FIRST_BANK;
++    // a slot the settings do not give the game
++    if (slot >= SAVE_SLOT_COUNT) return NULL;
++    // A blob that does not fit inside one SRAM bank has nowhere to go: writing
++    // it would run off the end of the bank and trash whatever the next one
++    // holds, so refuse the slot instead.
++    if ((save_blob_size == 0) || (save_blob_size > SRAM_BANK_SIZE)) return NULL;
+     for (UBYTE i = 0; i < slot; i++) {
+         res += save_blob_size;
+         if ((res + save_blob_size) > SRAM_BANK_SIZE) {
+-            if (++res_bank >= SRAM_BANKS_TO_SAVE) return NULL;
++            if (++res_bank >= SAVE_SRAM_END_BANK) return NULL;
+             res = 0;
+         }
+     }
+     *bank = res_bank;
+@@ -163,8 +245,26 @@
+     save_data += sizeof(save_signature);
+     // size of the save blob
+     *(size_t*)save_data = save_blob_size;
+     save_data += sizeof(save_blob_size);
++    #if SAVE_STRUCTURE == SAVE_STRUCTURE_CUSTOM
++    save_point_t point_ref;
++    const save_point_t * point_ptr = save_points;
++    MemcpyBanked(&point_ref, point_ptr, sizeof(save_point_t), BANK(save_points));
++    while(point_ref.target){
++        // size of the block
++        *(size_t*)save_data = point_ref.size;
++        save_data += sizeof(point_ref.size);
++        // ID of the block
++        *(uint8_t*)save_data = point_ref.id;
++        save_data += sizeof(point_ref.id);
++        // block data
++        memcpy(save_data, point_ref.target, point_ref.size);
++        save_data += point_ref.size;
++        point_ptr++;
++        MemcpyBanked(&point_ref, point_ptr, sizeof(save_point_t), BANK(save_points));
++    }
++    #else
+     for(const save_point_t * point = save_points; (point->target); point++) {
+         // size of the block
+         *(size_t*)save_data = point->size;
+         save_data += sizeof(point->size);
+@@ -174,39 +274,66 @@
+         // block data
+         memcpy(save_data, point->target, point->size);
+         save_data += point->size;
+     }
++    #endif
+     // party state, copied across banks
+     rpg_persist_copy(save_data, data_bank, TRUE);
+ #ifdef BATTERYLESS
+     // save to FLASH ROM
+     SWITCH_RAM_BANK(data_bank, RAM_BANKS_ONLY);
+-    save_sram(SRAM_BANKS_TO_SAVE);
++    save_sram(SAVE_SRAM_END_BANK);
+ #endif
+     SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
+ }
+ 
+ UBYTE data_load(UBYTE slot) BANKED {
+     UBYTE data_bank, *save_data = data_slot_address(slot, &data_bank);
+     if (save_data == NULL) return FALSE;
+     SWITCH_RAM_BANK(data_bank, RAM_BANKS_ONLY);
+-    if (SIGN_BY_PTR(save_data) != save_signature) {
++    if (SIGN_BY_PTR(save_data) != save_signature){
+         SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
+         return FALSE;
+     }
+     // seek to the first block
+     save_data += sizeof(save_signature) + sizeof(save_blob_size);
+     // load blocks
++    #if SAVE_STRUCTURE == SAVE_STRUCTURE_CUSTOM
++    save_point_t point_ref;
++    const save_point_t * point_ptr = save_points;
++    MemcpyBanked(&point_ref, point_ptr, sizeof(save_point_t), BANK(save_points));
++    while(point_ref.target){
++        // check chunk size
++        if (*(size_t*)save_data != point_ref.size){
++            SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
++            return FALSE;
++        } else {
++            save_data += sizeof(point_ref.size);
++        }
++        // check chunk id
++        if (*(uint8_t*)save_data != point_ref.id){
++            SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
++            return FALSE;
++        } else {
++            save_data += sizeof(point_ref.id);
++        }
++        // copy chunk data
++        memcpy(point_ref.target, save_data, point_ref.size);
++        save_data += point_ref.size;
++        point_ptr++;
++        MemcpyBanked(&point_ref, point_ptr, sizeof(save_point_t), BANK(save_points));
++    }
++    #else
+     for(const save_point_t * point = save_points; (point->target); point++) {
+         // check chunk size
+-        if (*(size_t*)save_data != point->size) {
++        if (*(size_t*)save_data != point->size){
+             SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
+             return FALSE;
+         } else {
+             save_data += sizeof(point->size);
+         }
+         // check chunk id
+-        if (*(uint8_t*)save_data != point->id) {
++        if (*(uint8_t*)save_data != point->id){
+             SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
+             return FALSE;
+         } else {
+             save_data += sizeof(point->id);
+@@ -214,14 +341,22 @@
+         // copy chunk data
+         memcpy(point->target, save_data, point->size);
+         save_data += point->size;
+     }
++    #endif
+     // party state, copied across banks
+     rpg_persist_copy(save_data, data_bank, FALSE);
+     // the cached database records may describe the previous game's party
+     rpg_data_invalidate();
+     SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
+-    // Music is not part of the save, so whatever is playing keeps playing.
++#if SAVE_KEEPS_CONTEXTS
++    // Restart music
++    if (music_current_track_bank != MUSIC_STOP_BANK) {
++        music_next_track = music_current_track;
++    } else {
++        music_sound_cut();
++    }
++#endif
+     return TRUE;
+ }
+ 
+ void data_clear(UBYTE slot) BANKED {
+@@ -230,28 +365,70 @@
+     SWITCH_RAM_BANK(data_bank, RAM_BANKS_ONLY);
+     SIGN_BY_PTR(save_data) = 0;
+ #ifdef BATTERYLESS
+     // save to FLASH ROM
+-    save_sram(SRAM_BANKS_TO_SAVE);
++    save_sram(SAVE_SRAM_END_BANK);
+ #endif
+     SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
+ }
+ 
+ UBYTE data_peek(UBYTE slot, UINT16 idx, UWORD count, UINT16 * dest) BANKED {
+     UBYTE data_bank, *save_data = data_slot_address(slot, &data_bank);
+     if (save_data == NULL) return FALSE;
+     SWITCH_RAM_BANK(data_bank, RAM_BANKS_ONLY);
+-    if (SIGN_BY_PTR(save_data) != save_signature) {
++    if (SIGN_BY_PTR(save_data) != save_signature){
+         SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
+         return FALSE;
+     }
+     if (count) memcpy(dest, save_data + (sizeof(save_signature) + sizeof(save_blob_size) + sizeof(size_t) + sizeof(uint8_t)) + (idx << 1), count << 1);
+     SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
+     return TRUE;
+ }
+ 
++UBYTE data_peek_ex(UBYTE slot, UINT16 idx, UWORD count, UINT16 * dest) BANKED {
++    UBYTE data_bank, *save_data = data_slot_address(slot, &data_bank);
++    if (save_data == NULL) return FALSE;
++    SWITCH_RAM_BANK(data_bank, RAM_BANKS_ONLY);
++    if (SIGN_BY_PTR(save_data) != save_signature){
++        SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
++        return FALSE;
++    }
++#if SAVE_STRUCTURE == SAVE_STRUCTURE_CUSTOM
++    // one block per configured variable: idx is the save point index
++    if (count) memcpy(dest, save_data + (sizeof(save_signature) + sizeof(save_blob_size) + (((idx + 1) * (sizeof(size_t) + sizeof(uint8_t) + sizeof(int16_t))) - sizeof(int16_t))), count << 1);
++#else
++    // the first block holds every variable: idx is the variable index
++    if (count) memcpy(dest, save_data + (sizeof(save_signature) + sizeof(save_blob_size) + sizeof(size_t) + sizeof(uint8_t)) + (idx << 1), count << 1);
++#endif
++    SWITCH_RAM_BANK(0, RAM_BANKS_ONLY);
++    return TRUE;
++}
++
++void vm_data_peek_ex(SCRIPT_CTX * THIS) OLDCALL BANKED {
++    int16_t idx = *(int16_t*)VM_REF_TO_PTR(FN_ARG3);
++    int16_t * A;
++    if (idx < 0) A = THIS->stack_ptr + idx - 4; else A = script_memory + idx;
++    data_peek_ex(*(uint8_t *)VM_REF_TO_PTR(FN_ARG0), *(uint16_t *)VM_REF_TO_PTR(FN_ARG1), *(uint16_t *)VM_REF_TO_PTR(FN_ARG2), A);
++}
++
++void vm_data_check_ex(SCRIPT_CTX * THIS) OLDCALL BANKED {
++    int16_t idx = *(int16_t*)VM_REF_TO_PTR(FN_ARG1);
++    int16_t * A;
++    if (idx < 0) A = THIS->stack_ptr + idx - 2; else A = script_memory + idx;
++    // count 0: no data is copied, only the slot and its signature are checked
++    *A = data_peek_ex(*(uint8_t *)VM_REF_TO_PTR(FN_ARG0), 0, 0, NULL);
++}
++
++void vm_data_save_ex(SCRIPT_CTX * THIS) OLDCALL BANKED {
++    data_save(*(uint8_t *)VM_REF_TO_PTR(FN_ARG0));
++}
++
++void vm_data_load_ex(SCRIPT_CTX * THIS) OLDCALL BANKED {
++    data_load(*(uint8_t *)VM_REF_TO_PTR(FN_ARG0));
++}
++
+ // ---------------------------------------------------------------------------
+-// Looking into a slot
++// Looking into a slot (RPG Maker 2000)
+ //
+ // A save menu has to show what is in a file before deciding whether to open
+ // it, and none of that is in the variables: the party block is written after
+ // them, which is why data_peek cannot reach it. This walks past the blocks to
+@@ -272,13 +449,24 @@
+         return 1;
+     }
+ 
+     // Past the header, then past every block the slot holds, exactly as
+-    // data_save wrote them.
++    // data_save wrote them - whichever structure the settings chose.
+     save_data += sizeof(save_signature) + sizeof(save_blob_size);
++    #if SAVE_STRUCTURE == SAVE_STRUCTURE_CUSTOM
++    save_point_t point_ref;
++    const save_point_t * point_ptr = save_points;
++    MemcpyBanked(&point_ref, point_ptr, sizeof(save_point_t), BANK(save_points));
++    while (point_ref.target) {
++        save_data += sizeof(point_ref.size) + sizeof(point_ref.id) + point_ref.size;
++        point_ptr++;
++        MemcpyBanked(&point_ref, point_ptr, sizeof(save_point_t), BANK(save_points));
++    }
++    #else
+     for (const save_point_t *point = save_points; (point->target); point++) {
+         save_data += sizeof(point->size) + sizeof(point->id) + point->size;
+     }
++    #endif
+ 
+     // The party block is a byte-for-byte copy of rpg_persist_t, so it can be
+     // read through one. The pointer is a runtime address rather than a literal
+     // one, which is what keeps SDCC's optimiser out of the ditch it falls into

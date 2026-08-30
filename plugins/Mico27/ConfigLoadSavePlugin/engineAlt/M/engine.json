@@ -4,7 +4,7 @@
         {
             "key": "SAVE_STRUCTURE",
             "label": "Save structure",
-            "description": "What a save slot holds. Full save-state is GB Studio's own structure: every variable plus the scene, the actors, the music and the running scripts, so loading resumes the game exactly where it was saved. The other two hold variables and nothing else, so loading restores no scene and no running scripts — the game keeps playing where it is with the saved variables in place.",
+            "description": "What a save slot holds. Full save-state is GB Studio's own structure: every variable plus the scene, the actors, the music and the running scripts, so loading resumes the game exactly where it was saved. The other two hold variables and nothing else, so loading restores no scene and no running scripts. The game keeps playing where it is, with the saved variables in place.",
             "group": "Configure Load/Save",
             "type": "select",
             "options": [

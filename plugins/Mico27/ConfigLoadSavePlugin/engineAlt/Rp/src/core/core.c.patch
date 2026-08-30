@@ -1,0 +1,62 @@
+Index: src/core/core.c
+===================================================================
+--- src/core/core.c
++++ src/core/core.c
+@@ -32,9 +32,29 @@
+ #include "palette.h"
+ #include "parallax.h"
+ #include "shadow.h"
+ #include "data/data_bootstrap.h"
++#include "data/states_defines.h"
+ 
++// ---------------------------------------------------------------------------
++// Configure Load/Save: does a save blob carry the VM contexts, and with them
++// the scene the save was taken in? Only the stock full-state structure does.
++// Kept in step with src/core/load_save.c.
++// ---------------------------------------------------------------------------
++#define SAVE_STRUCTURE_FULL      0
++#define SAVE_STRUCTURE_VARIABLES 1
++#define SAVE_STRUCTURE_CUSTOM    2
++
++#ifndef SAVE_STRUCTURE
++#define SAVE_STRUCTURE SAVE_STRUCTURE_FULL
++#endif
++
++#if SAVE_STRUCTURE == SAVE_STRUCTURE_FULL
++#define SAVE_KEEPS_CONTEXTS 1
++#else
++#define SAVE_KEEPS_CONTEXTS 0
++#endif
++
+ extern void __bank_bootstrap_script;
+ extern const UBYTE bootstrap_script[];
+ 
+ extern void core_reset_hook(void);
+@@ -136,16 +156,27 @@
+                         data_save(ReadBankedUBYTE(vm_exception_params_offset, vm_exception_params_bank));
+                         continue;
+                     }
+                     case EXCEPTION_LOAD: {
++#if SAVE_KEEPS_CONTEXTS
+                         fade_out_modal();
+                         // remove previous LCD ISR's
+                         remove_LCD_ISRs();
+                         // load game state from SRAM
+                         vm_loaded_state = data_load(ReadBankedUBYTE(vm_exception_params_offset, vm_exception_params_bank));
+                         load_scene(current_scene.ptr, current_scene.bank, FALSE);
+                         fade_in = FALSE;
+                         break;
++#else
++                        // This build's save holds no scene and no VM contexts,
++                        // so there is nothing for a scene reload to restore:
++                        // fading out and rebuilding the current scene would only
++                        // leave a black screen with no script left to fade back
++                        // in. Restore the data where the game stands and let the
++                        // calling script carry on.
++                        vm_loaded_state = data_load(ReadBankedUBYTE(vm_exception_params_offset, vm_exception_params_bank));
++                        continue;
++#endif
+                     }
+                     default: {
+                         // nothing: suppress any unknown exception
+                         continue;

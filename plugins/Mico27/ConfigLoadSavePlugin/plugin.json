@@ -5,10 +5,48 @@
   "url": "https://github.com/Mico27/gbs-ConfigLoadSavePlugin",
   "description": "Allows configuration of the game saving structure.",
   "license": "MIT",
-  "version": "4.3.11",
+  "version": "4.3.15",
   "gbsVersion": ">=4.3.0",
   "order": -2,
   "engineAltRules": [
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/MetaTilePlugin",
+          "Mico27/SceneStackExPlugin",
+          "Mico27/RpgMaker2KPlugin"
+        ]
+      },
+      "use": "M_Sce_Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "MetaTilePlugin",
+          "SceneStackExPlugin",
+          "RpgMaker2KPlugin"
+        ]
+      },
+      "use": "M_Sce_Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/MetaTilePlugin",
+          "Mico27/RpgMaker2KPlugin"
+        ]
+      },
+      "use": "M_Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "MetaTilePlugin",
+          "RpgMaker2KPlugin"
+        ]
+      },
+      "use": "M_Rp"
+    },
     {
       "when": {
         "additionalPlugins": [
@@ -30,6 +68,24 @@
     {
       "when": {
         "additionalPlugins": [
+          "Mico27/SceneStackExPlugin",
+          "Mico27/RpgMaker2KPlugin"
+        ]
+      },
+      "use": "Sce_Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "SceneStackExPlugin",
+          "RpgMaker2KPlugin"
+        ]
+      },
+      "use": "Sce_Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
           "Mico27/MetaTilePlugin"
         ]
       },
@@ -42,6 +98,22 @@
         ]
       },
       "use": "M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/RpgMaker2KPlugin"
+        ]
+      },
+      "use": "Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "RpgMaker2KPlugin"
+        ]
+      },
+      "use": "Rp"
     },
     {
       "when": {

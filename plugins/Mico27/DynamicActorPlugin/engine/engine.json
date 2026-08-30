@@ -272,7 +272,7 @@
         {
           "key": "DYNAMIC_ACTOR_ENABLE_ACTIVATION_EVENTS",
           "label": "Events: Actor activated / deactivated",
-          "description": "Compile the 'Actor activated' and 'Actor deactivated' event slots of 'Attach a Script to a Dynamic Actor Event'. The scripts are launched by the engine when an actor becomes active or is deactivated, including when it scrolls offscreen. Adds two callback slots (5 bytes of RAM each). Unchecking this makes the plugin's actor.c compile as if the hooks were not there.",
+          "description": "Compile the 'Actor activated' and 'Actor deactivated' event slots of 'Attach a Script to a Dynamic Actor Event'. The scripts are launched by the engine when an actor becomes active or is deactivated, including when it scrolls offscreen. Adds two script slots, 5 bytes of memory each. Unticking it leaves the hooks out of the build entirely.",
           "group": "Dynamic actor",
           "type": "checkbox",
           "cType": "define",
@@ -317,7 +317,7 @@
         {
           "key": "DYNAMIC_ACTOR_ENABLE_VM_WAIT_FOR_COLLISION",
           "label": "VM: Wait for collision",
-          "description": "Compile vm_wait_for_collision waitable helper.",
+          "description": "Builds the 'Wait For Actor Collision' events. Untick it to save ROM when no script uses them.",
           "group": "Dynamic actor",
           "type": "checkbox",
           "cType": "define",
@@ -326,7 +326,7 @@
         {
           "key": "DYNAMIC_ACTOR_ENABLE_VM_WAIT_FOR_IN_RANGE",
           "label": "VM: Wait for actor in range",
-          "description": "Compile vm_wait_for_actor_in_range waitable helper.",
+          "description": "Builds the 'Wait For Actor In Range' events. Untick it to save ROM when no script uses them.",
           "group": "Dynamic actor",
           "type": "checkbox",
           "cType": "define",
@@ -335,7 +335,7 @@
         {
           "key": "DYNAMIC_ACTOR_ENABLE_VM_WAIT_FOR_STATE",
           "label": "VM: Wait for actor state",
-          "description": "Compile vm_wait_for_actor_state waitable helper.",
+          "description": "Builds the 'Wait For Actor State' events. Untick it to save ROM when no script uses them.",
           "group": "Dynamic actor",
           "type": "checkbox",
           "cType": "define",
@@ -344,7 +344,7 @@
         {
           "key": "DYNAMIC_ACTOR_ENABLE_VM_MOTION_CHASE_ACTOR",
           "label": "VM motion: Chase actor",
-          "description": "Compile vm_actor_chase_actor.",
+          "description": "Builds the 'Actor Chase Actor' events. Untick it to save ROM when no script uses them.",
           "group": "Dynamic actor",
           "type": "checkbox",
           "cType": "define",
@@ -353,7 +353,7 @@
         {
           "key": "DYNAMIC_ACTOR_ENABLE_VM_MOTION_MOVE_TO_POS_BY_VELOCITY",
           "label": "VM motion: Move to position by velocity",
-          "description": "Compile vm_actor_move_to_pos_by_velocity.",
+          "description": "Builds the 'Actor Move To Position By Velocity' events. Untick it to save ROM when no script uses them.",
           "group": "Dynamic actor",
           "type": "checkbox",
           "cType": "define",
@@ -362,7 +362,7 @@
         {
           "key": "DYNAMIC_ACTOR_ENABLE_VM_MOTION_CRAWL_STEP",
           "label": "VM motion: Crawl step",
-          "description": "Compile vm_actor_crawl_step.",
+          "description": "Builds the 'Actor Motion: Wall Crawl' events. Untick it to save ROM when no script uses them.",
           "group": "Dynamic actor",
           "type": "checkbox",
           "cType": "define",

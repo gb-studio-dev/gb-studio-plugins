@@ -117,7 +117,7 @@ const fields = [
         fields: [
             {
                 label: "Starting palettes - background:",
-                description: "Background palettes at the beginning of the colour fade. These should usually match the palettes that are already loaded.",
+                description: "Background palettes at the start of the fade. These usually match the palettes already loaded.",
             },
             {
                 label: "Final palettes - background:",
@@ -395,7 +395,7 @@ const fields = [
         fields: [
             {
                 label: "Starting palettes - sprites:",
-                description: "Sprite palettes at the beginning of the colour fade. These should usually match the palettes that are already loaded.",
+                description: "Sprite palettes at the start of the fade. These usually match the palettes already loaded.",
             },
             {
                 label: "Final palettes - sprites:",
@@ -688,7 +688,7 @@ const fields = [
         type: "textarea",
         key:  "slot_text",
         label: "Order of slots to fade:",
-        description: "Enter a comma separated list of integers indicating which palette colours should be faded, and it what order. If a groups of slots should fade together, separate the numbers with a pipe symbol \"|\". \nBackground slots are numbered 0-31, starting at the first colour of palette 1, and ending at the last colour of palette 8. Palette #1 comprises colours 0, 1, 2, and 3, palette #2 comprises colours 4, 5, 6, and 7, etc.\nSprite slots are number 32-63, starting at the first colour of palette 1, and ending at the last colour of palette 8. There are FOUR slots per sprite palette, and the first slot is invisible/unused. Sprite palette #1 comprises colours 32, 33, 34, and 35, with colour 32 is invisible. 33, 34, and 35 are the three visible colours in palette #1, corresponding to white, light grey, and black, respectively, in GB Studio.\nEach slot may appear no more that one time in the list.",
+        description: "A comma separated list of the palette slots to fade, in the order they fade. Join slots with a pipe, \"|\", to fade them together.\nBackground slots run 0 to 31, four per palette: 0 to 3 are palette 1, 4 to 7 are palette 2, and so on to palette 8.\nSprite slots run 32 to 63, also four per palette, and the first of each four is the transparent one. Sprite palette 1 is 32 to 35, where 32 is transparent and 33, 34 and 35 are white, light grey and black.\nList each slot at most once.",
     },
 ];
 
@@ -954,31 +954,7 @@ const compile = (input, helpers) => {
 
     let slots_str = "";
 
-    _addComment(`      ___      ___        _____        ___`);
-    _addComment(`     /  /\\    /  /\\      /  /::\\      /  /\\`);
-    _addComment(`    /  /:/_  /  /::\\    /  /:/\\:\\    /  /:/_`);
-    _addComment(`   /  /:/ /\\/  /:/\\:\\  /  /:/  \\:\\  /  /:/ /\\`);
-    _addComment(`  /  /:/ /:/  /:/~/::\\/__/:/ \\__\\:|/  /:/ /:/_`);
-    _addComment(` /__/:/ /:/__/:/ /:/\\:\\  \\:\\ /  /:/__/:/ /:/ /\\`);
-    _addComment(` \\  \\:\\/:/\\  \\:\\/:/__\\/\\  \\:\\  /:/\\  \\:\\/:/ /:/`);
-    _addComment(`  \\  \\::/  \\  \\::/      \\  \\:\\/:/  \\  \\::/ /:/`);
-    _addComment(`   \\  \\:\\   \\  \\:\\       \\  \\::/    \\  \\:\\/:/`);
-    _addComment(`    \\  \\:\\   \\  \\:\\       \\__\\/      \\  \\::/`);
-    _addComment(`     \\___/    \\__\\/       ___         ___\\/       ___`);
-    _addComment(`     /  /\\        ___    /  /\\       /  /\\       /  /\\        ___`);
-    _addComment(`    /  /:/_      /  /\\  /  /::\\     /  /:/_     /  /:/_      /  /\\`);
-    _addComment(`   /  /:/ /\\    /  /:/ /  /:/\\:\\   /  /:/ /\\   /  /:/ /\\    /  /:/`);
-    _addComment(`  /  /:/ /::\\  /  /:/ /  /:/~/:/  /  /:/ /:/_ /  /:/ /:/_  /  /:/`);
-    _addComment(` /__/:/ /:/\\:\\/  /::\\/__/:/ /:/__/__/:/ /:/ //__/:/ /:/ /\\/  /::\\`);
-    _addComment(` \\  \\:\\/:/~/:/__/:/\\:\\  \\:\\/:::::\\  \\:\\/:/ /:\\  \\:\\/:/ /:/__/:/\\:\\`);
-    _addComment(`  \\  \\::/ /:/\\__\\/  \\:\\  \\::/~~~~ \\  \\::/ /:/ \\  \\::/ /:/\\__\\/  \\:\\`);
-    _addComment(`   \\__\\/ /:/      \\  \\:\\  \\:\\      \\  \\:\\/:/   \\  \\:\\/:/      \\  \\:\\`);
-    _addComment(`     /__/:/        \\__\\/\\  \\:\\      \\  \\::/     \\  \\::/        \\__\\/`);
-    _addComment(`     \\__\\/               \\__\\/       \\__\\/       \\__\\/`);
-    _addComment(`     `);
     _addComment(`                    Fade One Colour at a Time`);
-    _addComment(`               [GF_EVENT_FADE_STREET_ONE_AT_A_TIME]`);
-    _addComment(`     `);
     _addComment(`    Parameters:`);
     _addComment(`        Steps per slot: ${steps}`);
     _addComment(`        Frames per step: ${wait_frames}`);
@@ -999,7 +975,7 @@ const compile = (input, helpers) => {
     }
     _addComment(``);
     appendRaw(gbvm);
-    _addComment(`~~~ End of Fade One Colour at a Time block ~~~\n\n`);
+    _addComment(`End of Fade One Colour at a Time`);
 };
 
 module.exports = {
