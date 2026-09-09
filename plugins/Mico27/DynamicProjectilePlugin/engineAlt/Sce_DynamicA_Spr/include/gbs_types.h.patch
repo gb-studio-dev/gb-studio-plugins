@@ -79,3 +79,10 @@ Index: include/gbs_types.h
  
  #define FONT_RECODE     1
  #define FONT_VWF        2
+@@ -222,6 +259,4 @@
+     palette_entry_t cgb_palette[];
+ } palette_t;
+ 
+ #endif
+-
+-
