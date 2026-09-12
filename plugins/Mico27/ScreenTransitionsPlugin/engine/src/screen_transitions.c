@@ -1,6 +1,6 @@
 #pragma bank 255
 
-// Screen Transitions — runtime, waitable transition engine.
+// Screen Transitions: waitable transition engine.
 //
 // Instead of baking hundreds of tile writes into GBVM script at compile time,
 // each transition runs here in C as a single *waitable* VM function driven by
@@ -33,8 +33,8 @@
     #define TR_USE_QUAD
 #endif
 
-// --- effects --- (ids are stable; the reverse-pair complements — wipe left/up,
-// curtain close, iris/diamond close, diagonal BR, mask shrink — were dropped and
+// --- effects --- (ids are stable; the reverse-pair complements, wipe left/up,
+// curtain close, iris/diamond close, diagonal BR and mask shrink, were dropped and
 // are reproduced by the Direction = Reversed option, so their ids are now unused)
 #define E_WIPE_R   0
 #define E_WIPE_D   2
@@ -91,7 +91,7 @@ UBYTE tr_map_w, tr_mask_w, tr_mask_h;
 const UBYTE * tr_map_ptr, * tr_attr_ptr, * tr_mask_ptr;
 UBYTE tr_map_bank, tr_attr_bank, tr_mask_bank;
 UWORD tr_mask_ntiles; // = tileset tile count = number of grow/shrink steps
-// scene object pointers set directly by the event (copy / mask modes) — resolved
+// scene object pointers set directly by the event (copy / mask modes), resolved
 // into the tilemap pointers above on start.
 const void * tr_scene_ptr; UBYTE tr_scene_bank;
 const void * tr_maskscene_ptr; UBYTE tr_maskscene_bank;
@@ -256,7 +256,7 @@ static void tr_put(UBYTE lx, UBYTE ly) {
 }
 
 #ifdef TR_USE_QUAD
-// Quadrant shift — the Shrink and Split effects. The region is
+// Quadrant shift: the Shrink and Split effects. The region is
 // split into four quadrants at (tr_cx, tr_cy) and each step re-renders every
 // quadrant one tile closer to that centre (Shrink) or one tile further from it
 // (Split), covering the strip the content just vacated with the fill tile.
@@ -264,7 +264,7 @@ static void tr_put(UBYTE lx, UBYTE ly) {
 // This resolves one axis of one quadrant: `side` 0 = near half (p < h), 1 = far
 // half. Returns the signed source offset (source = destination + offset) and
 // writes the inclusive range of destination tiles whose source is still inside
-// the half — *hi < *lo once that half has been covered completely.
+// the half: *hi < *lo once that half has been covered completely.
 static BYTE tr_quad_range(UBYTE side, UBYTE h, UBYTE dim, UBYTE k, BYTE * lo, BYTE * hi) {
     UBYTE outward = FALSE;   // Shrink pulls the halves in, Split pushes them out
 #if defined(TRANSITION_SPLIT) && defined(TRANSITION_SHRINK)
@@ -283,7 +283,7 @@ static BYTE tr_quad_range(UBYTE side, UBYTE h, UBYTE dim, UBYTE k, BYTE * lo, BY
 
 #ifdef TR_USE_LINE
 // Bresenham line between two region-local points (either may lie outside the
-// region — off-region tiles are clipped by the tr_put guard). Signed coords so
+// region; off-region tiles are clipped by the tr_put guard). Signed coords so
 // the walk is correct even when an endpoint is negative. Shared by the radial
 // (clock / fan / X) and diamond effects.
 static void tr_line(BYTE x0, BYTE y0, BYTE x1, BYTE y1) {
@@ -499,8 +499,8 @@ static void tr_draw_step(UWORD k) {
             UBYTE q = (UBYTE)k;
             // The previous step's ranges give the strip that has just been
             // vacated. On the first drawn step fall back to step 0 (the whole
-            // quadrant) so that a Start step > 0 — and a reversed (reveal) run,
-            // which begins at the last step — still paints the entire rim.
+            // quadrant) so that a Start step > 0, and a reversed (reveal) run
+            // which begins at the last step, still paint the entire rim.
             UBYTE qp = (tr_first || q == 0u) ? 0u : (UBYTE)(q - 1u);
             for (UBYTE vside = 0; vside < 2u; vside++) {
                 BYTE ylo, yhi, pylo, pyhi;
@@ -545,7 +545,7 @@ static void tr_draw_step(UWORD k) {
 
 // Prime the overlay (window) with the current scene's visible tiles and show it
 // covering the screen. The transition then draws over the window, so the screen
-// looks unchanged until the effect touches a tile — and the overlay is left
+// looks unchanged until the effect touches a tile, and the overlay is left
 // OPEN afterwards so a following Change Scene is seamless (the window keeps
 // covering the background repaint; win_pos + the window tilemap both survive a
 // scene change). Dismiss it later with the stock "Hide Overlay" event.
@@ -572,7 +572,7 @@ static void tr_overlay_show(void) {
 // Compute derived state for a transition whose parameter globals were already
 // set DIRECTLY by the event (tr_effect / tr_layer / tr_mode / tr_x0.. / tr_fill_*
 // / tr_src_* and, for copy/mask modes, tr_scene_* / tr_maskscene_*). Called once
-// on the first (start) frame — no stack frame is passed anymore.
+// on the first (start) frame; no stack frame is passed anymore.
 static void tr_begin(void) {
     if (!tr_w) tr_w = 1; if (tr_w > 32u) tr_w = 32u;
     if (!tr_h) tr_h = 1; if (tr_h > 32u) tr_h = 32u;
@@ -647,7 +647,7 @@ UBYTE screen_transition_update(void * THIS, UBYTE start, UWORD * stack_frame) OL
 
     for (UBYTE s = 0; s < tr_speed && tr_step < tr_total; s++) {
         // reverse = play the [tr_min, tr_total) window back-to-front (flips
-        // direction / CW<->CCW) — same steps as forward, just reversed order, so
+        // direction / CW<->CCW): the same steps as forward in reversed order, so
         // min/max always select the same portion regardless of direction.
         tr_draw_step(tr_reverse ? (UWORD)(tr_total - 1u - tr_step + tr_min) : tr_step);
         tr_first = FALSE;

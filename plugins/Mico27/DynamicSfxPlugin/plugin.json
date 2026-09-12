@@ -2,7 +2,7 @@
   "type": "enginePlugin",
   "name": "Dynamic Sfx",
   "author": "Mico27",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "gbsVersion": ">=4.3.0",
   "description": "Gen 1 Pokemon style parameter-driven sound synthesis: base sounds + per-preset pitch/length modifiers played in real time on hardware channels 1, 2 and 4.",
   "url": "https://github.com/Mico27/gbs-DynamicSfxPlugin"

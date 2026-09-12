@@ -863,30 +863,7 @@ const compile = (input, helpers) => {
         gbvm += "VM_PUSH_CONST " + (carried_wait) +  "\nVM_INVOKE b_wait_frames, _wait_frames, 1, .ARG0\n";
     }
 
-    _addComment(`      ___      ___        _____        ___`);
-    _addComment(`     /  /\\    /  /\\      /  /::\\      /  /\\`);
-    _addComment(`    /  /:/_  /  /::\\    /  /:/\\:\\    /  /:/_`);
-    _addComment(`   /  /:/ /\\/  /:/\\:\\  /  /:/  \\:\\  /  /:/ /\\`);
-    _addComment(`  /  /:/ /:/  /:/~/::\\/__/:/ \\__\\:|/  /:/ /:/_`);
-    _addComment(` /__/:/ /:/__/:/ /:/\\:\\  \\:\\ /  /:/__/:/ /:/ /\\`);
-    _addComment(` \\  \\:\\/:/\\  \\:\\/:/__\\/\\  \\:\\  /:/\\  \\:\\/:/ /:/`);
-    _addComment(`  \\  \\::/  \\  \\::/      \\  \\:\\/:/  \\  \\::/ /:/`);
-    _addComment(`   \\  \\:\\   \\  \\:\\       \\  \\::/    \\  \\:\\/:/`);
-    _addComment(`    \\  \\:\\   \\  \\:\\       \\__\\/      \\  \\::/`);
-    _addComment(`     \\___/    \\__\\/       ___         ___\\/       ___`);
-    _addComment(`     /  /\\        ___    /  /\\       /  /\\       /  /\\        ___`);
-    _addComment(`    /  /:/_      /  /\\  /  /::\\     /  /:/_     /  /:/_      /  /\\`);
-    _addComment(`   /  /:/ /\\    /  /:/ /  /:/\\:\\   /  /:/ /\\   /  /:/ /\\    /  /:/`);
-    _addComment(`  /  /:/ /::\\  /  /:/ /  /:/~/:/  /  /:/ /:/_ /  /:/ /:/_  /  /:/`);
-    _addComment(` /__/:/ /:/\\:\\/  /::\\/__/:/ /:/__/__/:/ /:/ //__/:/ /:/ /\\/  /::\\`);
-    _addComment(` \\  \\:\\/:/~/:/__/:/\\:\\  \\:\\/:::::\\  \\:\\/:/ /:\\  \\:\\/:/ /:/__/:/\\:\\`);
-    _addComment(`  \\  \\::/ /:/\\__\\/  \\:\\  \\::/~~~~ \\  \\::/ /:/ \\  \\::/ /:/\\__\\/  \\:\\`);
-    _addComment(`   \\__\\/ /:/      \\  \\:\\  \\:\\      \\  \\:\\/:/   \\  \\:\\/:/      \\  \\:\\`);
-    _addComment(`     /__/:/        \\__\\/\\  \\:\\      \\  \\::/     \\  \\::/        \\__\\/`);
-    _addComment(`     \\__\\/               \\__\\/       \\__\\/       \\__\\/`);
-    _addComment(`     `);
     _addComment(`                        DMG Palette Cycle`);
-    _addComment(`               [GF_EVENT_FADE_STREET_DMG_CYCLE]`);
     _addComment(``);
     _addComment(`    Parameters:`);
     _addComment(`        Cycle steps: ${input.cycle_length}`);
@@ -896,7 +873,7 @@ const compile = (input, helpers) => {
     _addComment(`    Total wait:              ${wait_frames * num_slots} frames`);
     _addComment("");
     appendRaw(gbvm);
-    _addComment(`~~~ End of DMG Palette Cycle block ~~~\n\n`);
+    _addComment(`End of DMG Palette Cycle`);
 };
 
 module.exports = {

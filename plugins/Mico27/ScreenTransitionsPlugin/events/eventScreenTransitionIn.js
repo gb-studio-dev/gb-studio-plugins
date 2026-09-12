@@ -120,7 +120,7 @@ export const fields = [
   {
     type: "label",
     label:
-      "Overlay: draws the source scene onto the window and leaves it open, so a following Change Scene (fade None) is seamless — dismiss it with \"Hide Overlay\" on the target scene.",
+      "Overlay: draws the source scene onto the overlay and leaves it there, so a following Change Scene with the fade set to None is seamless. Dismiss it with \"Hide Overlay\" on the target scene.",
     conditions: [
       { key: "source", eq: "scene" },
       { key: "layer", eq: "overlay" },
@@ -154,7 +154,7 @@ export const fields = [
         key: "srcX",
         label: "Source X (tiles)",
         description:
-          "Tile offset in the source scene to pull from — set to the scroll position the target scene will be entered at, so the switch lines up.",
+          "Tile offset in the source scene to take tiles from. Set it to the scroll position the target scene will be entered at, so the two line up.",
         type: "value",
         width: "50%",
         min: 0,
@@ -249,7 +249,7 @@ export const fields = [
     key: "direction",
     label: "Direction",
     description:
-      "Plays the effect in reverse — flips a wipe to the opposite side, an iris close to open, a clock/fan/spiral to counter-clockwise, and Shrink/Split from covering the screen to revealing it.",
+      "Plays the effect in reverse, so a wipe comes from the other side, an iris opens instead of closing, a clock, fan or spiral turns the other way, and Shrink and Split reveal the screen instead of covering it.",
     type: "select",
     options: [
       ["forward", "Normal / Clockwise"],
@@ -385,7 +385,7 @@ export const fields = [
   {
     type: "label",
     label:
-      "Mask: the mask scene's tile values (0-255) set the reveal order — lower tiles first (Reversed = highest first), so a drawn gradient becomes the transition shape (separate from the reveal content above). With a Custom centre the mask's centre tile aligns to that screen point; size the mask scene large enough to cover the screen at the chosen offset.",
+      "Mask: the mask scene's tiles, 0 to 255, set the order things appear in, lowest first, or highest first when reversed, so a drawn gradient becomes the shape of the transition. It is separate from what is revealed. With a custom centre the mask's middle tile lines up with that point on screen, so draw the mask scene large enough to cover the screen at the chosen offset.",
     conditions: [{ key: "effect", in: ["mask_grow"] }],
   },
   {

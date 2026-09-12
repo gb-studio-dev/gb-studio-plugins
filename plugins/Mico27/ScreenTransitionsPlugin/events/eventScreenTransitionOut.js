@@ -103,7 +103,7 @@ export const fields = [
       {
         key: "fill",
         label: "Fill",
-        description: "Tile the effect covers the screen with — the rim tile for Shrink / Split.",
+        description: "The tile the effect covers the screen with, and the rim tile for Shrink and Split.",
         type: "select",
         width: "50%",
         options: [
@@ -179,7 +179,7 @@ export const fields = [
     key: "direction",
     label: "Direction",
     description:
-      "Plays the effect in reverse — flips a wipe to the opposite side, an iris close to open, a clock/fan/spiral to counter-clockwise, and Shrink/Split from covering the screen to revealing it.",
+      "Plays the effect in reverse, so a wipe comes from the other side, an iris opens instead of closing, a clock, fan or spiral turns the other way, and Shrink and Split reveal the screen instead of covering it.",
     type: "select",
     options: [
       ["forward", "Normal / Clockwise"],
@@ -275,7 +275,7 @@ export const fields = [
   {
     type: "label",
     label:
-      "Mask: the mask scene's tile values (0-255) set the reveal order — darker/lower tiles first (Reversed = highest first) so any drawn gradient becomes the transition shape. With a Custom centre the mask's centre tile aligns to that screen point; size the mask scene large enough to cover the screen at the chosen offset.",
+      "Mask: the mask scene's tiles, 0 to 255, set the order things happen in, lowest first, or highest first when reversed, so a drawn gradient becomes the shape of the transition. With a custom centre the mask's middle tile lines up with that point on screen, so draw the mask scene large enough to cover the screen at the chosen offset.",
     conditions: [{ key: "effect", in: ["mask_grow"] }],
   },
   {
@@ -288,7 +288,7 @@ export const fields = [
   {
     type: "label",
     label:
-      "Runs as a waitable VM function — the script pauses until the transition finishes. Background transitions track the current scroll automatically. All numeric fields accept variables.",
+      "The script waits here until the transition finishes. Background transitions follow the current scroll on their own. Every number field accepts a variable.",
   },
 ];
 

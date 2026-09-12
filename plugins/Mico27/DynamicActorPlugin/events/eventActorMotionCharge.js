@@ -18,7 +18,7 @@ export const fields = [
     key: "actorId",
     label: l10n("ACTOR"),
     description:
-      "Actor that charges. Needs a behavior with movement on the dash axis. One event = one charge: wait until aligned with the target, dash at it, stop on impact — place it in a loop.",
+      "Charges at a target. Needs a behaviour with movement on the dash axis. One event is one charge: wait until lined up with the target, dash at it, stop on impact. Put it in a loop to repeat.",
     type: "actor",
     defaultValue: "$self$",
   },

@@ -77,7 +77,7 @@ Index: src/core/collision.c
  }
  
  // ============================================================
-+// Metatile collision — current scene (SRAM lookup)
++// Metatile collision: current scene (SRAM lookup)
 +// ============================================================
 +
 +// Iterate over y range using current scene's SRAM metatile collision table.
@@ -135,7 +135,7 @@ Index: src/core/collision.c
 +}
 +
 +// ============================================================
-+// Metatile collision — neighbor scene (ROM lookup via continuous scene)
++// Metatile collision: neighbor scene (ROM lookup via continuous scene)
 +// ============================================================
 +
 +// Iterate over y range in a neighbor scene's metatile collision (ROM tilemap -> SRAM table).
@@ -181,7 +181,7 @@ Index: src/core/collision.c
  // Test collision along a fixed x (tx), iterating over y (ty_start -> ty_end).
 @@ -121,8 +236,9 @@
  
-     // OOB: tile is outside current scene — check neighbor or treat as wall
+     // Outside the current scene: check the neighbour or treat it as a wall
      if (tile_hit_x >= image_tile_width || tile_hit_y >= image_tile_height) {
          if (continuous_scene_enabled) {
 +            // Metatile scene + continuous: look up collision in the neighbor's ROM tilemap
@@ -215,7 +215,7 @@ Index: src/core/collision.c
 @@ -152,9 +273,9 @@
      tile_hit_y = ty;
  
-     // OOB: tile is outside current scene — check neighbor or treat as wall
+     // Outside the current scene: check the neighbour or treat it as a wall
      if (tile_hit_x >= image_tile_width || tile_hit_y >= image_tile_height) {
 -        if (continuous_scene_enabled) {
 +        if (continuous_scene_enabled){

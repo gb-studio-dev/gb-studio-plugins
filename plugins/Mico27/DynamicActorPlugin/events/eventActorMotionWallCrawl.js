@@ -13,7 +13,7 @@ export const fields = [
     key: "actorId",
     label: l10n("ACTOR"),
     description:
-      "Actor that crawls along walls/ceilings/floors, wrapping around corners (Zelda Spark style). Needs a behavior with Move X + Move Y and tile collision OFF — the crawl logic is what follows the walls. Runs forever; a wall is a fully solid tile (map borders count as wall).",
+      "Crawls along walls, ceilings and floors, wrapping around corners, the way a Zelda spark does. Needs a behaviour with Move X and Move Y and tile collision turned off, since the crawling is what follows the walls. Runs forever. A wall is a fully solid tile, and the map's edges count as wall.",
     type: "actor",
     defaultValue: "$self$",
   },

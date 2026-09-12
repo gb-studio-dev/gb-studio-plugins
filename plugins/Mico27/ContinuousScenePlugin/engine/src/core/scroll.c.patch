@@ -26,7 +26,7 @@ Index: src/core/scroll.c
  
  INT16 scroll_x;
  INT16 scroll_y;
-@@ -33,17 +37,25 @@
+@@ -33,17 +37,26 @@
  UINT16 scroll_x_min;
  UINT16 scroll_y_min;
  UINT16 scroll_x_max;
@@ -35,6 +35,7 @@ Index: src/core/scroll.c
 +UBYTE bkg_scroll_y;
  BYTE scroll_offset_x;
  BYTE scroll_offset_y;
++UBYTE DISABLE_SCROLL_LIMITS;
 +BYTE bkg_offset_x;
 +BYTE bkg_offset_y;
  UBYTE pending_h_x, pending_h_y;
@@ -54,7 +55,7 @@ Index: src/core/scroll.c
  
  void scroll_init(void) BANKED {
      draw_scroll_x   = 0;
-@@ -53,37 +65,46 @@
+@@ -53,37 +66,46 @@
      scroll_x_max    = 0;
      scroll_y_max    = 0;
      scroll_offset_x = 0;
@@ -92,26 +93,31 @@ Index: src/core/scroll.c
 +    y = SUBPX_TO_PX((UWORD)camera_y) - (SCREENHEIGHT >> 1);
  
 -    if ((x & 0x8000u) || (x < scroll_x_min)) {  // check for negative signed bit
-+#ifndef DISABLE_SCROLL_LIMITS
-+    if (!(continuous_scene_enabled & DIRECTION_LEFT_FLAG) && (((UWORD)x > SCREEN_OOB_LEFT_PX) || (x < scroll_x_min))) {
-         x = scroll_x_min;
+-        x = scroll_x_min;
 -    } else if (x > scroll_x_max) {
-+    } else if (!(continuous_scene_enabled & DIRECTION_RIGHT_FLAG) && (((UWORD)x < SCREEN_OOB_LEFT_PX) && (x > scroll_x_max))) {
-         x = scroll_x_max;
+-        x = scroll_x_max;
++    if (!DISABLE_SCROLL_LIMITS) {
++        if (!(continuous_scene_enabled & DIRECTION_LEFT_FLAG) && (((UWORD)x > SCREEN_OOB_LEFT_PX) || (x < scroll_x_min))) {
++            x = scroll_x_min;
++        } else if (!(continuous_scene_enabled & DIRECTION_RIGHT_FLAG) && (((UWORD)x < SCREEN_OOB_LEFT_PX) && (x > scroll_x_max))) {
++            x = scroll_x_max;
++        }
++        if (!(continuous_scene_enabled & DIRECTION_TOP_FLAG) && (((UWORD)y > SCREEN_OOB_TOP_PX) || (y < scroll_y_min))) {
++            y = scroll_y_min;
++        } else if (!(continuous_scene_enabled & DIRECTION_BOTTOM_FLAG) && (((UWORD)y < SCREEN_OOB_TOP_PX) && (y > scroll_y_max))) {
++            y = scroll_y_max;
++        }
      }
 -    if ((y & 0x8000u) || (y < scroll_y_min)) {
-+    if (!(continuous_scene_enabled & DIRECTION_TOP_FLAG) && (((UWORD)y > SCREEN_OOB_TOP_PX) || (y < scroll_y_min))) {
-         y = scroll_y_min;
+-        y = scroll_y_min;
 -    } else if (y > scroll_y_max) {
-+    } else if (!(continuous_scene_enabled & DIRECTION_BOTTOM_FLAG) && (((UWORD)y < SCREEN_OOB_TOP_PX) && (y > scroll_y_max))) {
-         y = scroll_y_max;
-     }
-+#endif
+-        y = scroll_y_max;
+-    }
  
      current_col = PX_TO_TILE(scroll_x);
      current_row = PX_TO_TILE(scroll_y);
      new_col = PX_TO_TILE(x);
-@@ -92,8 +113,10 @@
+@@ -92,8 +114,10 @@
      scroll_x = x;
      scroll_y = y;
      draw_scroll_x = x + scroll_offset_x;
@@ -122,7 +128,7 @@ Index: src/core/scroll.c
      if (scroll_viewport(parallax_rows)) return;
      if (scroll_viewport(parallax_rows + 1)) return;
      scroll_viewport(parallax_rows + 2);
-@@ -111,18 +134,19 @@
+@@ -111,18 +135,19 @@
              shift_scroll_x = draw_scroll_x >> port->shift;
          }
  
@@ -145,7 +151,7 @@ Index: src/core/scroll.c
          } else if (current_col != new_col) {
              // If column differs by more than 1 render entire viewport
              scroll_render_rows(shift_scroll_x, 0, port->start_tile, port->tile_height);
-@@ -132,22 +156,26 @@
+@@ -132,22 +157,26 @@
          // last parallax slice OR no parallax
          port->shadow_scx = draw_scroll_x;
  
@@ -181,7 +187,7 @@ Index: src/core/scroll.c
              // If column differs by more than 1 render entire screen
              scroll_render_rows(draw_scroll_x, draw_scroll_y, ((scene_LCD_type == LCD_parallax) ? port->start_tile : -SCREEN_PAD_TOP), SCREEN_TILE_REFRES_H);
              return TRUE;
-@@ -155,20 +183,20 @@
+@@ -155,20 +184,20 @@
              scroll_load_pending_col();
          }
  
@@ -209,7 +215,7 @@ Index: src/core/scroll.c
              // If row differs by more than 1 render entire screen
              scroll_render_rows(draw_scroll_x, draw_scroll_y, ((scene_LCD_type == LCD_parallax) ? port->start_tile : -SCREEN_PAD_TOP), SCREEN_TILE_REFRES_H);
              return TRUE;
-@@ -184,120 +212,1223 @@
+@@ -184,120 +213,1223 @@
      scroll_reset();
      scroll_update();
  }

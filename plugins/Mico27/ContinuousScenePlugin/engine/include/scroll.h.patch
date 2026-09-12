@@ -17,13 +17,14 @@ Index: include/scroll.h
  extern INT16 scroll_x;
  extern INT16 scroll_y;
  extern INT16 draw_scroll_x;
-@@ -26,10 +30,16 @@
+@@ -26,10 +30,17 @@
  extern UINT16 scroll_x_max;
  extern UINT16 scroll_y_max;
  extern BYTE scroll_offset_x;
  extern BYTE scroll_offset_y;
 +extern UBYTE bkg_scroll_x;
 +extern UBYTE bkg_scroll_y;
++extern UBYTE DISABLE_SCROLL_LIMITS;
 +extern BYTE bkg_offset_x;
 +extern BYTE bkg_offset_y;
  extern UINT8 pending_w_i;
@@ -34,7 +35,7 @@ Index: include/scroll.h
  /**
   * Resets scroll settings on engine start
   */
-@@ -49,8 +59,12 @@
+@@ -49,8 +60,12 @@
   * Resets scroll and update the whole screen
   */
  void scroll_repaint(void) BANKED;

@@ -419,31 +419,7 @@ const compile = (input, helpers) => {
         }
     }
 
-    _addComment(`      ___      ___        _____        ___`);
-    _addComment(`     /  /\\    /  /\\      /  /::\\      /  /\\`);
-    _addComment(`    /  /:/_  /  /::\\    /  /:/\\:\\    /  /:/_`);
-    _addComment(`   /  /:/ /\\/  /:/\\:\\  /  /:/  \\:\\  /  /:/ /\\`);
-    _addComment(`  /  /:/ /:/  /:/~/::\\/__/:/ \\__\\:|/  /:/ /:/_`);
-    _addComment(` /__/:/ /:/__/:/ /:/\\:\\  \\:\\ /  /:/__/:/ /:/ /\\`);
-    _addComment(` \\  \\:\\/:/\\  \\:\\/:/__\\/\\  \\:\\  /:/\\  \\:\\/:/ /:/`);
-    _addComment(`  \\  \\::/  \\  \\::/      \\  \\:\\/:/  \\  \\::/ /:/`);
-    _addComment(`   \\  \\:\\   \\  \\:\\       \\  \\::/    \\  \\:\\/:/`);
-    _addComment(`    \\  \\:\\   \\  \\:\\       \\__\\/      \\  \\::/`);
-    _addComment(`     \\___/    \\__\\/       ___         ___\\/       ___`);
-    _addComment(`     /  /\\        ___    /  /\\       /  /\\       /  /\\        ___`);
-    _addComment(`    /  /:/_      /  /\\  /  /::\\     /  /:/_     /  /:/_      /  /\\`);
-    _addComment(`   /  /:/ /\\    /  /:/ /  /:/\\:\\   /  /:/ /\\   /  /:/ /\\    /  /:/`);
-    _addComment(`  /  /:/ /::\\  /  /:/ /  /:/~/:/  /  /:/ /:/_ /  /:/ /:/_  /  /:/`);
-    _addComment(` /__/:/ /:/\\:\\/  /::\\/__/:/ /:/__/__/:/ /:/ //__/:/ /:/ /\\/  /::\\`);
-    _addComment(` \\  \\:\\/:/~/:/__/:/\\:\\  \\:\\/:::::\\  \\:\\/:/ /:\\  \\:\\/:/ /:/__/:/\\:\\`);
-    _addComment(`  \\  \\::/ /:/\\__\\/  \\:\\  \\::/~~~~ \\  \\::/ /:/ \\  \\::/ /:/\\__\\/  \\:\\`);
-    _addComment(`   \\__\\/ /:/      \\  \\:\\  \\:\\      \\  \\:\\/:/   \\  \\:\\/:/      \\  \\:\\`);
-    _addComment(`     /__/:/        \\__\\/\\  \\:\\      \\  \\::/     \\  \\::/        \\__\\/`);
-    _addComment(`     \\__\\/               \\__\\/       \\__\\/       \\__\\/`);
-    _addComment(`     `);
     _addComment(`                    Single Colour Fade`);
-    _addComment(`               [GF_EVENT_FADE_STREET_SINGLE]`);
-    _addComment(`     `);
     _addComment(`    Parameters:`);
     _addComment(`        Slot: ${input.pal_type} palette ${input.pal_index}, colour ${input.pal_type==="sprite" ? input.obj_colour_index : input.bkg_colour_index}`);
     _addComment(`        Start colour: RGB(${input.start_r}, ${input.start_g}, ${input.start_b})`);
@@ -454,7 +430,7 @@ const compile = (input, helpers) => {
     _addComment(`        Don't wait before step 1: ${no_wait}`);
     _addComment("");
     appendRaw(gbvm);
-    _addComment(`~~~ End of Single Colour Fade block ~~~\n\n`);
+    _addComment(`End of Single Colour Fade`);
 };
 
 module.exports = {

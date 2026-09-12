@@ -653,30 +653,7 @@ const compile = (input, helpers) => {
         }
     }
 
-    _addComment(`      ___      ___        _____        ___`);
-    _addComment(`     /  /\\    /  /\\      /  /::\\      /  /\\`);
-    _addComment(`    /  /:/_  /  /::\\    /  /:/\\:\\    /  /:/_`);
-    _addComment(`   /  /:/ /\\/  /:/\\:\\  /  /:/  \\:\\  /  /:/ /\\`);
-    _addComment(`  /  /:/ /:/  /:/~/::\\/__/:/ \\__\\:|/  /:/ /:/_`);
-    _addComment(` /__/:/ /:/__/:/ /:/\\:\\  \\:\\ /  /:/__/:/ /:/ /\\`);
-    _addComment(` \\  \\:\\/:/\\  \\:\\/:/__\\/\\  \\:\\  /:/\\  \\:\\/:/ /:/`);
-    _addComment(`  \\  \\::/  \\  \\::/      \\  \\:\\/:/  \\  \\::/ /:/`);
-    _addComment(`   \\  \\:\\   \\  \\:\\       \\  \\::/    \\  \\:\\/:/`);
-    _addComment(`    \\  \\:\\   \\  \\:\\       \\__\\/      \\  \\::/`);
-    _addComment(`     \\___/    \\__\\/       ___         ___\\/       ___`);
-    _addComment(`     /  /\\        ___    /  /\\       /  /\\       /  /\\        ___`);
-    _addComment(`    /  /:/_      /  /\\  /  /::\\     /  /:/_     /  /:/_      /  /\\`);
-    _addComment(`   /  /:/ /\\    /  /:/ /  /:/\\:\\   /  /:/ /\\   /  /:/ /\\    /  /:/`);
-    _addComment(`  /  /:/ /::\\  /  /:/ /  /:/~/:/  /  /:/ /:/_ /  /:/ /:/_  /  /:/`);
-    _addComment(` /__/:/ /:/\\:\\/  /::\\/__/:/ /:/__/__/:/ /:/ //__/:/ /:/ /\\/  /::\\`);
-    _addComment(` \\  \\:\\/:/~/:/__/:/\\:\\  \\:\\/:::::\\  \\:\\/:/ /:\\  \\:\\/:/ /:/__/:/\\:\\`);
-    _addComment(`  \\  \\::/ /:/\\__\\/  \\:\\  \\::/~~~~ \\  \\::/ /:/ \\  \\::/ /:/\\__\\/  \\:\\`);
-    _addComment(`   \\__\\/ /:/      \\  \\:\\  \\:\\      \\  \\:\\/:/   \\  \\:\\/:/      \\  \\:\\`);
-    _addComment(`     /__/:/        \\__\\/\\  \\:\\      \\  \\::/     \\  \\::/        \\__\\/`);
-    _addComment(`     \\__\\/               \\__\\/       \\__\\/       \\__\\/`);
-    _addComment(`     `);
     _addComment(`                   Automagic Fade Out`);
-    _addComment(`          [GF_EVENT_FADE_STREET_AUTO_FADE_OUT]`);
     _addComment(``);
     _addComment(`    Parameters:`);
     _addComment(`        Mode: ${mode_str}`);
@@ -721,7 +698,7 @@ const compile = (input, helpers) => {
         appendRaw(`${colour_end}$:`);
         appendRaw("VM_POP 1");
     }
-    _addComment(`~~~ End of Automagic Fade Out block ~~~\n\n`);
+    _addComment(`End of Automagic Fade Out`);
 };
 
 module.exports = {

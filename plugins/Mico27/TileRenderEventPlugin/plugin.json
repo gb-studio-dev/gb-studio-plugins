@@ -5,10 +5,50 @@
   "url": "https://github.com/Mico27/GBS-TileRenderEventPlugin",
   "description": "Can register scripts to be run when a row/column/whole screen is rendered.",
   "license": "MIT",
-  "version": "4.3.2",
+  "version": "4.3.4",
   "gbsVersion": ">=4.3.0",
   "order": -1,
   "engineAltRules": [
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/MetaTilePlugin",
+          "Mico27/RpgMaker2KPlugin"
+        ]
+      },
+      "use": "Cont_M_Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "MetaTilePlugin",
+          "RpgMaker2KPlugin"
+        ]
+      },
+      "use": "Cont_M_Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/MetaTilePlugin",
+          "Mico27/RpgMaker2KPlugin"
+        ]
+      },
+      "use": "ScreenS_M_Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "MetaTilePlugin",
+          "RpgMaker2KPlugin"
+        ]
+      },
+      "use": "ScreenS_M_Rp"
+    },
     {
       "when": {
         "additionalPlugins": [
@@ -30,6 +70,42 @@
     {
       "when": {
         "additionalPlugins": [
+          "Mico27/ContinuousScenePlugin",
+          "Mico27/RpgMaker2KPlugin"
+        ]
+      },
+      "use": "Cont_Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ContinuousScenePlugin",
+          "RpgMaker2KPlugin"
+        ]
+      },
+      "use": "Cont_Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/MetaTilePlugin",
+          "Mico27/RpgMaker2KPlugin"
+        ]
+      },
+      "use": "M_Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "MetaTilePlugin",
+          "RpgMaker2KPlugin"
+        ]
+      },
+      "use": "M_Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
           "Mico27/ScreenScrollPlugin",
           "Mico27/MetaTilePlugin"
         ]
@@ -44,6 +120,24 @@
         ]
       },
       "use": "ScreenS_M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/ScreenScrollPlugin",
+          "Mico27/RpgMaker2KPlugin"
+        ]
+      },
+      "use": "ScreenS_Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "ScreenScrollPlugin",
+          "RpgMaker2KPlugin"
+        ]
+      },
+      "use": "ScreenS_Rp"
     },
     {
       "when": {
@@ -76,6 +170,22 @@
         ]
       },
       "use": "M"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "Mico27/RpgMaker2KPlugin"
+        ]
+      },
+      "use": "Rp"
+    },
+    {
+      "when": {
+        "additionalPlugins": [
+          "RpgMaker2KPlugin"
+        ]
+      },
+      "use": "Rp"
     },
     {
       "when": {

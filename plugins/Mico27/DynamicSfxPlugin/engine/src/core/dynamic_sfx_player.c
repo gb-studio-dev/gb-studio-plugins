@@ -1,14 +1,14 @@
 #pragma bank 255
 
-// Dynamic Sfx plugin — runtime parameter-driven sound synthesizer.
+// Dynamic Sfx plugin: parameter-driven sound synthesizer.
 //
 // Replicates the Gen 1 (pokered) cry engine: each sound is three command
 // streams (pulse 1, pulse 2, noise) of parameterised hardware notes,
 // compiled into ROM data by the "Compile Base Sfx Data" IDE event.
 // Per-preset variation comes from two byte modifiers applied at playback
 // time:
-//   pitch  — added to the 11-bit square frequency and the noise polynomial
-//   length — note duration scale, frames = len16 * (0x80 + length) / 256,
+//   pitch:  added to the 11-bit square frequency and the noise polynomial
+//   length: note duration scale, frames = len16 * (0x80 + length) / 256,
 //            accumulated in 8.8 fixed point across notes
 //
 // The player is driven once per frame from a VBL handler (pokered updates
@@ -23,7 +23,7 @@
 //   0xFF              end of channel
 //
 // Banking: everything lives in the plugin's own switchable bank except two
-// small NONBANKED stubs that must be resident in bank 0 — the VBL entry
+// small NONBANKED stubs that must be resident in bank 0: the VBL entry
 // point and the stream fetch window (see below).
 
 #include <gbdk/platform.h>
@@ -66,7 +66,7 @@ static uint8_t dynsfx_window[DYNSFX_WINDOW];
 // itself. dynsfx_fetch is the one piece that has to stay NONBANKED: it maps
 // the stream bank, copies the next command plus its widest possible operand
 // set into dynsfx_window, and maps the caller's bank back. Reading up to
-// three bytes past a command is harmless — the extra bytes are only consumed
+// three bytes past a command is harmless, since the extra bytes are only consumed
 // once the opcode says they exist.
 //
 // This deliberately does NOT use MemcpyBanked / ReadBankedUBYTE: every helper
@@ -107,7 +107,7 @@ static void dynsfx_channel_update(uint8_t idx) {
 
     if (ch->delay != 1) {
         // note still sounding: count down and rotate the duty pattern
-        // (delay 0 wraps to 255 — authentic pokered counter behaviour)
+        // (delay 0 wraps to 255, matching the original counter behaviour)
         ch->delay--;
         if (ch->rotate) {
             ch->duty_pattern = (uint8_t)((ch->duty_pattern << 2) | (ch->duty_pattern >> 6));

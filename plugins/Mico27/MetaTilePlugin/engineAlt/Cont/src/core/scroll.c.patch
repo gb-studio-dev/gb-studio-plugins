@@ -23,7 +23,7 @@ Index: src/core/scroll.c
  #include "data/game_globals.h"
  #include "vm.h"
  #include "macro.h"
-@@ -194,9 +199,9 @@
+@@ -195,9 +200,9 @@
              // Queue top row
              UBYTE x = new_col - SCREEN_PAD_LEFT;
              UBYTE y = (scene_LCD_type == LCD_parallax) ? port->start_tile : (new_row - SCREEN_PAD_TOP);
@@ -34,13 +34,13 @@ Index: src/core/scroll.c
              // If row differs by more than 1 render entire screen
              scroll_render_rows(draw_scroll_x, draw_scroll_y, ((scene_LCD_type == LCD_parallax) ? port->start_tile : -SCREEN_PAD_TOP), SCREEN_TILE_REFRES_H);
              return TRUE;
-@@ -281,8 +286,14 @@
+@@ -282,8 +287,14 @@
      pending_h_i = (scene_LCD_type == LCD_parallax) ? MIN(SCREEN_TILE_REFRES_H, image_tile_height - y) : SCREEN_TILE_REFRES_H;
      scroll_load_pending_col();
  }
  
 +// ============================================================
-+// Non-metatile tile rendering — current scene
++// Non-metatile tile rendering: current scene
 +// ============================================================
 +
 +// Render a row section from any banked ROM tilemap into VRAM.
@@ -49,7 +49,7 @@ Index: src/core/scroll.c
      _save_bank = CURRENT_BANK;
      SWITCH_ROM(bank);
      UWORD y_offset = (y * (UWORD)source_width);
-@@ -293,8 +304,9 @@
+@@ -294,8 +305,9 @@
      }
      SWITCH_ROM(_save_bank);
  }
@@ -59,14 +59,14 @@ Index: src/core/scroll.c
      _save_bank = CURRENT_BANK;
      SWITCH_ROM(bank);
      UWORD tile_offset = (y * (UINT16)source_width) + x;
-@@ -306,22 +318,227 @@
+@@ -307,22 +319,227 @@
      }
      SWITCH_ROM(_save_bank);
  }
  
 -void fill_tile_row(UBYTE width, UBYTE tile_id) {
 +// ============================================================
-+// Non-metatile fill — current scene
++// Non-metatile fill: current scene
 +// ============================================================
 +
 +// Fill a row section in VRAM with a constant raw tile ID.
@@ -87,7 +87,7 @@ Index: src/core/scroll.c
  }
  
 +// ============================================================
-+// Metatile tile rendering — current scene (SRAM lookup)
++// Metatile tile rendering: current scene (SRAM lookup)
 +// ============================================================
 +
 +// Render a row section using the current scene's SRAM metatile map and banked VRAM tile table.
@@ -131,7 +131,7 @@ Index: src/core/scroll.c
 +}
 +
 +// ============================================================
-+// Metatile fill — current scene
++// Metatile fill: current scene
 +// ============================================================
 +
 +// Fill a row section by resolving a metatile ID through the current scene's VRAM tile table.
@@ -163,7 +163,7 @@ Index: src/core/scroll.c
 +}
 +
 +// ============================================================
-+// Fill dispatch — current scene (metatile or plain)
++// Fill dispatch: current scene (metatile or plain)
 +// ============================================================
 +
 +// Fill a row section with fill_tile_id; treats it as a metatile ID when MetaTile is active.
@@ -185,7 +185,7 @@ Index: src/core/scroll.c
 +}
 +
 +// ============================================================
-+// Metatile tile rendering — neighbor scene (ROM tilemap lookup)
++// Metatile tile rendering: neighbor scene (ROM tilemap lookup)
 +// ============================================================
 +
 +// Render a row from a neighbor scene's ROM tilemap: reads the metatile ID via ReadBankedUBYTE,
@@ -262,7 +262,7 @@ Index: src/core/scroll.c
 +}
 +
 +// ============================================================
-+// Tile rendering dispatch — neighbor scene
++// Tile rendering dispatch: neighbor scene
 +// ============================================================
 +
 +// Render a row from a neighbor scene: uses metatile ROM lookup when MetaTile is active,
@@ -289,7 +289,7 @@ Index: src/core/scroll.c
      // Used for continuous scene row rendering to adjust for different scene sizes and offsets
      bkg_address_offset = ((UWORD)get_bkg_xy_addr((x + bkg_offset_x), (y + bkg_offset_y))) - 0x9800;
      continuous_scene_t* continuous_scene;
-@@ -335,104 +552,76 @@
+@@ -336,104 +553,76 @@
          if (y > SCREEN_OOB_TOP) {
              if (top_x_offset > 0){
                  continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -415,7 +415,7 @@ Index: src/core/scroll.c
              }
          }
          width -= section_width;
-@@ -443,36 +632,32 @@
+@@ -444,36 +633,32 @@
          section_width = MIN(width, (image_tile_width - x));
          if (y > SCREEN_OOB_TOP) {
              continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -463,7 +463,7 @@ Index: src/core/scroll.c
          }
          width -= section_width;
          x += section_width;
-@@ -481,104 +666,76 @@
+@@ -482,104 +667,76 @@
      if (y > SCREEN_OOB_TOP) {
          if (top_x_offset + continuous_scenes[DIRECTION_TOP].tile_width > image_tile_width){
              continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -589,7 +589,7 @@ Index: src/core/scroll.c
          }
      }
  }
-@@ -597,104 +754,76 @@
+@@ -598,104 +755,76 @@
          if (x > SCREEN_OOB_LEFT) {
              if (top_x_offset > 0){
                  continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -715,7 +715,7 @@ Index: src/core/scroll.c
              }
          }
          height -= section_height;
-@@ -705,35 +834,31 @@
+@@ -706,35 +835,31 @@
          section_height = MIN(height, (image_tile_height - y));
          if (x > SCREEN_OOB_LEFT) {
              continuous_scene = &continuous_scenes[DIRECTION_LEFT];
@@ -762,7 +762,7 @@ Index: src/core/scroll.c
          }
          height -= section_height;
          y += section_height;
-@@ -742,112 +867,233 @@
+@@ -743,112 +868,233 @@
      if (x > SCREEN_OOB_LEFT) {
          if (bottom_x_offset > 0){
              continuous_scene = &continuous_scenes[DIRECTION_BOTTOM];
@@ -892,7 +892,7 @@ Index: src/core/scroll.c
  #ifdef CGB
  
 +// ============================================================
-+// CGB: Metatile attribute rendering — neighbor scene (ROM tilemap lookup)
++// CGB: Metatile attribute rendering: neighbor scene (ROM tilemap lookup)
 +// ============================================================
  
 +// Render a row of CGB attributes from a neighbor scene's ROM tilemap via metatile_attr_ptr lookup.
@@ -968,7 +968,7 @@ Index: src/core/scroll.c
 +}
 +
 +// ============================================================
-+// CGB: Metatile attribute fill — current scene
++// CGB: Metatile attribute fill: current scene
 +// ============================================================
 +
 +// Fill a row section with CGB attribute bytes by resolving a metatile ID through metatile_attr_ptr.
@@ -996,7 +996,7 @@ Index: src/core/scroll.c
 +}
 +
 +// ============================================================
-+// CGB: Attribute fill dispatch — current scene (metatile or plain)
++// CGB: Attribute fill dispatch: current scene (metatile or plain)
 +// ============================================================
 +
 +// Fill a row section with fill_tile_id attrs; treats it as a metatile ID when MetaTile is active.
@@ -1018,7 +1018,7 @@ Index: src/core/scroll.c
 +}
 +
 +// ============================================================
-+// CGB: Attribute rendering dispatch — neighbor scene
++// CGB: Attribute rendering dispatch: neighbor scene
 +// ============================================================
 +
 +// Render a row of CGB attributes from a neighbor scene: uses metatile ROM lookup when MetaTile
@@ -1045,7 +1045,7 @@ Index: src/core/scroll.c
      // Used for continuous scene row rendering to adjust for different scene sizes and offsets
      bkg_address_offset = ((UWORD)get_bkg_xy_addr((x + bkg_offset_x), (y + bkg_offset_y))) - 0x9800;
      continuous_scene_t* continuous_scene;
-@@ -861,104 +1107,76 @@
+@@ -862,104 +1108,76 @@
          if (y > SCREEN_OOB_TOP) {
              if (top_x_offset > 0){
                  continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -1171,7 +1171,7 @@ Index: src/core/scroll.c
              }
          }
          width -= section_width;
-@@ -969,36 +1187,32 @@
+@@ -970,36 +1188,32 @@
          section_width = MIN(width, (image_tile_width - x));
          if (y > SCREEN_OOB_TOP) {
              continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -1219,7 +1219,7 @@ Index: src/core/scroll.c
          }
          width -= section_width;
          x += section_width;
-@@ -1007,104 +1221,76 @@
+@@ -1008,104 +1222,76 @@
      if (y > SCREEN_OOB_TOP) {
          if (top_x_offset + continuous_scenes[DIRECTION_TOP].tile_width > image_tile_width){
              continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -1345,7 +1345,7 @@ Index: src/core/scroll.c
          }
      }
  }
-@@ -1123,104 +1309,76 @@
+@@ -1124,104 +1310,76 @@
          if (x > SCREEN_OOB_LEFT) {
              if (top_x_offset > 0){
                  continuous_scene = &continuous_scenes[DIRECTION_TOP];
@@ -1471,7 +1471,7 @@ Index: src/core/scroll.c
              }
          }
          height -= section_height;
-@@ -1231,35 +1389,31 @@
+@@ -1232,35 +1390,31 @@
          section_height = MIN(height, (image_tile_height - y));
          if (x > SCREEN_OOB_LEFT) {
              continuous_scene = &continuous_scenes[DIRECTION_LEFT];
@@ -1518,7 +1518,7 @@ Index: src/core/scroll.c
          }
          height -= section_height;
          y += section_height;
-@@ -1268,104 +1422,76 @@
+@@ -1269,104 +1423,76 @@
      if (x > SCREEN_OOB_LEFT) {
          if (bottom_x_offset > 0){
              continuous_scene = &continuous_scenes[DIRECTION_BOTTOM];

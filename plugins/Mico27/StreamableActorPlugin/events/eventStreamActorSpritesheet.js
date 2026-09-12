@@ -72,16 +72,14 @@ export const fields = [
 // ---------------------------------------------------------------------------
 // Build-time spritesheet re-packer
 //
-// GB Studio de-duplicates sprite tiles across the whole sheet, so the tiles of
-// one frame can be scattered anywhere in the tileset - useless for streaming.
-// This rebuilds the sheet so that every frame owns one contiguous block of
-// tiles and its metasprite only references tiles 0..n-1 of that block, which
-// makes "show frame N" a single linear copy into a fixed VRAM band.
-// (Plugin event files cannot require sibling modules, so this helper is
-// duplicated in the events that need it.)
+// GB Studio de-duplicates tiles across the whole sheet, so one frame's tiles
+// can be scattered anywhere in the tileset - useless for streaming. This
+// rebuilds it so every frame owns a contiguous block referenced as tiles
+// 0..n-1, making "show frame N" one linear copy into a fixed band.
+// (Event files cannot require sibling modules, so this is duplicated.)
 // ---------------------------------------------------------------------------
 
-const analyseStreamSheet = (sprite, spriteMode) => {
+const analyseStreamSheet = (sprite, spriteMode, cgbOnly) => {
   const step = spriteMode === "8x8" ? 1 : 2; // 8x8 tiles per metasprite entry
   const vramData = sprite.vramData || [[], []];
   const metasprites = sprite.metasprites || [];
@@ -106,8 +104,8 @@ const analyseStreamSheet = (sprite, spriteMode) => {
     const sources = [];
     let next = 0;
     const entries = (metasprite || []).map((t) => {
-      // props bit 3 = S_VRAM2: colour-only sheets keep some tiles in VRAM
-      // bank 1. Streamed frames always land in bank 0, so the flag is cleared.
+      // props bit 3 = S_VRAM2. Where a tile came from says nothing about where
+      // its streamed copy goes, so clear it here and set it again below.
       const vramBank = t.props & 0x08 ? 1 : 0;
       const key = `${vramBank}:${t.tile}`;
       let local = localOf.get(key);
@@ -119,6 +117,24 @@ const analyseStreamSheet = (sprite, spriteMode) => {
       }
       return { y: t.y, x: t.x, tile: local, props: t.props & ~0x08 };
     });
+
+    // A slot is one tile index and on a Game Boy Color holds a tile in either
+    // bank, so a band kept in bank 0 alone would cost a streamed actor twice
+    // a stock one's slots. Split it the way GB Studio splits an ordinary
+    // sheet (spriteTileAllocationColorOnly): low half in bank 0, rounded up,
+    // and up again to whole pairs in 8x16 mode. Bank 0's tiles stay first, so
+    // the second bank gets the tail of the block at the same tile index.
+    const nBank0 = !cgbOnly
+      ? next
+      : step === 2
+      ? Math.ceil(next / 4) * 2
+      : Math.ceil(next / 2);
+    for (const entry of entries) {
+      if (entry.tile >= nBank0) {
+        entry.tile -= nBank0;
+        entry.props |= 0x08;
+      }
+    }
 
     const bytes = [];
     for (const source of sources) {
@@ -134,15 +150,18 @@ const analyseStreamSheet = (sprite, spriteMode) => {
       for (let i = 0; i < bytes.length; i++) data.push(bytes[i]);
     }
 
-    return { entries, nTiles: next, offset };
+    return { entries, nTiles: next, nBank0, offset };
   });
 
   const frames = order.map(
-    (index) => uniq[index] || { entries: [], nTiles: 0, offset: 0 }
+    (index) => uniq[index] || { entries: [], nTiles: 0, nBank0: 0, offset: 0 }
   );
   const maxTiles = frames.reduce((max, frame) => Math.max(max, frame.nTiles), 0);
+  // Tile slots the band needs. The bank 0 half is the larger of the two, so
+  // it is the one that sizes the band.
+  const maxSlots = frames.reduce((max, frame) => Math.max(max, frame.nBank0), 0);
 
-  return { step, data, uniq, frames, maxTiles };
+  return { step, data, uniq, frames, maxTiles, maxSlots };
 };
 
 const toHexRows = (bytes) => {
@@ -162,29 +181,23 @@ const toHexRows = (bytes) => {
 // ---------------------------------------------------------------------------
 // Shared tile blob files
 //
-// Every streamed sheet's tiles go into one array shared by all of them, spilling
-// into stream_tiles_1, _2 ... whenever the next blob would not fit in a bank.
-// Two reasons:
+// Every streamed sheet's tiles go into one array shared by all of them,
+// spilling into stream_tiles_1, _2 ... whenever the next blob will not fit in
+// a bank. Two reasons:
 //
-//   * Alignment. On a Game Boy Color the streamer moves tiles with general
-//     purpose DMA, which ignores the low four bits of its source address, so it
-//     only works on a blob that starts on a 16 byte boundary - and nothing in
-//     the toolchain can ask for one. Pooling turns one coin flip per sheet into
-//     one coin flip for all of them: every blob in the array is a whole number
-//     of tiles, so they are all aligned or all not, and a full array is big
-//     enough that the bank packer usually has to open a fresh bank for it,
-//     which starts at 0x4000 and is therefore aligned.
-//   * Packing. One large object the packer places on its own, instead of a
-//     tile blob welded to each sheet's metasprite and animation tables.
+//   * Alignment. GDMA ignores the low four bits of its source address, and
+//     nothing in the toolchain can ask for a 16 byte boundary. Pooling turns
+//     one coin flip per sheet into one for all of them, and a full array is
+//     big enough that the packer usually opens a fresh bank for it, which
+//     starts at 0x4000 and so is aligned.
+//   * Packing. One large object the packer places on its own.
 //
-// The pool has to be built up across every "Stream Actor Spritesheet" event in
-// the project, and each event file is its own sandbox with its own module
-// scope - so the accumulated state cannot live in a variable here. It lives in
-// the compiler's additionalOutput map instead, which is shared by every event
-// in a build and created fresh for each one: the group file that has been
-// written so far is read back, the new blob is appended to it, and it is
-// written out again. The manifest comment at the top is what makes that
-// readable - it records the length so far and where each sheet's blob starts.
+// The pool spans every "Stream Actor Spritesheet" event in the project, and
+// each event file is its own sandbox, so the state cannot live in a variable
+// here. It lives in the compiler's additionalOutput map, shared by every event
+// in a build: the group file written so far is read back, the new blob is
+// appended, and it is written out again. The manifest comment at the top
+// records the length so far and where each sheet's blob starts.
 // ---------------------------------------------------------------------------
 
 const TILES_BANK_SIZE = 16384; // an object has to fit in one bank
@@ -251,9 +264,8 @@ const renderTileGroup = (group, alignPools) => {
     source: `#pragma bank 255
 
 // Streamed tile blocks, pool ${group.index}
-// Generated by the Streamable Actor plugin. Every streamed spritesheet in the
-// project appends its frame blocks here, so they share one address and one
-// 16 byte alignment. Each sheet's descriptor points at its own slice.
+// Generated by the Streamable Actor plugin. Every streamed spritesheet appends
+// its frame blocks here, so they share one address and one 16 byte alignment.
 ${TILES_MANIFEST}${manifest}
 
 #include "data/${symbol}.h"
@@ -277,10 +289,9 @@ extern const uint8_t ${symbol}[];
   };
 };
 
-// Places a sheet's blob in the pool and returns the group it landed in and the
-// byte offset of its slice. Re-registering a sheet - two actors streaming the
-// same spritesheet, or the by-index event alongside this one - returns the
-// slice it already has instead of appending a second copy.
+// Places a sheet's blob in the pool and returns its group and byte offset.
+// Re-registering a sheet returns the slice it already has rather than
+// appending a second copy.
 const addToTilePool = (
   writeAsset,
   additionalOutput,
@@ -325,9 +336,10 @@ const writeStreamSheet = (
   sprite,
   spriteMode,
   statesOrder,
-  alignPools
+  alignPools,
+  cgbOnly
 ) => {
-  const analysis = analyseStreamSheet(sprite, spriteMode);
+  const analysis = analyseStreamSheet(sprite, spriteMode, cgbOnly);
   const symbol = `${sprite.symbol}_stream`;
   const pool = addToTilePool(
     writeAsset,
@@ -358,9 +370,8 @@ const writeStreamSheet = (
 
 // Streamed spritesheet: ${sprite.name}
 // Generated by the Streamable Actor plugin. Every frame owns a contiguous
-// block of tiles and references it as tiles 0..n-1, so only the current frame
-// has to be resident in sprite VRAM. The blocks live in the shared tile pool
-// ${pool.group}[], starting at byte ${pool.base}.
+// block referenced as tiles 0..n-1, so only the current frame has to be
+// resident. Blocks live in ${pool.group}[], from byte ${pool.base}.
 
 #include "data/${symbol}.h"
 #include "data/${pool.group}.h"
@@ -369,7 +380,9 @@ BANKREF(${symbol})
 
 const stream_frame_t ${symbol}_frames[] = {
 ${analysis.frames
-  .map((frame) => `    { ${frame.offset}, ${frame.nTiles} }`)
+  .map(
+    (frame) => `    { ${frame.offset}, ${frame.nTiles}, ${frame.nBank0} }`
+  )
   .join(",\n")}
 };
 
@@ -399,8 +412,8 @@ const UWORD ${symbol}_animations_lookup[] = {
 ${animationsLookup.map((value) => `    ${value}`).join(",\n")}
 };
 
-// No tileset: streamed sheets never load their tiles through load_sprite(),
-// the VBlank streamer fills the actor's reserved band one frame at a time.
+// No tileset: streamed sheets never load through load_sprite(), the streamer
+// fills the actor's reserved band one frame at a time.
 const struct spritesheet_t ${symbol} = {
     .n_metasprites = ${(sprite.metaspritesOrder || []).length},
     .emote_origin = { .x = 0, .y = ${-(sprite.canvasHeight || 16)} },
@@ -421,7 +434,7 @@ const stream_sheet_t ${symbol}_desc = {
     ${pool.group} + ${pool.base},
     ${symbol}_frames,
     ${analysis.frames.length},
-    ${analysis.maxTiles},
+    ${analysis.maxSlots},
     BANK(${pool.group})
 };
 `;
@@ -432,7 +445,10 @@ const stream_sheet_t ${symbol}_desc = {
 #include "gbs_types.h"
 #include "streamable_actor.h"
 
+// Tiles in the largest frame, and the slots they occupy - the same number
+// unless the sheet is colour only and split over both VRAM banks.
 #define ${symbol.toUpperCase()}_MAX_TILES ${analysis.maxTiles}
+#define ${symbol.toUpperCase()}_MAX_SLOTS ${analysis.maxSlots}
 
 BANKREF_EXTERN(${symbol})
 extern const struct spritesheet_t ${symbol};
@@ -444,14 +460,13 @@ extern const stream_sheet_t ${symbol}_desc;
   writeAsset(`${symbol}.c`, source);
   writeAsset(`${symbol}.h`, header);
 
-  return { symbol, maxTiles: analysis.maxTiles };
+  return { symbol, maxTiles: analysis.maxTiles, maxSlots: analysis.maxSlots };
 };
 
 // Streaming loads no tiles at scene load, so keep the sheet out of the scene's
-// shared sprite VRAM pool. GB Studio adds any sprite referenced by an event arg
-// named `spriteSheetId` to that pool, and gives every actor without an
-// exclusive reservation a slot for its editor spritesheet - both are wasted
-// VRAM for a streamed actor.
+// shared sprite VRAM pool: GB Studio adds any sprite named by a `spriteSheetId`
+// arg to it, and gives every actor without an exclusive reservation a slot for
+// its editor sheet. Both are wasted VRAM for a streamed actor.
 // VRAM buffer mode gives each streamed actor two bands and copies into the one
 // it is not drawing from, so the reservation has to be twice the frame size.
 // (Plugin event files cannot require sibling modules, so this is duplicated in
@@ -462,20 +477,13 @@ const engineFieldValue = (options, id) => {
   return field && field.value !== undefined ? field.value : undefined;
 };
 
-// Build-time only: whether each tile pool is padded out to a whole ROM bank so
-// that it is guaranteed to start on a 16 byte boundary. A pool that size can be
-// placed nowhere but an empty bank, which it then fills, so nothing can be
-// linked in front of it and it starts at 0x4000.
+// Whether each tile pool is padded out to a whole ROM bank, which forces the
+// packer to give it a bank of its own and so a 0x4000 start.
 //
-// Only a VBlank mode build with HDMA enabled has anything to gain from it -
-// general purpose DMA is the only thing that needs the alignment, and VRAM
-// buffer mode copies from the render loop where it cannot be used. Padding in
-// either of those cases would spend up to 16 KB of ROM on nothing. The setting
-// is hidden in the editor there, but a value set before the mode or the HDMA
-// setting was changed stays in the project, so both are checked here rather
-// than trusting the editor to have kept up.
-// (Plugin event files cannot require sibling modules, so this is duplicated in
-// the events that need it.)
+// Only VBlank mode with HDMA on has anything to gain - GDMA is the only thing
+// needing the alignment - and padding elsewhere would spend up to 16 KB of ROM
+// on nothing. The editor hides the setting in the other cases, but a value
+// stored before the mode changed survives, so both are re-checked here.
 const alignTilePools = (options) => {
   const mode = engineFieldValue(options, "STREAMABLE_ACTOR_MODE");
   if (mode !== undefined && String(mode) !== "STREAM_MODE_VBLANK") return false;
@@ -491,6 +499,31 @@ const bandsPerActor = (options) => {
   const value =
     field && field.value !== undefined ? field.value : "STREAM_MODE_VBLANK";
   return String(value) === "STREAM_MODE_VRAM_BUFFER" ? 2 : 1;
+};
+
+// GB Studio silently turns an actor id that is not in the scene into index 0,
+// the player. Worse than a no-op here: the band is reserved against an id
+// nothing reads, so the actor it was meant for keeps its shared pool slot and
+// the streamer writes over whatever else draws from it - which surfaces as one
+// actor wearing another's tiles, far from the cause. Duplicating a scene is the
+// usual way to get one: new actor ids, same script naming the originals.
+const resolveActorId = (input, options) => {
+  const { scene, entity, entityType } = options;
+  let actorId = String(input.actorId);
+  if (actorId === "$self$") {
+    actorId = entityType === "actor" && entity ? entity.id : "player";
+  }
+  if (
+    actorId !== "player" &&
+    scene &&
+    !(scene.actors || []).some((a) => a && a.id === actorId)
+  ) {
+    const where = scene.name || scene.symbol || scene.id;
+    throw new Error(
+      `${name}: actor "${actorId}" is not in scene "${where}". Pick the actor again in that scene's script.`
+    );
+  }
+  return actorId;
 };
 
 const removeFromScenePool = (scene, spriteSheetId, keepForActorId) => {
@@ -523,28 +556,28 @@ export const compile = (input, helpers) => {
     _declareLocal,
     setActorId,
   } = helpers;
-  const { sprites, settings, statesOrder, scene, entity, entityType } = options;
+  const { sprites, settings, statesOrder, scene } = options;
 
   const sprite = (sprites || []).find((s) => s.id === input.spriteSheetId);
   if (!sprite) return;
 
   const spriteMode =
     sprite.spriteMode || (settings && settings.spriteMode) || "8x16";
-  const { symbol, maxTiles } = writeStreamSheet(
+  // A colour-only sheet is only ever in a Game Boy Color ROM, so its band can
+  // use both VRAM banks and cost half the tile slots.
+  const { symbol, maxSlots } = writeStreamSheet(
     writeAsset,
     additionalOutput,
     sprite,
     spriteMode,
     statesOrder,
-    alignTilePools(options)
+    alignTilePools(options),
+    sprite.colorMode === "color"
   );
 
   // ---- build time: reserve the actor's exclusive VRAM band ----------------
-  let actorId = String(input.actorId);
-  if (actorId === "$self$") {
-    actorId = entityType === "actor" && entity ? entity.id : "player";
-  }
-  const reserveTiles = Math.max(maxTiles, Number(input.reserveTiles) || 0);
+  const actorId = resolveActorId(input, options);
+  const reserveTiles = Math.max(maxSlots, Number(input.reserveTiles) || 0);
   if (scene) {
     if (actorId !== "player") {
       const actor = (scene.actors || []).find((a) => a.id === actorId);

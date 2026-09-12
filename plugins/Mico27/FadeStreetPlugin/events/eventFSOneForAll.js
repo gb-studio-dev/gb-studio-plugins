@@ -113,36 +113,13 @@ const compile = (input, helpers) => {
 
     const rgb = "0x" + ((input.target_b << 10) | (input.target_g << 5) | input.target_r).toString(16).padStart(4, '0');
     gbvm = `VM_PUSH_CONST ${rgb}\nVM_CALL_NATIVE b_set_all_palettes _set_all_palettes\nVM_POP 1`;
-    _addComment(`      ___      ___        _____        ___`);
-    _addComment(`     /  /\\    /  /\\      /  /::\\      /  /\\`);
-    _addComment(`    /  /:/_  /  /::\\    /  /:/\\:\\    /  /:/_`);
-    _addComment(`   /  /:/ /\\/  /:/\\:\\  /  /:/  \\:\\  /  /:/ /\\`);
-    _addComment(`  /  /:/ /:/  /:/~/::\\/__/:/ \\__\\:|/  /:/ /:/_`);
-    _addComment(` /__/:/ /:/__/:/ /:/\\:\\  \\:\\ /  /:/__/:/ /:/ /\\`);
-    _addComment(` \\  \\:\\/:/\\  \\:\\/:/__\\/\\  \\:\\  /:/\\  \\:\\/:/ /:/`);
-    _addComment(`  \\  \\::/  \\  \\::/      \\  \\:\\/:/  \\  \\::/ /:/`);
-    _addComment(`   \\  \\:\\   \\  \\:\\       \\  \\::/    \\  \\:\\/:/`);
-    _addComment(`    \\  \\:\\   \\  \\:\\       \\__\\/      \\  \\::/`);
-    _addComment(`     \\___/    \\__\\/       ___         ___\\/       ___`);
-    _addComment(`     /  /\\        ___    /  /\\       /  /\\       /  /\\        ___`);
-    _addComment(`    /  /:/_      /  /\\  /  /::\\     /  /:/_     /  /:/_      /  /\\`);
-    _addComment(`   /  /:/ /\\    /  /:/ /  /:/\\:\\   /  /:/ /\\   /  /:/ /\\    /  /:/`);
-    _addComment(`  /  /:/ /::\\  /  /:/ /  /:/~/:/  /  /:/ /:/_ /  /:/ /:/_  /  /:/`);
-    _addComment(` /__/:/ /:/\\:\\/  /::\\/__/:/ /:/__/__/:/ /:/ //__/:/ /:/ /\\/  /::\\`);
-    _addComment(` \\  \\:\\/:/~/:/__/:/\\:\\  \\:\\/:::::\\  \\:\\/:/ /:\\  \\:\\/:/ /:/__/:/\\:\\`);
-    _addComment(`  \\  \\::/ /:/\\__\\/  \\:\\  \\::/~~~~ \\  \\::/ /:/ \\  \\::/ /:/\\__\\/  \\:\\`);
-    _addComment(`   \\__\\/ /:/      \\  \\:\\  \\:\\      \\  \\:\\/:/   \\  \\:\\/:/      \\  \\:\\`);
-    _addComment(`     /__/:/        \\__\\/\\  \\:\\      \\  \\::/     \\  \\::/        \\__\\/`);
-    _addComment(`     \\__\\/               \\__\\/       \\__\\/       \\__\\/`);
-    _addComment(`     `);
     _addComment(`           Set All Palettes to One Colour`);
-    _addComment(`          [GF_EVENT_FADE_STREET_ONE_FOR_ALL]`);
     _addComment(``);
     _addComment(`    Parameters:`);
     _addComment(`        Target colour: (${input.target_r}, ${input.target_g}, ${input.target_b})`);
     _addComment("");
     appendRaw(gbvm);
-    _addComment(`~~~ End of Set All Palettes to One Colour block ~~~\n\n`);
+    _addComment(`End of Set All Palettes to One Colour`);
 };
 
 module.exports = {

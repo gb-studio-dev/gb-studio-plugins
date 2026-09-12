@@ -42,8 +42,9 @@ export const fields = [
 ];
 
 // Same frame packing maths as "Stream Actor Spritesheet", used here only to
-// find the largest frame. (Plugin event files cannot require sibling modules.)
-const analyseStreamSheet = (sprite, spriteMode) => {
+// size the band. Returns tile slots, not tiles: a colour-only sheet splits
+// each frame over both VRAM banks, so it needs half the tile indices.
+const analyseStreamSheet = (sprite, spriteMode, cgbOnly) => {
   const step = spriteMode === "8x8" ? 1 : 2;
   const metasprites = sprite.metasprites || [];
   const order = sprite.metaspritesOrder || [];
@@ -58,7 +59,8 @@ const analyseStreamSheet = (sprite, spriteMode) => {
         next += step;
       }
     });
-    return next;
+    if (!cgbOnly) return next;
+    return step === 2 ? Math.ceil(next / 4) * 2 : Math.ceil(next / 2);
   });
 
   return order.reduce((max, index) => Math.max(max, uniq[index] || 0), 0);
@@ -72,6 +74,31 @@ const bandsPerActor = (options) => {
   const value =
     field && field.value !== undefined ? field.value : "STREAM_MODE_VBLANK";
   return String(value) === "STREAM_MODE_VRAM_BUFFER" ? 2 : 1;
+};
+
+// GB Studio silently turns an actor id that is not in the scene into index 0,
+// the player. Worse than a no-op here: the band is reserved against an id
+// nothing reads, so the actor it was meant for keeps its shared pool slot and
+// the streamer writes over whatever else draws from it - which surfaces as one
+// actor wearing another's tiles, far from the cause. Duplicating a scene is the
+// usual way to get one: new actor ids, same script naming the originals.
+const resolveActorId = (input, options) => {
+  const { scene, entity, entityType } = options;
+  let actorId = String(input.actorId);
+  if (actorId === "$self$") {
+    actorId = entityType === "actor" && entity ? entity.id : "player";
+  }
+  if (
+    actorId !== "player" &&
+    scene &&
+    !(scene.actors || []).some((a) => a && a.id === actorId)
+  ) {
+    const where = scene.name || scene.symbol || scene.id;
+    throw new Error(
+      `${name}: actor "${actorId}" is not in scene "${where}". Pick the actor again in that scene's script.`
+    );
+  }
+  return actorId;
 };
 
 const removeFromScenePool = (scene, spriteSheetId, keepForActorId) => {
@@ -93,20 +120,21 @@ const removeFromScenePool = (scene, spriteSheetId, keepForActorId) => {
 
 export const compile = (input, helpers) => {
   const { options } = helpers;
-  const { sprites, settings, scene, entity, entityType } = options;
+  const { sprites, settings, scene } = options;
   if (!scene) return;
 
-  let actorId = String(input.actorId);
-  if (actorId === "$self$") {
-    actorId = entityType === "actor" && entity ? entity.id : "player";
-  }
+  const actorId = resolveActorId(input, options);
 
   let reserveTiles = Number(input.reserveTiles) || 0;
   const sprite = (sprites || []).find((s) => s.id === input.spriteSheetId);
   if (!reserveTiles && sprite) {
     const spriteMode =
       sprite.spriteMode || (settings && settings.spriteMode) || "8x16";
-    reserveTiles = analyseStreamSheet(sprite, spriteMode);
+    reserveTiles = analyseStreamSheet(
+      sprite,
+      spriteMode,
+      sprite.colorMode === "color"
+    );
   }
   if (!reserveTiles) return;
 

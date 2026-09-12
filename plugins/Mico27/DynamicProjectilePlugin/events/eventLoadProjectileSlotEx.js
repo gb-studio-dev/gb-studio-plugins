@@ -368,7 +368,7 @@ const fields = [
     key: "overrideTileCollision",
     label: "Tile Collision Override",
     description:
-      "Advanced. Requires the 'Enable tile collision override' engine setting; ignored (and rejected if set) without it. Replaces the collision mask this projectile tests against a tile when non-zero, so 0 means stock collision (tested against the direction it is travelling, as normal). Tile bits: 1 top, 2 bottom, 4 left, 8 right; then the 16-112 value space (16 ladder, 32-112 the six slopes) and 128, which no engine code reads. A property bit (16 and up) makes tiles carrying it solid from every direction. A direction bit (1-8) makes the projectile react to only that one side, from whichever direction it approaches. An empty tile is never solid whatever the value.",
+      "Advanced. Needs the 'Enable tile collision override' engine setting, and is refused without it. Changes what this projectile treats as solid. 0 is normal collision, testing the side it is travelling into. Values: 1 top, 2 bottom, 4 left, 8 right, then 16 ladder, 32 to 112 the six slopes, and 128, which nothing reads. A value of 16 or above makes tiles carrying it solid from every direction. A value of 1 to 8 makes the projectile react only to that side, from wherever it touches. An empty tile is never solid.",
     type: "value",
     min: 0,
     max: 255,
@@ -781,9 +781,9 @@ const compile = (input, helpers) => {
     input.collisionMask
   );
 
-  _addComment(
-    `Projectile Behaviour (type ${type}, flags ${flags}, collision ${collision})`
-  );
+  const behaviourName =
+    Object.keys(TYPE).find((k) => TYPE[k] === type) || "default";
+  _addComment(`Projectile Behaviour: ${behaviourName}`);
   _stackPushScriptValue(frequency);
   _stackPushScriptValue(amplitude);
   _stackPushScriptValue(overrideTileCollision);
